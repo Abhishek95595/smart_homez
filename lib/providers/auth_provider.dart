@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../data/mock_data.dart';
 import '../models/app_user.dart';
@@ -37,29 +38,46 @@ class AuthProvider extends ChangeNotifier {
       _apiService.setCredentials(clientId, clientSecret);
       
       // 2. Attempt real login (JWT)
-      final token = await _apiService.login(clientId, clientSecret);
-      if (token == null) {
+      final loginResponse = await _baseUrlPost('/api/Auth/login', {'email': clientId, 'password': clientSecret});
+      
+      if (loginResponse.statusCode != 200) {
         return 'Login failed. Please check your credentials.';
       }
+
+      final loginData = jsonDecode(loginResponse.body);
+      if (loginData['success'] != true || loginData['token'] == null) {
+        return loginData['error'] ?? 'Login failed. Please check your credentials.';
+      }
+
+      final String token = loginData['token'];
+      final String? apiClientId = loginData['clientId'];
+      final String? apiClientName = loginData['clientName'];
+      final String? userType = loginData['userType'];
+
       _token = token;
+      _apiService.setToken(token);
       
-      // 3. Resolve the client or use login response data
-      // For Tenant types, we use the clientName from the login response if resolve fails or clientId is null
-      final resolveResponse = await _apiRepo.resolveClient(
-        email: clientId, 
-        name: 'Smart Homez Manager',
-      );
+      // 3. Handle Identity Resolution
+      String finalId = apiClientId ?? '';
+      String finalName = apiClientName ?? 'Smart Homez Manager';
       
-      String finalId = '';
-      String finalName = '';
-      
-      if (resolveResponse != null) {
-        finalId = resolveResponse.id;
-        finalName = resolveResponse.name ?? 'App Manager';
-      } else {
-        // Fallback: Try to extract from the JWT token or use defaults if resolve failed but login succeeded
-        finalName = 'Smart Homez Manager';
-        finalId = 'tenant_root'; // Default ID for root tenants if not resolvable
+      if (finalId.isEmpty) {
+        debugPrint('[Auth] No clientId in login response. Attempting to resolve via API...');
+        final resolveResponse = await _apiRepo.resolveClient(
+          email: clientId, 
+          name: 'Smart Homez Manager',
+        );
+        
+        if (resolveResponse != null) {
+          finalId = resolveResponse.id;
+          finalName = resolveResponse.name ?? finalName;
+        } else if (userType == 'Tenant') {
+          // If we can't resolve but we are a Tenant, use a fallback scope
+          debugPrint('[Auth] Client resolution failed for Tenant. Using fallback scope.');
+          finalId = 'tenant_root'; 
+        } else {
+          return 'Could not verify client identity. Please contact support.';
+        }
       }
       
       _resolvedClientId = finalId;
@@ -75,10 +93,15 @@ class AuthProvider extends ChangeNotifier {
         avatarInitials: finalName.length >= 2 ? finalName.substring(0, 2).toUpperCase() : 'AM',
       );
 
-      // 5. Trigger Automatic Sync
+      // 5. Trigger Automatic Sync (Graceful)
       propertyProvider.setClientId(finalId);
-      await propertyProvider.syncFromApi(finalId);
-      await deviceProvider.syncFromApi(finalId);
+      try {
+        await propertyProvider.syncFromApi(finalId);
+        await deviceProvider.syncFromApi(finalId);
+      } catch (syncError) {
+        debugPrint('[Auth Sync Error] $syncError');
+        // We still allow login even if sync fails partially
+      }
 
       notifyListeners();
       return null; // Success
@@ -86,6 +109,14 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('[Auth Provider Error] $e');
       return 'Connection Error: ${e.toString().split('\n').first}';
     }
+  }
+
+  Future<http.Response> _baseUrlPost(String path, Map<String, dynamic> body) async {
+    return http.post(
+      Uri.parse('${_apiService.baseUrl}$path'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
   }
 
   /// Simulated login: pick a demo user by role.
@@ -103,6 +134,7 @@ class AuthProvider extends ChangeNotifier {
     _currentUser = null;
     _token = null;
     _resolvedClientId = null;
+    _apiService.setToken('');
     notifyListeners();
   }
 }

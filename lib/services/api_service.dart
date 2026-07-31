@@ -30,7 +30,7 @@ class ApiService {
     };
   }
 
-  Future<http.Response> post(String path, dynamic body) async {
+  Future<http.Response> post(String path, dynamic body, {bool isRetry = false}) async {
     final url = '$baseUrl$path';
     final headers = await _headers();
     
@@ -45,12 +45,12 @@ class ApiService {
 
       debugPrint('[API Response] ${response.statusCode} | ${response.body}');
 
-      if (response.statusCode == 401 && _clientId != null && _clientSecret != null) {
+      if (response.statusCode == 401 && _clientId != null && _clientSecret != null && !isRetry) {
         debugPrint('[API Auth] 401 Unauthorized. Attempting token refresh...');
         final newToken = await login(_clientId!, _clientSecret!);
         if (newToken != null) {
           debugPrint('[API Auth] Token refreshed, retrying original request...');
-          return post(path, body);
+          return post(path, body, isRetry: true);
         }
       }
       return response;
@@ -60,7 +60,7 @@ class ApiService {
     }
   }
 
-  Future<http.Response> get(String path) async {
+  Future<http.Response> get(String path, {bool isRetry = false}) async {
     final url = '$baseUrl$path';
     final headers = await _headers();
 
@@ -74,12 +74,12 @@ class ApiService {
 
       debugPrint('[API Response] ${response.statusCode} | ${response.body}');
 
-      if (response.statusCode == 401 && _clientId != null && _clientSecret != null) {
+      if (response.statusCode == 401 && _clientId != null && _clientSecret != null && !isRetry) {
         debugPrint('[API Auth] 401 Unauthorized. Attempting token refresh...');
         final newToken = await login(_clientId!, _clientSecret!);
         if (newToken != null) {
           debugPrint('[API Auth] Token refreshed, retrying original request...');
-          return get(path);
+          return get(path, isRetry: true);
         }
       }
       return response;
