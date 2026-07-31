@@ -16,13 +16,17 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   UserRole _selectedRole = UserRole.resident;
   bool _loading = false;
-  bool _obscurePassword = true;
+  bool _obscureSecret = true;
 
+  final _clientIdCtrl = TextEditingController();
+  final _secretCtrl = TextEditingController();
   final _emailCtrl = TextEditingController(text: 'demo@smarthomez.in');
   final _passCtrl = TextEditingController(text: '••••••••');
 
   @override
   void dispose() {
+    _clientIdCtrl.dispose();
+    _secretCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
@@ -31,18 +35,18 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     setState(() => _loading = true);
     
-    // Check if the user entered the specific "demo" credentials or use real API
-    final email = _emailCtrl.text.trim();
-    final password = _passCtrl.text.trim();
+    final clientId = _clientIdCtrl.text.trim();
+    final secret = _secretCtrl.text.trim();
     
     bool success = false;
-    if (email == 'demo@smarthomez.in' || email.isEmpty) {
-      // Classic demo login by role
+    
+    if (clientId.isNotEmpty && secret.isNotEmpty) {
+      // Manual API login
+      success = await context.read<AuthProvider>().loginWithApi(clientId, secret, _selectedRole);
+    } else {
+      // Fallback to demo login
       await context.read<AuthProvider>().loginAs(_selectedRole);
       success = true;
-    } else {
-      // Real API login
-      success = await context.read<AuthProvider>().loginWithApi(email, password);
     }
     
     if (!mounted) return;
@@ -54,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login failed. Please check your credentials.')),
+        const SnackBar(content: Text('Login failed. Please check your Client ID and Secret.')),
       );
     }
   }
@@ -128,45 +132,56 @@ class _LoginScreenState extends State<LoginScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Welcome back',
+            'Connect to Backend',
             style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 6),
           const Text(
-            'Sign in to monitor and automate your properties.',
+            'Enter your Client ID and Secret to sync with real data.',
             style: TextStyle(color: AppColors.textSecondary, fontSize: 13.5),
           ),
           const SizedBox(height: 26),
-          const _FormLabel('Email'),
+          const _FormLabel('Client ID'),
           TextField(
-            controller: _emailCtrl,
-            keyboardType: TextInputType.emailAddress,
+            controller: _clientIdCtrl,
             decoration: const InputDecoration(
-              hintText: 'name@example.com',
-              prefixIcon: Icon(Icons.email_outlined),
+              hintText: 'e.g. anvyaaai_567A',
+              prefixIcon: Icon(Icons.badge_outlined),
             ),
           ),
           const SizedBox(height: 16),
-          const _FormLabel('Password'),
+          const _FormLabel('Client Secret'),
           TextField(
-            controller: _passCtrl,
-            obscureText: _obscurePassword,
+            controller: _secretCtrl,
+            obscureText: _obscureSecret,
             decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.lock_outline_rounded),
+              hintText: 'Enter your API secret',
+              prefixIcon: const Icon(Icons.key_rounded),
               suffixIcon: IconButton(
-                tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                tooltip: _obscureSecret ? 'Show secret' : 'Hide secret',
                 onPressed: () =>
-                    setState(() => _obscurePassword = !_obscurePassword),
+                    setState(() => _obscureSecret = !_obscureSecret),
                 icon: Icon(
-                  _obscurePassword
+                  _obscureSecret
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 22),
-          const _FormLabel('Demo access role'),
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 12),
+          const Text(
+            'OR USE DEMO ACCESS',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textFaint,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 16),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -200,8 +215,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: Colors.white,
                       ),
                     )
-                  : const Icon(Icons.arrow_forward_rounded),
-              label: const Text('Sign In'),
+                  : const Icon(Icons.login_rounded),
+              label: Text(_clientIdCtrl.text.isNotEmpty ? 'Connect & Sign In' : 'Sign In as Demo'),
             ),
           ),
           const SizedBox(height: 16),
@@ -212,7 +227,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(width: 6),
               Flexible(
                 child: Text(
-                  'Secure demo access · backend integration ready',
+                  'Encrypted connection to saajsajja.in',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.textFaint, fontSize: 11.5),
                 ),

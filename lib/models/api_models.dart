@@ -45,8 +45,8 @@ class ClientResolveResponse {
 
   factory ClientResolveResponse.fromJson(Map<String, dynamic> json) {
     return ClientResolveResponse(
-      id: json['id'] as String,
-      name: json['name'] as String?,
+      id: json['client_id'] as String, // Fix key to match real API
+      name: json['client_name'] as String?, // Fix key to match real API
       email: json['email'] as String?,
     );
   }

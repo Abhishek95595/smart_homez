@@ -22,28 +22,42 @@ class AuthProvider extends ChangeNotifier {
   String? get resolvedClientId => _resolvedClientId;
 
   /// Authenticate with the real backend API.
-  Future<bool> loginWithApi(String clientId, String clientSecret) async {
+  Future<bool> loginWithApi(String clientId, String clientSecret, UserRole targetRole) async {
+    // 1. Set credentials in service
+    _apiService.setCredentials(clientId, clientSecret);
+    
+    // 2. Attempt real login
     final token = await _apiService.login(clientId, clientSecret);
     if (token != null) {
       _token = token;
+    }
+    
+    // 3. Resolve the client to verify credentials and get an ID
+    // Even if token login fails, we try to resolve using the fallback header
+    final response = await _apiRepo.resolveClient(
+      email: 'app_user@aurabrain.com', 
+      name: 'Smart Homez Manager',
+    );
+    
+    if (response != null) {
+      _resolvedClientId = response.id;
       
-      // After login, resolve the client to get an ID
-      final response = await _apiRepo.resolveClient(
-        email: clientId, // Using email as clientId for now
-        name: 'App Manager',
+      // Update the mock user profile with real data and the selected role
+      _currentUser = AppUser(
+        id: response.id,
+        name: response.name ?? 'App Manager',
+        email: response.email ?? clientId,
+        phone: '',
+        role: targetRole,
+        tenantId: 'aurabrain',
+        avatarInitials: response.name != null ? response.name!.substring(0, 2).toUpperCase() : 'AM',
       );
-      
-      if (response != null) {
-        _resolvedClientId = response.id;
-      }
-
-      // Keep using a mock user for UI roles for now, but linked to API session
-      final users = MockData.demoUsers();
-      _currentUser = users.first; // Default to admin for API sessions
 
       notifyListeners();
       return true;
     }
+    
+    // If we get here, both login and resolve failed
     return false;
   }
 

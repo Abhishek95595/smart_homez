@@ -16,7 +16,10 @@ class TenantApiRepository {
     );
 
     if (response.statusCode == 200) {
-      return ClientResolveResponse.fromJson(jsonDecode(response.body));
+      final body = jsonDecode(response.body);
+      if (body['success'] == true && body['data'] != null) {
+        return ClientResolveResponse.fromJson(body['data']);
+      }
     }
     return null;
   }
@@ -39,7 +42,10 @@ class TenantApiRepository {
     );
 
     if (response.statusCode == 200) {
-      return ApiHomeResponse.fromJson(jsonDecode(response.body));
+      final body = jsonDecode(response.body);
+      if (body['success'] == true && body['data'] != null) {
+        return ApiHomeResponse.fromJson(body['data']);
+      }
     }
     return null;
   }
@@ -56,7 +62,10 @@ class TenantApiRepository {
     );
 
     if (response.statusCode == 200) {
-      return ApiFloorResponse.fromJson(jsonDecode(response.body));
+      final body = jsonDecode(response.body);
+      if (body['success'] == true && body['data'] != null) {
+        return ApiFloorResponse.fromJson(body['data']);
+      }
     }
     return null;
   }
@@ -73,7 +82,10 @@ class TenantApiRepository {
     );
 
     if (response.statusCode == 200) {
-      return ApiRoomResponse.fromJson(jsonDecode(response.body));
+      final body = jsonDecode(response.body);
+      if (body['success'] == true && body['data'] != null) {
+        return ApiRoomResponse.fromJson(body['data']);
+      }
     }
     return null;
   }

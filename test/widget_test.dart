@@ -18,8 +18,8 @@ void main() {
     await tester.tap(startButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('Welcome back'), findsOneWidget);
-    expect(find.text('Sign In'), findsOneWidget);
+    expect(find.text('Connect to Backend'), findsOneWidget);
+    expect(find.text('Sign In as Demo'), findsOneWidget);
   });
 
   testWidgets('Landing page opens the interactive product demo', (
