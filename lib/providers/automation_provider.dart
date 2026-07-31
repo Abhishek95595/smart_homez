@@ -1,118 +1,67 @@
-import 'dart:convert';
-
-import 'package:flutter/foundation.dart';
-import 'package:hive/hive.dart';
-import 'package:uuid/uuid.dart';
-
+import 'package:flutter/material.dart';
 import '../models/automation_rule.dart';
+import '../services/tenant_api_repository.dart';
 
 class AutomationProvider extends ChangeNotifier {
-  static const _boxName = 'smart_homz_automations';
-  static const _rulesKey = 'rules_v1';
-
+  final TenantApiRepository _apiRepo = TenantApiRepository();
   final List<AutomationRule> _rules = [];
-  bool _loading = true;
+  bool _isLoading = false;
 
   AutomationProvider() {
-    _load();
+    // We could initial fetch here, but usually MainShell or the screen will trigger it
   }
 
   List<AutomationRule> get rules => List.unmodifiable(_rules);
-  bool get loading => _loading;
-  int get enabledCount => _rules.where((rule) => rule.enabled).length;
+  int get enabledCount => _rules.where((r) => r.enabled).length;
+  bool get isLoading => _isLoading;
+  bool get loading => _isLoading; // Compatibility alias
 
-  Future<void> _load() async {
+  Future<void> fetchRules() async {
+    _isLoading = true;
+    notifyListeners();
+
     try {
-      final box = await Hive.openBox<String>(_boxName);
-      final stored = box.get(_rulesKey);
-      if (stored != null) {
-        final list = jsonDecode(stored) as List<dynamic>;
-        _rules.addAll(
-          list.map(
-            (item) =>
-                AutomationRule.fromJson(Map<String, dynamic>.from(item as Map)),
-          ),
-        );
+      final apiRules = await _apiRepo.getAutomations();
+      _rules.clear();
+      for (final r in apiRules) {
+        _rules.add(AutomationRule(
+          id: r.id,
+          name: r.name,
+          trigger: 'Time/Sensor', // Placeholder for complex mapping
+          action: 'Run command',   // Placeholder
+          repeat: 'Custom',        // Placeholder
+          scene: 'Attached Scene', // Placeholder
+          enabled: r.isActive,
+        ));
       }
-    } on HiveError {
-      // The app remains usable with session data if storage is unavailable.
+    } catch (e) {
+      debugPrint('Error fetching automations: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-    if (_rules.isEmpty) _seedDefaults();
-    _loading = false;
+  }
+
+  Future<void> toggleRule(AutomationRule rule) async {
+    final index = _rules.indexWhere((r) => r.id == rule.id);
+    if (index == -1) return;
+
+    final newState = !rule.enabled;
+    final success = await _apiRepo.toggleAutomation(rule.id, newState);
+
+    if (success) {
+      _rules[index] = rule.copyWith(enabled: newState);
+      notifyListeners();
+    }
+  }
+
+  void addRule(AutomationRule rule) {
+    _rules.add(rule);
     notifyListeners();
   }
 
-  void _seedDefaults() {
-    _rules.addAll(const [
-      AutomationRule(
-        id: 'morning_scene',
-        name: 'Good Morning',
-        trigger: '07:00',
-        action: 'Open curtains · Lights 45% · Pump auto',
-        repeat: 'Daily',
-        scene: 'Morning',
-      ),
-      AutomationRule(
-        id: 'away_scene',
-        name: 'Away Protection',
-        trigger: 'When everyone leaves',
-        action: 'Lock doors · Turn off lights · Arm sensors',
-        repeat: 'Always',
-        scene: 'Away',
-      ),
-      AutomationRule(
-        id: 'night_scene',
-        name: 'Night Safety',
-        trigger: '22:30',
-        action: 'Lock doors · Night lights · Safety monitoring',
-        repeat: 'Daily',
-        scene: 'Night',
-      ),
-    ]);
-  }
-
-  Future<void> addRule({
-    required String name,
-    required String trigger,
-    required String action,
-    required String repeat,
-    required String scene,
-  }) async {
-    _rules.add(
-      AutomationRule(
-        id: const Uuid().v4(),
-        name: name.trim(),
-        trigger: trigger,
-        action: action.trim(),
-        repeat: repeat,
-        scene: scene,
-      ),
-    );
-    await _saveAndNotify();
-  }
-
-  Future<void> toggleRule(String id, bool enabled) async {
-    final index = _rules.indexWhere((rule) => rule.id == id);
-    if (index == -1) return;
-    _rules[index] = _rules[index].copyWith(enabled: enabled);
-    await _saveAndNotify();
-  }
-
-  Future<void> deleteRule(String id) async {
-    _rules.removeWhere((rule) => rule.id == id);
-    await _saveAndNotify();
-  }
-
-  Future<void> _saveAndNotify() async {
-    try {
-      final box = await Hive.openBox<String>(_boxName);
-      await box.put(
-        _rulesKey,
-        jsonEncode(_rules.map((rule) => rule.toJson()).toList()),
-      );
-    } on HiveError {
-      // Keep the in-memory state and continue.
-    }
+  void deleteRule(String id) {
+    _rules.removeWhere((r) => r.id == id);
     notifyListeners();
   }
 }

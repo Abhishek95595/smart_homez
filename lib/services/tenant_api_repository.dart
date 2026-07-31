@@ -76,6 +76,61 @@ class TenantApiRepository {
     return [];
   }
 
+  Future<bool> toggleDevice(String deviceId, {int? state, int? brightness}) async {
+    final response = await _api.post(
+      '/api/v1/devices/toggle',
+      ToggleRequest(deviceId: deviceId, state: state, brightness: brightness),
+    );
+    return response.statusCode == 200;
+  }
+
+  Future<bool> sendDeviceCommand(String clientId, String deviceId, String command, dynamic value) async {
+    final response = await _api.post(
+      '/api/v1/clients/$clientId/devices/$deviceId/command',
+      DeviceCommandRequestV1(command: command, value: value),
+    );
+    return response.statusCode == 200;
+  }
+
+  Future<List<ApiAutomationResponse>> getAutomations() async {
+    final response = await _api.get('/api/v1/automations');
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      if (body['success'] == true && body['data'] != null) {
+        return (body['data'] as List)
+            .map((item) => ApiAutomationResponse.fromJson(item))
+            .toList();
+      }
+    }
+    return [];
+  }
+
+  Future<bool> toggleAutomation(String id, bool isActive) async {
+    final response = await _api.post(
+      '/api/v1/automations/$id/toggle',
+      {'isActive': isActive},
+    );
+    return response.statusCode == 200;
+  }
+
+  Future<List<ApiSceneResponse>> getScenes() async {
+    final response = await _api.get('/api/v1/scenes');
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      if (body['success'] == true && body['data'] != null) {
+        return (body['data'] as List)
+            .map((item) => ApiSceneResponse.fromJson(item))
+            .toList();
+      }
+    }
+    return [];
+  }
+
+  Future<bool> activateScene(String id) async {
+    final response = await _api.post('/api/v1/scenes/$id/activate', {});
+    return response.statusCode == 200;
+  }
+
   Future<ApiHomeResponse?> createHome(
     String clientId, {
     required String name,

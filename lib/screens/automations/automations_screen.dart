@@ -15,12 +15,15 @@ class AutomationsScreen extends StatelessWidget {
       builder: (_) => const _AutomationForm(),
     );
     if (result == null || !context.mounted) return;
-    await context.read<AutomationProvider>().addRule(
-      name: result.name,
-      trigger: result.trigger,
-      action: result.action,
-      repeat: result.repeat,
-      scene: result.scene,
+    context.read<AutomationProvider>().addRule(
+      AutomationRule(
+        id: 'local_${DateTime.now().millisecondsSinceEpoch}',
+        name: result.name,
+        trigger: result.trigger,
+        action: result.action,
+        repeat: result.repeat,
+        scene: result.scene,
+      ),
     );
   }
 
@@ -172,7 +175,7 @@ class _AutomationCard extends StatelessWidget {
                         value: rule.enabled,
                         onChanged: (value) => context
                             .read<AutomationProvider>()
-                            .toggleRule(rule.id, value),
+                            .toggleRule(rule),
                       ),
                     ],
                   ),

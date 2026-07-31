@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
-import '../models/api_models.dart';
 import '../models/app_user.dart';
 import '../models/device.dart';
 import '../models/telemetry.dart';
@@ -23,6 +22,7 @@ class DeviceProvider extends ChangeNotifier {
   bool _isLoading = true;
   bool _isDisposed = false;
   String? _loadError;
+  String? _clientId;
 
   DeviceProvider({DeviceRepository? repository})
     : _repository = repository ?? HiveDeviceRepository() {
@@ -32,6 +32,10 @@ class DeviceProvider extends ChangeNotifier {
   List<Device> get devices => List.unmodifiable(_devices);
   bool get isLoading => _isLoading;
   String? get loadError => _loadError;
+
+  void setClientId(String? id) {
+    _clientId = id;
+  }
 
   List<Device> get controllableDevices =>
       _devices.where((d) => d.type.isControllable).toList();
@@ -79,6 +83,7 @@ class DeviceProvider extends ChangeNotifier {
   }
 
   Future<void> syncFromApi(String clientId) async {
+    _clientId = clientId;
     _isLoading = true;
     notifyListeners();
 
@@ -262,21 +267,41 @@ class DeviceProvider extends ChangeNotifier {
 
   /// Toggles device on/off; in production sends MQTT command payload via
   /// device.buildCommandPayload(command: 'relay_on'/'relay_off', ...).
-  void toggleDevice(Device device, {String requestedBy = 'app_user'}) {
+  Future<void> toggleDevice(Device device, {String requestedBy = 'app_user'}) async {
     final idx = _devices.indexWhere((d) => d.deviceId == device.deviceId);
     if (idx == -1) return;
-    final updated = _devices[idx].copyWith(isOn: !_devices[idx].isOn);
-    _devices[idx] = updated;
-    _save();
-    notifyListeners();
+    
+    final newState = !_devices[idx].isOn;
+    
+    // API Call
+    final success = await _apiRepo.toggleDevice(
+      device.deviceId, 
+      state: newState ? 1 : 0
+    );
+
+    if (success) {
+      final updated = _devices[idx].copyWith(isOn: newState);
+      _devices[idx] = updated;
+      _save();
+      notifyListeners();
+    }
   }
 
-  void setDimLevel(Device device, double value) {
+  Future<void> setDimLevel(Device device, double value) async {
     final idx = _devices.indexWhere((d) => d.deviceId == device.deviceId);
     if (idx == -1) return;
-    _devices[idx].dimLevel = value;
-    _save();
-    notifyListeners();
+
+    // API Call
+    final success = await _apiRepo.toggleDevice(
+      device.deviceId, 
+      brightness: value.toInt()
+    );
+
+    if (success) {
+      _devices[idx].dimLevel = value;
+      _save();
+      notifyListeners();
+    }
   }
 
   bool deviceNameExists(String roomId, String name, {String? excludingId}) {

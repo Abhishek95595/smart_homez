@@ -175,3 +175,78 @@ class ApiDeviceResponse {
     );
   }
 }
+
+class ToggleRequest {
+  final String deviceId;
+  final int? state; // 0 for off, 1 for on
+  final int? brightness; // 0-100
+
+  ToggleRequest({required this.deviceId, this.state, this.brightness});
+
+  Map<String, dynamic> toJson() => {
+    'deviceId': deviceId,
+    if (state != null) 'state': state,
+    if (brightness != null) 'brightness': brightness,
+  };
+}
+
+class DeviceCommandRequestV1 {
+  final String command;
+  final dynamic value;
+
+  DeviceCommandRequestV1({required this.command, this.value});
+
+  Map<String, dynamic> toJson() => {
+    'command': command,
+    'value': value,
+  };
+}
+
+class ApiAutomationResponse {
+  final String id;
+  final String name;
+  final String? description;
+  final bool isActive;
+
+  ApiAutomationResponse({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.isActive,
+  });
+
+  factory ApiAutomationResponse.fromJson(Map<String, dynamic> json) {
+    return ApiAutomationResponse(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+      isActive: json['isActive'] as bool? ?? false,
+    );
+  }
+}
+
+class ApiSceneResponse {
+  final String id;
+  final String name;
+  final String? description;
+  final String? icon;
+  final bool isFavorite;
+
+  ApiSceneResponse({
+    required this.id,
+    required this.name,
+    this.description,
+    this.icon,
+    required this.isFavorite,
+  });
+
+  factory ApiSceneResponse.fromJson(Map<String, dynamic> json) {
+    return ApiSceneResponse(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+      icon: json['icon'] as String?,
+      isFavorite: json['isFavorite'] as bool? ?? false,
+    );
+  }
+}
