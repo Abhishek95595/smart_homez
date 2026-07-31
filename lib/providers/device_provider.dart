@@ -3,17 +3,20 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
+import '../models/api_models.dart';
 import '../models/app_user.dart';
 import '../models/device.dart';
 import '../models/telemetry.dart';
 import '../models/user_role.dart';
 import '../services/realtime_service.dart';
 import '../services/device_repository.dart';
+import '../services/tenant_api_repository.dart';
 
 /// Manages device registry + live state. Wraps command sending
 /// (would publish to anvya/{tenant}/{building}/{device}/command in prod).
 class DeviceProvider extends ChangeNotifier {
   final DeviceRepository _repository;
+  final TenantApiRepository _apiRepo = TenantApiRepository();
   final List<Device> _devices = MockData.demoDevices();
   final Map<String, Telemetry> _latestTelemetry = {};
   StreamSubscription<Telemetry>? _sub;
@@ -73,6 +76,59 @@ class DeviceProvider extends ChangeNotifier {
     _latestTelemetry.clear();
     notifyListeners();
     await _load();
+  }
+
+  Future<void> syncFromApi(String clientId) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final apiDevices = await _apiRepo.getDevices(clientId);
+      if (apiDevices.isNotEmpty) {
+        _devices.clear();
+        for (final d in apiDevices) {
+          _devices.add(Device(
+            deviceId: d.id,
+            name: d.name,
+            type: _mapType(d.type),
+            status: _mapStatus(d.status),
+            buildingId: d.homeId ?? '',
+            floorId: d.floorId,
+            roomId: d.roomId,
+            zone: d.zone ?? 'Unassigned',
+            lastHeartbeat: DateTime.now(),
+            firmwareVersion: '1.0.0',
+            macAddress: 'UNKNOWN',
+            tenantId: clientId,
+          ));
+        }
+        await _save();
+      }
+    } catch (e) {
+      debugPrint('Device Sync Error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  DeviceType _mapType(String? apiType) {
+    switch (apiType?.toLowerCase()) {
+      case 'light': return DeviceType.light;
+      case 'fan': return DeviceType.fan;
+      case 'ac': return DeviceType.ac;
+      case 'pump': return DeviceType.pump;
+      case 'smoke_sensor': return DeviceType.smokeSensor;
+      case 'gas_sensor': return DeviceType.gasSensor;
+      case 'energy_meter': return DeviceType.energyMeter;
+      default: return DeviceType.light;
+    }
+  }
+
+  DeviceStatus _mapStatus(String? apiStatus) {
+    return apiStatus?.toLowerCase() == 'online' 
+        ? DeviceStatus.online 
+        : DeviceStatus.offline;
   }
 
   int get onlineCount =>

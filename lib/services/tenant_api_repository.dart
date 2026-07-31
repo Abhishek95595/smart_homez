@@ -24,6 +24,58 @@ class TenantApiRepository {
     return null;
   }
 
+  Future<List<ApiHomeResponse>> getHomes(String clientId) async {
+    final response = await _api.get('/api/v1/clients/$clientId/homes');
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      if (body['success'] == true && body['data'] != null) {
+        return (body['data'] as List)
+            .map((item) => ApiHomeResponse.fromJson(item))
+            .toList();
+      }
+    }
+    return [];
+  }
+
+  Future<List<ApiFloorResponse>> getFloors(String clientId, String homeId) async {
+    final response = await _api.get('/api/v1/clients/$clientId/homes/$homeId/floors');
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      if (body['success'] == true && body['data'] != null) {
+        return (body['data'] as List)
+            .map((item) => ApiFloorResponse.fromJson(item))
+            .toList();
+      }
+    }
+    return [];
+  }
+
+  Future<List<ApiRoomResponse>> getRooms(String clientId, String homeId, String floorId) async {
+    final response = await _api.get('/api/v1/clients/$clientId/homes/$homeId/floors/$floorId/rooms');
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      if (body['success'] == true && body['data'] != null) {
+        return (body['data'] as List)
+            .map((item) => ApiRoomResponse.fromJson(item))
+            .toList();
+      }
+    }
+    return [];
+  }
+
+  Future<List<ApiDeviceResponse>> getDevices(String clientId) async {
+    final response = await _api.get('/api/v1/clients/$clientId/devices');
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      if (body['success'] == true && body['data'] != null) {
+        return (body['data'] as List)
+            .map((item) => ApiDeviceResponse.fromJson(item))
+            .toList();
+      }
+    }
+    return [];
+  }
+
   Future<ApiHomeResponse?> createHome(
     String clientId, {
     required String name,

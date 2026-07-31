@@ -177,6 +177,54 @@ class PropertyProvider extends ChangeNotifier {
     ]);
   }
 
+  Future<void> syncFromApi(String clientId) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final apiHomes = await _apiRepo.getHomes(clientId);
+      if (apiHomes.isNotEmpty) {
+        _properties.clear();
+        _floors.clear();
+        _rooms.clear();
+
+        for (final h in apiHomes) {
+          _properties.add(ManagedProperty(
+            id: h.id,
+            name: h.name,
+            address: h.address,
+          ));
+
+          final apiFloors = await _apiRepo.getFloors(clientId, h.id);
+          for (final f in apiFloors) {
+            _floors.add(ManagedFloor(
+              id: f.id,
+              propertyId: h.id,
+              name: f.name,
+              level: f.floorNumber,
+            ));
+
+            final apiRooms = await _apiRepo.getRooms(clientId, h.id, f.id);
+            for (final r in apiRooms) {
+              _rooms.add(ManagedRoom(
+                id: r.id,
+                floorId: f.id,
+                name: r.name,
+                type: 'Other',
+              ));
+            }
+          }
+        }
+        await _save();
+      }
+    } catch (e) {
+      debugPrint('Sync Error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   bool propertyNameExists(String name, {String? excludingId}) {
     final normalized = name.trim().toLowerCase();
     if (normalized.isEmpty) return false;

@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../models/user_role.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/device_provider.dart';
+import '../../providers/property_provider.dart';
 import '../../theme/app_theme.dart';
 import '../main_shell.dart';
 
@@ -42,7 +44,13 @@ class _LoginScreenState extends State<LoginScreen> {
     
     if (clientId.isNotEmpty && secret.isNotEmpty) {
       // Manual API login
-      success = await context.read<AuthProvider>().loginWithApi(clientId, secret, _selectedRole);
+      success = await context.read<AuthProvider>().loginWithApi(
+        clientId, 
+        secret, 
+        _selectedRole,
+        propertyProvider: context.read<PropertyProvider>(),
+        deviceProvider: context.read<DeviceProvider>(),
+      );
     } else {
       // Fallback to demo login
       await context.read<AuthProvider>().loginAs(_selectedRole);

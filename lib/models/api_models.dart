@@ -45,8 +45,8 @@ class ClientResolveResponse {
 
   factory ClientResolveResponse.fromJson(Map<String, dynamic> json) {
     return ClientResolveResponse(
-      id: json['client_id'] as String, // Fix key to match real API
-      name: json['client_name'] as String?, // Fix key to match real API
+      id: json['client_id'] as String,
+      name: json['client_name'] as String?,
       email: json['email'] as String?,
     );
   }
@@ -137,6 +137,41 @@ class ApiRoomResponse {
     return ApiRoomResponse(
       id: json['id'] as String,
       name: json['name'] as String,
+    );
+  }
+}
+
+class ApiDeviceResponse {
+  final String id;
+  final String name;
+  final String? type;
+  final String? status;
+  final String? homeId;
+  final String? floorId;
+  final String? roomId;
+  final String? zone;
+
+  ApiDeviceResponse({
+    required this.id,
+    required this.name,
+    this.type,
+    this.status,
+    this.homeId,
+    this.floorId,
+    this.roomId,
+    this.zone,
+  });
+
+  factory ApiDeviceResponse.fromJson(Map<String, dynamic> json) {
+    return ApiDeviceResponse(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      type: json['type'] as String?,
+      status: json['status'] as String?,
+      homeId: json['home_id'] as String?,
+      floorId: json['floor_id'] as String?,
+      roomId: json['room_id'] as String?,
+      zone: json['zone'] as String?,
     );
   }
 }

@@ -5,6 +5,8 @@ import '../models/app_user.dart';
 import '../models/user_role.dart';
 import '../services/api_service.dart';
 import '../services/tenant_api_repository.dart';
+import 'device_provider.dart';
+import 'property_provider.dart';
 
 /// Handles login/session state. In production this will call the
 /// Auth API (login/signup/token refresh) described in the PRD.
@@ -22,7 +24,12 @@ class AuthProvider extends ChangeNotifier {
   String? get resolvedClientId => _resolvedClientId;
 
   /// Authenticate with the real backend API.
-  Future<bool> loginWithApi(String clientId, String clientSecret, UserRole targetRole) async {
+  Future<bool> loginWithApi(
+    String clientId, 
+    String clientSecret, 
+    UserRole targetRole,
+    {required PropertyProvider propertyProvider, required DeviceProvider deviceProvider}
+  ) async {
     // 1. Set credentials in service
     _apiService.setCredentials(clientId, clientSecret);
     
@@ -33,7 +40,6 @@ class AuthProvider extends ChangeNotifier {
     }
     
     // 3. Resolve the client to verify credentials and get an ID
-    // Even if token login fails, we try to resolve using the fallback header
     final response = await _apiRepo.resolveClient(
       email: 'app_user@aurabrain.com', 
       name: 'Smart Homez Manager',
@@ -53,11 +59,15 @@ class AuthProvider extends ChangeNotifier {
         avatarInitials: response.name != null ? response.name!.substring(0, 2).toUpperCase() : 'AM',
       );
 
+      // 4. Trigger Automatic Sync
+      propertyProvider.setClientId(response.id);
+      await propertyProvider.syncFromApi(response.id);
+      await deviceProvider.syncFromApi(response.id);
+
       notifyListeners();
       return true;
     }
     
-    // If we get here, both login and resolve failed
     return false;
   }
 
