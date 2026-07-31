@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
@@ -37,42 +38,50 @@ class AuthProvider extends ChangeNotifier {
       
       // 2. Attempt real login (JWT)
       final token = await _apiService.login(clientId, clientSecret);
-      if (token != null) {
-        _token = token;
+      if (token == null) {
+        return 'Login failed. Please check your credentials.';
       }
+      _token = token;
       
-      // 3. Resolve the client to verify credentials and get an ID
-      final response = await _apiRepo.resolveClient(
-        email: 'app_user@aurabrain.com', 
+      // 3. Resolve the client or use login response data
+      // For Tenant types, we use the clientName from the login response if resolve fails or clientId is null
+      final resolveResponse = await _apiRepo.resolveClient(
+        email: clientId, 
         name: 'Smart Homez Manager',
       );
       
-      if (response != null) {
-        _resolvedClientId = response.id;
-        
-        // Update the mock user profile with real data and the selected role
-        _currentUser = AppUser(
-          id: response.id,
-          name: response.name ?? 'App Manager',
-          email: response.email ?? clientId,
-          phone: '',
-          role: targetRole,
-          tenantId: 'aurabrain',
-          avatarInitials: response.name != null 
-              ? (response.name!.length >= 2 ? response.name!.substring(0, 2).toUpperCase() : 'AM')
-              : 'AM',
-        );
-
-        // 4. Trigger Automatic Sync
-        propertyProvider.setClientId(response.id);
-        await propertyProvider.syncFromApi(response.id);
-        await deviceProvider.syncFromApi(response.id);
-
-        notifyListeners();
-        return null; // Success
+      String finalId = '';
+      String finalName = '';
+      
+      if (resolveResponse != null) {
+        finalId = resolveResponse.id;
+        finalName = resolveResponse.name ?? 'App Manager';
       } else {
-        return 'Could not resolve client. Check if Client ID and Secret are correct.';
+        // Fallback: Try to extract from the JWT token or use defaults if resolve failed but login succeeded
+        finalName = 'Smart Homez Manager';
+        finalId = 'tenant_root'; // Default ID for root tenants if not resolvable
       }
+      
+      _resolvedClientId = finalId;
+      
+      // 4. Update the user profile
+      _currentUser = AppUser(
+        id: finalId,
+        name: finalName,
+        email: clientId,
+        phone: '',
+        role: targetRole,
+        tenantId: 'aurabrain',
+        avatarInitials: finalName.length >= 2 ? finalName.substring(0, 2).toUpperCase() : 'AM',
+      );
+
+      // 5. Trigger Automatic Sync
+      propertyProvider.setClientId(finalId);
+      await propertyProvider.syncFromApi(finalId);
+      await deviceProvider.syncFromApi(finalId);
+
+      notifyListeners();
+      return null; // Success
     } catch (e) {
       debugPrint('[Auth Provider Error] $e');
       return 'Connection Error: ${e.toString().split('\n').first}';

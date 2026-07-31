@@ -21,19 +21,12 @@ class ApiService {
     _token = token;
   }
 
-  bool get isAuthenticated => _token != null || (_clientId != null && _clientSecret != null);
+  bool get isAuthenticated => _token != null;
 
   Future<Map<String, String>> _headers() async {
-    String? authHeader;
-    if (_token != null) {
-      authHeader = 'Bearer $_token';
-    } else if (_clientId != null && _clientSecret != null) {
-      authHeader = 'Bearer $_clientId:$_clientSecret';
-    }
-
     return {
       'Content-Type': 'application/json',
-      if (authHeader != null) 'Authorization': authHeader,
+      if (_token != null) 'Authorization': 'Bearer $_token',
     };
   }
 
@@ -42,7 +35,6 @@ class ApiService {
     final headers = await _headers();
     
     debugPrint('[API Request] POST $url');
-    // debugPrint('[API Headers] ${headers.keys.join(', ')}'); // Mask secret values
 
     try {
       final response = await http.post(
@@ -53,10 +45,13 @@ class ApiService {
 
       debugPrint('[API Response] ${response.statusCode} | ${response.body}');
 
-      if (response.statusCode == 401 && _clientId != null && _clientSecret != null && _token != null) {
-        debugPrint('[API Auth] Token expired, retrying with credentials fallback');
-        _token = null;
-        return post(path, body);
+      if (response.statusCode == 401 && _clientId != null && _clientSecret != null) {
+        debugPrint('[API Auth] 401 Unauthorized. Attempting token refresh...');
+        final newToken = await login(_clientId!, _clientSecret!);
+        if (newToken != null) {
+          debugPrint('[API Auth] Token refreshed, retrying original request...');
+          return post(path, body);
+        }
       }
       return response;
     } catch (e) {
@@ -79,10 +74,13 @@ class ApiService {
 
       debugPrint('[API Response] ${response.statusCode} | ${response.body}');
 
-      if (response.statusCode == 401 && _clientId != null && _clientSecret != null && _token != null) {
-        debugPrint('[API Auth] Token expired, retrying with credentials fallback');
-        _token = null;
-        return get(path);
+      if (response.statusCode == 401 && _clientId != null && _clientSecret != null) {
+        debugPrint('[API Auth] 401 Unauthorized. Attempting token refresh...');
+        final newToken = await login(_clientId!, _clientSecret!);
+        if (newToken != null) {
+          debugPrint('[API Auth] Token refreshed, retrying original request...');
+          return get(path);
+        }
       }
       return response;
     } catch (e) {
