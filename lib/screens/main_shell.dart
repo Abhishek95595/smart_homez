@@ -21,6 +21,13 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _index = 0;
+  final List<GlobalKey<NavigatorState>> _navigatorKeys = [
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+  ];
 
   @override
   void initState() {
@@ -35,37 +42,55 @@ class _MainShellState extends State<MainShell> {
     super.dispose();
   }
 
-  /// Builds the role-aware tab set. Energy stays permission-aware, while
-  /// Activity is always the final tab so it remains in the lower-right corner.
+  void _onTabTapped(int index) {
+    if (_index == index) {
+      // Pop to root if the same tab is tapped
+      _navigatorKeys[index].currentState?.popUntil((route) => route.isFirst);
+    } else {
+      setState(() => _index = index);
+    }
+  }
+
   List<_Tab> _tabsFor(UserRole role) {
-    return [
-      const _Tab(
+    final List<_Tab> tabs = [
+      _Tab(
         icon: Icons.home_rounded,
         label: 'Home',
-        page: DashboardScreen(),
+        page: const DashboardScreen(),
+        navigatorKey: _navigatorKeys[0],
       ),
-      const _Tab(
+      _Tab(
         icon: Icons.devices_other_rounded,
         label: 'Devices',
-        page: DevicesScreen(),
+        page: const DevicesScreen(),
+        navigatorKey: _navigatorKeys[1],
       ),
-      const _Tab(
+      _Tab(
         icon: Icons.notifications_active_rounded,
         label: 'Alerts',
-        page: AlertsScreen(),
-      ),
-      if (role.canViewEnergy)
-        const _Tab(
-          icon: Icons.bolt_rounded,
-          label: 'Energy',
-          page: EnergyScreen(),
-        ),
-      const _Tab(
-        icon: Icons.history_rounded,
-        label: 'Activity',
-        page: ActivityScreen(),
+        page: const AlertsScreen(),
+        navigatorKey: _navigatorKeys[2],
       ),
     ];
+
+    var nextIdx = 3;
+    if (role.canViewEnergy) {
+      tabs.add(_Tab(
+        icon: Icons.bolt_rounded,
+        label: 'Energy',
+        page: const EnergyScreen(),
+        navigatorKey: _navigatorKeys[nextIdx++],
+      ));
+    }
+
+    tabs.add(_Tab(
+      icon: Icons.history_rounded,
+      label: 'Activity',
+      page: const ActivityScreen(),
+      navigatorKey: _navigatorKeys[nextIdx],
+    ));
+
+    return tabs;
   }
 
   @override
@@ -75,47 +100,90 @@ class _MainShellState extends State<MainShell> {
     final tabs = _tabsFor(role);
     final safeIndex = _index < tabs.length ? _index : 0;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final desktop = constraints.maxWidth >= 1100;
-        final content = IndexedStack(
-          index: safeIndex,
-          children: tabs.map((t) => t.page).toList(),
-        );
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final NavigatorState? navigator = _navigatorKeys[safeIndex].currentState;
+        if (navigator != null && navigator.canPop()) {
+          navigator.pop();
+        } else {
+          // If we can't pop anymore in the current tab, we could either switch to home
+          // or allow the app to close. For now, let's just let it close if at home root.
+          if (safeIndex != 0) {
+            setState(() => _index = 0);
+          } else {
+            // If at home root, we could minimize app or exit
+            // For now, let's exit the app context (requires SystemNavigator.pop or similar)
+            // But usually, setting canPop to true would handle this. 
+            // Since we use PopScope(canPop: false), we need to manually handle exit.
+          }
+        }
+      },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final desktop = constraints.maxWidth >= 1100;
 
-        return Scaffold(
-          body: desktop
-              ? Row(
-                  children: [
-                    AppNavigationDrawer(
-                      permanent: true,
-                      onDashboard: () => setState(() => _index = 0),
-                    ),
-                    Expanded(child: content),
-                  ],
-                )
-              : content,
-          bottomNavigationBar: desktop
-              ? null
-              : BottomNavigationBar(
-                  currentIndex: safeIndex,
-                  onTap: (i) => setState(() => _index = i),
-                  items: tabs
-                      .map(
-                        (t) => BottomNavigationBarItem(
-                          icon: t.label == 'Alerts'
-                              ? Badge(
-                                  isLabelVisible: criticalCount > 0,
-                                  label: Text('$criticalCount'),
-                                  backgroundColor: Colors.red,
-                                  child: Icon(t.icon),
-                                )
-                              : Icon(t.icon),
-                          label: t.label,
+          return Scaffold(
+            drawer: desktop ? null : const AppNavigationDrawer(),
+            body: desktop
+                ? Row(
+                    children: [
+                      AppNavigationDrawer(
+                        permanent: true,
+                        onDashboard: () => _onTabTapped(0),
+                      ),
+                      Expanded(
+                        child: IndexedStack(
+                          index: safeIndex,
+                          children: tabs.map((t) => _TabNavigator(tab: t)).toList(),
                         ),
-                      )
-                      .toList(),
-                ),
+                      ),
+                    ],
+                  )
+                : IndexedStack(
+                    index: safeIndex,
+                    children: tabs.map((t) => _TabNavigator(tab: t)).toList(),
+                  ),
+            bottomNavigationBar: desktop
+                ? null
+                : BottomNavigationBar(
+                    currentIndex: safeIndex,
+                    onTap: _onTabTapped,
+                    items: tabs
+                        .map(
+                          (t) => BottomNavigationBarItem(
+                            icon: t.label == 'Alerts'
+                                ? Badge(
+                                    isLabelVisible: criticalCount > 0,
+                                    label: Text('$criticalCount'),
+                                    backgroundColor: Colors.red,
+                                    child: Icon(t.icon),
+                                  )
+                                : Icon(t.icon),
+                            label: t.label,
+                          ),
+                        )
+                        .toList(),
+                  ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _TabNavigator extends StatelessWidget {
+  final _Tab tab;
+  const _TabNavigator({required this.tab});
+
+  @override
+  Widget build(BuildContext context) {
+    return Navigator(
+      key: tab.navigatorKey,
+      onGenerateRoute: (settings) {
+        return MaterialPageRoute(
+          builder: (context) => tab.page,
         );
       },
     );
@@ -126,5 +194,11 @@ class _Tab {
   final IconData icon;
   final String label;
   final Widget page;
-  const _Tab({required this.icon, required this.label, required this.page});
+  final GlobalKey<NavigatorState> navigatorKey;
+  const _Tab({
+    required this.icon,
+    required this.label,
+    required this.page,
+    required this.navigatorKey,
+  });
 }

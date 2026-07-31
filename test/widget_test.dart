@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_app/main.dart';
+import 'package:smart_homez/main.dart';
 
 void main() {
   testWidgets('App launches landing page and opens login', (

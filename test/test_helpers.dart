@@ -1,7 +1,7 @@
-import 'package:flutter_app/providers/device_provider.dart';
-import 'package:flutter_app/providers/property_provider.dart';
-import 'package:flutter_app/services/device_repository.dart';
-import 'package:flutter_app/services/property_repository.dart';
+import 'package:smart_homez/providers/device_provider.dart';
+import 'package:smart_homez/providers/property_provider.dart';
+import 'package:smart_homez/services/device_repository.dart';
+import 'package:smart_homez/services/property_repository.dart';
 
 /// Use these helpers in widget/provider tests to avoid opening Hive boxes.
 /// This keeps tests fast and prevents:

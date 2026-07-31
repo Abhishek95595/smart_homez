@@ -94,15 +94,22 @@ class PropertyProvider extends ChangeNotifier {
 
   void _seedDefaults() {
     if (_properties.isNotEmpty) return;
-    _properties.add(
-      const ManagedProperty(
+    _properties.addAll(const [
+      ManagedProperty(
         id: 'bldg_A',
         name: 'Greenwood Heights',
         address: '221 Palm Avenue, Bengaluru',
         category: 'Residential',
         propertyType: 'Apartment',
       ),
-    );
+      ManagedProperty(
+        id: 'bldg_B',
+        name: 'Palm View Residency',
+        address: '456 Oak Lane, Bengaluru',
+        category: 'Residential',
+        propertyType: 'Apartment',
+      ),
+    ]);
     _floors.addAll(const [
       ManagedFloor(
         id: 'floor_3',
@@ -115,6 +122,18 @@ class PropertyProvider extends ChangeNotifier {
         propertyId: 'bldg_A',
         name: 'Floor 4',
         level: 4,
+      ),
+      ManagedFloor(
+        id: 'palm_floor_1',
+        propertyId: 'bldg_B',
+        name: 'Floor 1',
+        level: 1,
+      ),
+      ManagedFloor(
+        id: 'palm_floor_2',
+        propertyId: 'bldg_B',
+        name: 'Floor 2',
+        level: 2,
       ),
     ]);
     _rooms.addAll(const [
@@ -135,6 +154,18 @@ class PropertyProvider extends ChangeNotifier {
         floorId: 'floor_3',
         name: 'Kitchen',
         type: 'Kitchen',
+      ),
+      ManagedRoom(
+        id: 'room_501_living',
+        floorId: 'palm_floor_1',
+        name: 'Living Room',
+        type: 'Living Room',
+      ),
+      ManagedRoom(
+        id: 'room_601_bedroom',
+        floorId: 'palm_floor_2',
+        name: 'Bedroom',
+        type: 'Bedroom',
       ),
     ]);
   }

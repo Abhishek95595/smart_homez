@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_app/models/property_hierarchy.dart';
-import 'package:flutter_app/widgets/property_summary_card.dart';
+import 'package:smart_homez/models/property_hierarchy.dart';
+import 'package:smart_homez/widgets/property_summary_card.dart';
 
 void main() {
   testWidgets('property menu contains only the three requested actions', (

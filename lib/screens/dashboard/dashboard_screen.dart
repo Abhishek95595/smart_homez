@@ -70,7 +70,6 @@ class DashboardScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      drawer: desktop ? null : const AppNavigationDrawer(),
       appBar: AppBar(
         backgroundColor: AppColors.background,
         automaticallyImplyLeading: false,
@@ -80,7 +79,7 @@ class DashboardScreen extends StatelessWidget {
             : Builder(
                 builder: (ctx) => IconButton(
                   icon: const Icon(Icons.menu_rounded),
-                  onPressed: () => Scaffold.of(ctx).openDrawer(),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
                 ),
               ),
         titleSpacing: desktop ? 18 : 2,
@@ -166,9 +165,9 @@ class DashboardScreen extends StatelessWidget {
                 _SystemHealthPanel(deviceProvider: deviceProvider, user: user),
                 const SizedBox(height: 24),
                 if (role.canViewEnergy) ...[
-                  const SectionHeader(title: 'Energy Snapshot'),
+                  const SectionHeader(title: 'Energy Consumption'),
                   const SizedBox(height: 12),
-                  _EnergySnapshotCard(energy: energy),
+                  _EnergyConsumptionCard(energy: energy),
                   const SizedBox(height: 24),
                 ],
               ],
@@ -1310,8 +1309,7 @@ class _FireSmokeSnapshotCard extends StatelessWidget {
   const _FireSmokeSnapshotCard({
     required this.deviceProvider,
     required this.alertProvider,
-    this.user,
-  });
+  }) : user = null;
 
   @override
   Widget build(BuildContext context) {
@@ -1472,70 +1470,77 @@ class _SystemHealthPanel extends StatelessWidget {
   }
 }
 
-class _EnergySnapshotCard extends StatelessWidget {
+class _EnergyConsumptionCard extends StatelessWidget {
   final EnergyProvider energy;
-  const _EnergySnapshotCard({required this.energy});
+  const _EnergyConsumptionCard({required this.energy});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF151722), AppColors.primaryDark, AppColors.primary],
-          stops: [0, 0.56, 1],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x33FF7A18),
-            blurRadius: 26,
-            offset: Offset(0, 13),
-          ),
-        ],
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const EnergyScreen()),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Current Load',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${energy.instantPowerWatts.toStringAsFixed(0)} W',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF151722), AppColors.primaryDark, AppColors.primary],
+            stops: [0, 0.56, 1],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x33FF7A18),
+              blurRadius: 26,
+              offset: Offset(0, 13),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Current Load',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  "Today: ${energy.todayKwh.toStringAsFixed(1)} kWh",
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    '${energy.instantPowerWatts.toStringAsFixed(0)} W',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "Today: ${energy.todayKwh.toStringAsFixed(1)} kWh",
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.bolt_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
-            child: const Icon(
-              Icons.bolt_rounded,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

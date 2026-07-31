@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-import 'package:flutter_app/providers/alert_provider.dart';
-import 'package:flutter_app/screens/activity/activity_screen.dart';
-import 'package:flutter_app/theme/app_theme.dart';
+import 'package:smart_homez/providers/alert_provider.dart';
+import 'package:smart_homez/screens/activity/activity_screen.dart';
+import 'package:smart_homez/theme/app_theme.dart';
 
 void main() {
   testWidgets('activity screen presents the searchable timeline and filters', (

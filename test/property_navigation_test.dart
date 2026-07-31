@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_app/data/mock_data.dart';
-import 'package:flutter_app/models/device.dart';
-import 'package:flutter_app/models/user_role.dart';
-import 'package:flutter_app/providers/device_provider.dart';
-import 'package:flutter_app/providers/property_provider.dart';
-import 'package:flutter_app/services/device_repository.dart';
-import 'package:flutter_app/services/property_repository.dart';
+import 'package:smart_homez/data/mock_data.dart';
+import 'package:smart_homez/models/device.dart';
+import 'package:smart_homez/models/user_role.dart';
+import 'package:smart_homez/providers/device_provider.dart';
+import 'package:smart_homez/providers/property_provider.dart';
+import 'package:smart_homez/services/device_repository.dart';
+import 'package:smart_homez/services/property_repository.dart';
 
 void main() {
   test('property hierarchy contains homes, floors and rooms', () {
