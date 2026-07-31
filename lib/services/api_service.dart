@@ -21,20 +21,33 @@ class ApiService {
     _token = token;
   }
 
-  bool get isAuthenticated => _token != null;
+  bool get isAuthenticated => _token != null || (_clientId != null && _clientSecret != null);
 
-  Future<Map<String, String>> _headers() async {
+  Future<Map<String, String>> _headers({bool forceMasterKey = false}) async {
+    String? authHeader;
+    
+    // Priority: 1. Force Master Key, 2. JWT Token, 3. Master Key Fallback
+    if (forceMasterKey && _clientId != null && _clientSecret != null) {
+      authHeader = 'Bearer $_clientId:$_clientSecret';
+    } else if (_token != null) {
+      authHeader = 'Bearer $_token';
+    } else if (_clientId != null && _clientSecret != null) {
+      authHeader = 'Bearer $_clientId:$_clientSecret';
+    }
+
     return {
       'Content-Type': 'application/json',
-      if (_token != null) 'Authorization': 'Bearer $_token',
+      if (authHeader != null) 'Authorization': authHeader,
     };
   }
 
   Future<http.Response> post(String path, dynamic body, {bool isRetry = false}) async {
     final url = '$baseUrl$path';
-    final headers = await _headers();
+    // For specific discovery endpoints, we might want to try master key on retry
+    final bool useMasterKey = isRetry && (path.contains('/clients/resolve') || path.contains('/clients'));
+    final headers = await _headers(forceMasterKey: useMasterKey);
     
-    debugPrint('[API Request] POST $url');
+    debugPrint('[API Request] POST $url ${useMasterKey ? "(Master Key)" : ""}');
 
     try {
       final response = await http.post(
@@ -45,11 +58,12 @@ class ApiService {
 
       debugPrint('[API Response] ${response.statusCode} | ${response.body}');
 
-      if (response.statusCode == 401 && _clientId != null && _clientSecret != null && !isRetry) {
-        debugPrint('[API Auth] 401 Unauthorized. Attempting token refresh...');
-        final newToken = await login(_clientId!, _clientSecret!);
-        if (newToken != null) {
-          debugPrint('[API Auth] Token refreshed, retrying original request...');
+      if (response.statusCode == 401 && !isRetry) {
+        if (_clientId != null && _clientSecret != null) {
+          debugPrint('[API Auth] 401 Unauthorized. Attempting fallback/refresh...');
+          // For login path, don't retry as master key won't help there
+          if (path.contains('/api/Auth/login')) return response;
+          
           return post(path, body, isRetry: true);
         }
       }
@@ -62,9 +76,10 @@ class ApiService {
 
   Future<http.Response> get(String path, {bool isRetry = false}) async {
     final url = '$baseUrl$path';
-    final headers = await _headers();
+    final bool useMasterKey = isRetry; // Try master key on any GET 401
+    final headers = await _headers(forceMasterKey: useMasterKey);
 
-    debugPrint('[API Request] GET $url');
+    debugPrint('[API Request] GET $url ${useMasterKey ? "(Master Key)" : ""}');
 
     try {
       final response = await http.get(
@@ -74,11 +89,9 @@ class ApiService {
 
       debugPrint('[API Response] ${response.statusCode} | ${response.body}');
 
-      if (response.statusCode == 401 && _clientId != null && _clientSecret != null && !isRetry) {
-        debugPrint('[API Auth] 401 Unauthorized. Attempting token refresh...');
-        final newToken = await login(_clientId!, _clientSecret!);
-        if (newToken != null) {
-          debugPrint('[API Auth] Token refreshed, retrying original request...');
+      if (response.statusCode == 401 && !isRetry) {
+        if (_clientId != null && _clientSecret != null) {
+          debugPrint('[API Auth] 401 Unauthorized. Attempting master key fallback...');
           return get(path, isRetry: true);
         }
       }
