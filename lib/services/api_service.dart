@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
@@ -27,7 +28,6 @@ class ApiService {
     if (_token != null) {
       authHeader = 'Bearer $_token';
     } else if (_clientId != null && _clientSecret != null) {
-      // Fallback for special Bearer format supported by this backend
       authHeader = 'Bearer $_clientId:$_clientSecret';
     }
 
@@ -38,43 +38,73 @@ class ApiService {
   }
 
   Future<http.Response> post(String path, dynamic body) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl$path'),
-      headers: await _headers(),
-      body: jsonEncode(body),
-    );
+    final url = '$baseUrl$path';
+    final headers = await _headers();
+    
+    debugPrint('[API Request] POST $url');
+    // debugPrint('[API Headers] ${headers.keys.join(', ')}'); // Mask secret values
 
-    if (response.statusCode == 401 && _clientId != null && _clientSecret != null && _token != null) {
-      // Token expired, clear it and retry with credentials fallback
-      _token = null;
-      return post(path, body);
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      debugPrint('[API Response] ${response.statusCode} | ${response.body}');
+
+      if (response.statusCode == 401 && _clientId != null && _clientSecret != null && _token != null) {
+        debugPrint('[API Auth] Token expired, retrying with credentials fallback');
+        _token = null;
+        return post(path, body);
+      }
+      return response;
+    } catch (e) {
+      debugPrint('[API Error] POST $url failed: $e');
+      rethrow;
     }
-    return response;
   }
 
   Future<http.Response> get(String path) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl$path'),
-      headers: await _headers(),
-    );
+    final url = '$baseUrl$path';
+    final headers = await _headers();
 
-    if (response.statusCode == 401 && _clientId != null && _clientSecret != null && _token != null) {
-      _token = null;
-      return get(path);
+    debugPrint('[API Request] GET $url');
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: headers,
+      );
+
+      debugPrint('[API Response] ${response.statusCode} | ${response.body}');
+
+      if (response.statusCode == 401 && _clientId != null && _clientSecret != null && _token != null) {
+        debugPrint('[API Auth] Token expired, retrying with credentials fallback');
+        _token = null;
+        return get(path);
+      }
+      return response;
+    } catch (e) {
+      debugPrint('[API Error] GET $url failed: $e');
+      rethrow;
     }
-    return response;
   }
 
   Future<String?> login(String id, String secret) async {
     _clientId = id;
     _clientSecret = secret;
     
+    debugPrint('[API Login] Attempting JWT login for $id');
+
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/Auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': id, 'password': secret}),
       );
+
+      debugPrint('[API Login Response] ${response.statusCode} | ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -83,11 +113,10 @@ class ApiService {
           return _token;
         }
       }
-    } catch (_) {
-      // Network error or other issues
+    } catch (e) {
+      debugPrint('[API Login Error] $e');
     }
     
-    // Return null to trigger fallback in AuthProvider or Repository
     return null;
   }
 }

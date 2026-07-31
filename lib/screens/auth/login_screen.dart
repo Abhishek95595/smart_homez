@@ -40,11 +40,11 @@ class _LoginScreenState extends State<LoginScreen> {
     final clientId = _clientIdCtrl.text.trim();
     final secret = _secretCtrl.text.trim();
     
-    bool success = false;
+    String? error;
     
     if (clientId.isNotEmpty && secret.isNotEmpty) {
       // Manual API login
-      success = await context.read<AuthProvider>().loginWithApi(
+      error = await context.read<AuthProvider>().loginWithApi(
         clientId, 
         secret, 
         _selectedRole,
@@ -54,19 +54,22 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       // Fallback to demo login
       await context.read<AuthProvider>().loginAs(_selectedRole);
-      success = true;
     }
     
     if (!mounted) return;
     setState(() => _loading = false);
     
-    if (success) {
+    if (error == null) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const MainShell()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login failed. Please check your Client ID and Secret.')),
+        SnackBar(
+          content: Text(error),
+          backgroundColor: AppColors.critical,
+          duration: const Duration(seconds: 4),
+        ),
       );
     }
   }

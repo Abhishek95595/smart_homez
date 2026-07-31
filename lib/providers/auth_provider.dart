@@ -24,51 +24,59 @@ class AuthProvider extends ChangeNotifier {
   String? get resolvedClientId => _resolvedClientId;
 
   /// Authenticate with the real backend API.
-  Future<bool> loginWithApi(
+  /// Returns null on success, or an error message on failure.
+  Future<String?> loginWithApi(
     String clientId, 
     String clientSecret, 
     UserRole targetRole,
     {required PropertyProvider propertyProvider, required DeviceProvider deviceProvider}
   ) async {
-    // 1. Set credentials in service
-    _apiService.setCredentials(clientId, clientSecret);
-    
-    // 2. Attempt real login
-    final token = await _apiService.login(clientId, clientSecret);
-    if (token != null) {
-      _token = token;
-    }
-    
-    // 3. Resolve the client to verify credentials and get an ID
-    final response = await _apiRepo.resolveClient(
-      email: 'app_user@aurabrain.com', 
-      name: 'Smart Homez Manager',
-    );
-    
-    if (response != null) {
-      _resolvedClientId = response.id;
+    try {
+      // 1. Set credentials in service
+      _apiService.setCredentials(clientId, clientSecret);
       
-      // Update the mock user profile with real data and the selected role
-      _currentUser = AppUser(
-        id: response.id,
-        name: response.name ?? 'App Manager',
-        email: response.email ?? clientId,
-        phone: '',
-        role: targetRole,
-        tenantId: 'aurabrain',
-        avatarInitials: response.name != null ? response.name!.substring(0, 2).toUpperCase() : 'AM',
+      // 2. Attempt real login (JWT)
+      final token = await _apiService.login(clientId, clientSecret);
+      if (token != null) {
+        _token = token;
+      }
+      
+      // 3. Resolve the client to verify credentials and get an ID
+      final response = await _apiRepo.resolveClient(
+        email: 'app_user@aurabrain.com', 
+        name: 'Smart Homez Manager',
       );
+      
+      if (response != null) {
+        _resolvedClientId = response.id;
+        
+        // Update the mock user profile with real data and the selected role
+        _currentUser = AppUser(
+          id: response.id,
+          name: response.name ?? 'App Manager',
+          email: response.email ?? clientId,
+          phone: '',
+          role: targetRole,
+          tenantId: 'aurabrain',
+          avatarInitials: response.name != null 
+              ? (response.name!.length >= 2 ? response.name!.substring(0, 2).toUpperCase() : 'AM')
+              : 'AM',
+        );
 
-      // 4. Trigger Automatic Sync
-      propertyProvider.setClientId(response.id);
-      await propertyProvider.syncFromApi(response.id);
-      await deviceProvider.syncFromApi(response.id);
+        // 4. Trigger Automatic Sync
+        propertyProvider.setClientId(response.id);
+        await propertyProvider.syncFromApi(response.id);
+        await deviceProvider.syncFromApi(response.id);
 
-      notifyListeners();
-      return true;
+        notifyListeners();
+        return null; // Success
+      } else {
+        return 'Could not resolve client. Check if Client ID and Secret are correct.';
+      }
+    } catch (e) {
+      debugPrint('[Auth Provider Error] $e');
+      return 'Connection Error: ${e.toString().split('\n').first}';
     }
-    
-    return false;
   }
 
   /// Simulated login: pick a demo user by role.
