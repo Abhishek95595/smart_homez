@@ -5,6 +5,7 @@ import '../models/user_role.dart';
 import '../providers/alert_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/device_provider.dart';
+import '../providers/property_provider.dart';
 import 'activity/activity_screen.dart';
 import 'alerts/alerts_screen.dart';
 import 'dashboard/dashboard_screen.dart';
@@ -96,7 +97,12 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final criticalCount = context.watch<AlertProvider>().criticalActiveCount;
-    final role = context.watch<AuthProvider>().role;
+    final auth = context.watch<AuthProvider>();
+    final role = auth.role;
+    
+    // Sync clientId to PropertyProvider
+    context.read<PropertyProvider>().setClientId(auth.resolvedClientId);
+
     final tabs = _tabsFor(role);
     final safeIndex = _index < tabs.length ? _index : 0;
 

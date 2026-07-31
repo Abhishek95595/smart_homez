@@ -13,7 +13,6 @@ import '../../providers/device_provider.dart';
 import '../../providers/energy_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/app_navigation_drawer.dart';
 import '../../widgets/app_state_widgets.dart';
 import '../../widgets/property_summary_card.dart';
 import '../../widgets/section_header.dart';

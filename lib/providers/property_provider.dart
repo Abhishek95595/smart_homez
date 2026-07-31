@@ -3,9 +3,11 @@ import 'package:uuid/uuid.dart';
 
 import '../models/property_hierarchy.dart';
 import '../services/property_repository.dart';
+import '../services/tenant_api_repository.dart';
 
 class PropertyProvider extends ChangeNotifier {
   final PropertyRepository _repository;
+  final TenantApiRepository _apiRepo = TenantApiRepository();
   final Uuid _uuid;
   final List<ManagedProperty> _properties = [];
   final List<ManagedFloor> _floors = [];
@@ -14,11 +16,16 @@ class PropertyProvider extends ChangeNotifier {
   bool _isLoading = true;
   bool _isDisposed = false;
   String? _loadError;
+  String? _clientId; // From AuthProvider
 
   PropertyProvider({PropertyRepository? repository, Uuid uuid = const Uuid()})
     : _repository = repository ?? HivePropertyRepository(),
       _uuid = uuid {
     _load();
+  }
+
+  void setClientId(String? id) {
+    _clientId = id;
   }
 
   bool get isLoading => _isLoading;
@@ -221,8 +228,23 @@ class PropertyProvider extends ChangeNotifier {
             _properties.map((property) => property.name),
           )
         : enteredName;
+    
+    String finalId = _uuid.v4();
+
+    // API Integration
+    if (_clientId != null) {
+      final apiResponse = await _apiRepo.createHome(
+        _clientId!,
+        name: resolvedName,
+        address: address.trim(),
+      );
+      if (apiResponse != null) {
+        finalId = apiResponse.id;
+      }
+    }
+
     final item = ManagedProperty(
-      id: _uuid.v4(),
+      id: finalId,
       name: resolvedName,
       address: address.trim(),
       category: category,
@@ -279,8 +301,23 @@ class PropertyProvider extends ChangeNotifier {
     required int level,
   }) async {
     final resolvedName = name.trim().isEmpty ? 'Floor $level' : name.trim();
+    String finalId = _uuid.v4();
+
+    // API Integration
+    if (_clientId != null) {
+      final apiResponse = await _apiRepo.createFloor(
+        _clientId!,
+        propertyId,
+        name: resolvedName,
+        floorNumber: level,
+      );
+      if (apiResponse != null) {
+        finalId = apiResponse.id;
+      }
+    }
+
     final item = ManagedFloor(
-      id: _uuid.v4(),
+      id: finalId,
       propertyId: propertyId,
       name: resolvedName,
       level: level,
@@ -325,8 +362,25 @@ class PropertyProvider extends ChangeNotifier {
                 .map((room) => room.name),
           )
         : enteredName;
+
+    String finalId = _uuid.v4();
+
+    // API Integration - Finding propertyId for this floor
+    final floor = floorById(floorId);
+    if (_clientId != null && floor != null) {
+      final apiResponse = await _apiRepo.createRoom(
+        _clientId!,
+        floor.propertyId,
+        floorId,
+        name: resolvedName,
+      );
+      if (apiResponse != null) {
+        finalId = apiResponse.id;
+      }
+    }
+
     final item = ManagedRoom(
-      id: _uuid.v4(),
+      id: finalId,
       floorId: floorId,
       name: resolvedName,
       type: type,

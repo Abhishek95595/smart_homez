@@ -30,12 +30,33 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     setState(() => _loading = true);
-    await context.read<AuthProvider>().loginAs(_selectedRole);
+    
+    // Check if the user entered the specific "demo" credentials or use real API
+    final email = _emailCtrl.text.trim();
+    final password = _passCtrl.text.trim();
+    
+    bool success = false;
+    if (email == 'demo@smarthomez.in' || email.isEmpty) {
+      // Classic demo login by role
+      await context.read<AuthProvider>().loginAs(_selectedRole);
+      success = true;
+    } else {
+      // Real API login
+      success = await context.read<AuthProvider>().loginWithApi(email, password);
+    }
+    
     if (!mounted) return;
     setState(() => _loading = false);
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const MainShell()));
+    
+    if (success) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const MainShell()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login failed. Please check your credentials.')),
+      );
+    }
   }
 
   @override
