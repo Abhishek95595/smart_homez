@@ -99,14 +99,24 @@ class ApiHomeResponse {
   final String id;
   final String name;
   final String address;
+  final double? latitude;
+  final double? longitude;
 
-  ApiHomeResponse({required this.id, required this.name, required this.address});
+  ApiHomeResponse({
+    required this.id, 
+    required this.name, 
+    required this.address,
+    this.latitude,
+    this.longitude,
+  });
 
   factory ApiHomeResponse.fromJson(Map<String, dynamic> json) {
     return ApiHomeResponse(
       id: json['id'] as String,
       name: json['name'] as String,
       address: json['address'] as String? ?? '',
+      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
+      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
     );
   }
 }

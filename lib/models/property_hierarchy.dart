@@ -65,6 +65,8 @@ class ManagedProperty {
   final String currency;
   final String? businessStart;
   final String? businessEnd;
+  final String? latitude;
+  final String? longitude;
 
   const ManagedProperty({
     required this.id,
@@ -76,6 +78,8 @@ class ManagedProperty {
     this.currency = 'INR',
     this.businessStart,
     this.businessEnd,
+    this.latitude,
+    this.longitude,
   });
 
   bool get isCommercial => category.toLowerCase() == 'commercial';
@@ -89,6 +93,8 @@ class ManagedProperty {
     String? currency,
     String? businessStart,
     String? businessEnd,
+    String? latitude,
+    String? longitude,
     bool clearBusinessHours = false,
   }) {
     return ManagedProperty(
@@ -103,6 +109,8 @@ class ManagedProperty {
           ? null
           : businessStart ?? this.businessStart,
       businessEnd: clearBusinessHours ? null : businessEnd ?? this.businessEnd,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
 
@@ -116,6 +124,8 @@ class ManagedProperty {
     'currency': currency,
     'businessStart': businessStart,
     'businessEnd': businessEnd,
+    'latitude': latitude,
+    'longitude': longitude,
   };
 
   factory ManagedProperty.fromJson(Map<String, dynamic> json) {
@@ -129,6 +139,8 @@ class ManagedProperty {
       currency: json['currency'] as String? ?? 'INR',
       businessStart: json['businessStart'] as String?,
       businessEnd: json['businessEnd'] as String?,
+      latitude: json['latitude'] as String?,
+      longitude: json['longitude'] as String?,
     );
   }
 }

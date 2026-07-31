@@ -117,22 +117,10 @@ class PropertyProvider extends ChangeNotifier {
         propertyType: 'Apartment',
       ),
     ]);
-    _floors.addAll(const [
-      ManagedFloor(
-        id: 'floor_3',
-        propertyId: 'bldg_A',
-        name: 'Floor 3',
-        level: 3,
-      ),
-      ManagedFloor(
-        id: 'floor_4',
-        propertyId: 'bldg_A',
-        name: 'Floor 4',
-        level: 4,
-      ),
-    ]);
   }
 
+  /// Exhaustive sync from API: Fetches all Homes, then all Floors for each Home,
+  /// then all Rooms for each Floor.
   Future<void> syncFromApi(String clientId) async {
     _clientId = clientId;
     _isLoading = true;
@@ -140,19 +128,48 @@ class PropertyProvider extends ChangeNotifier {
 
     try {
       final apiHomes = await _apiRepo.getHomes(clientId);
+      
+      // We clear mock data only if we actually received real homes from the API
       if (apiHomes.isNotEmpty) {
         _properties.clear();
+        _floors.clear();
+        _rooms.clear();
+
         for (final h in apiHomes) {
           _properties.add(ManagedProperty(
             id: h.id,
             name: h.name,
             address: h.address,
+            latitude: h.latitude != null ? h.latitude.toString() : null, // Store as string if needed
+            longitude: h.longitude != null ? h.longitude.toString() : null,
           ));
+
+          debugPrint('[Sync] Fetching floors for home: ${h.name} (${h.id})');
+          final apiFloors = await _apiRepo.getFloors(clientId, h.id);
+          for (final f in apiFloors) {
+            _floors.add(ManagedFloor(
+              id: f.id,
+              propertyId: h.id,
+              name: f.name,
+              level: f.floorNumber,
+            ));
+
+            debugPrint('[Sync] Fetching rooms for floor: ${f.name} (${f.id})');
+            final apiRooms = await _apiRepo.getRooms(clientId, h.id, f.id);
+            for (final r in apiRooms) {
+              _rooms.add(ManagedRoom(
+                id: r.id,
+                floorId: f.id,
+                name: r.name,
+                type: 'Other',
+              ));
+            }
+          }
         }
         await _save();
       }
     } catch (e) {
-      debugPrint('Sync Error: $e');
+      debugPrint('[Sync Error] Property Sync: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -378,7 +395,7 @@ class PropertyProvider extends ChangeNotifier {
   }
 
   Future<ManagedRoom> addRoom({
-    required String homeId, // Changed to require homeId
+    required String homeId,
     required String floorId,
     required String name,
     required String type,
