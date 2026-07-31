@@ -22,7 +22,6 @@ class DeviceProvider extends ChangeNotifier {
   bool _isLoading = true;
   bool _isDisposed = false;
   String? _loadError;
-  String? _clientId;
 
   DeviceProvider({DeviceRepository? repository})
     : _repository = repository ?? HiveDeviceRepository() {
@@ -34,7 +33,7 @@ class DeviceProvider extends ChangeNotifier {
   String? get loadError => _loadError;
 
   void setClientId(String? id) {
-    _clientId = id;
+    // Retained for logic compatibility, though not currently used for filtering
   }
 
   List<Device> get controllableDevices =>
@@ -83,7 +82,6 @@ class DeviceProvider extends ChangeNotifier {
   }
 
   Future<void> syncFromApi(String clientId) async {
-    _clientId = clientId;
     _isLoading = true;
     notifyListeners();
 
