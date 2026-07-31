@@ -2,19 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/property_hierarchy.dart';
+import '../../models/device.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_state_widgets.dart';
-import '../../widgets/property_management_widgets.dart';
 import 'homes_screen.dart';
 import 'management_dialogs.dart';
 import 'rooms_screen.dart';
 
-class FloorsScreen extends StatelessWidget {
+class FloorsScreen extends StatefulWidget {
   final String? propertyId;
 
   const FloorsScreen({super.key, this.propertyId});
+
+  @override
+  State<FloorsScreen> createState() => _FloorsScreenState();
+}
+
+class _FloorsScreenState extends State<FloorsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.propertyId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<PropertyProvider>().fetchFloorsForHome(widget.propertyId!);
+      });
+    }
+  }
 
   Future<void> _add(BuildContext context, String selectedPropertyId) async {
     final provider = context.read<PropertyProvider>();
@@ -51,150 +67,169 @@ class FloorsScreen extends StatelessWidget {
     final approved = await confirmDelete(
       context,
       title: 'Delete ${floor.name}?',
-      message:
-          'This will permanently delete the floor and every room and device '
-          'inside it.',
+      message: 'This will remove all rooms and devices on this floor.',
     );
-    if (!approved || !context.mounted) return;
-    await context.read<DeviceProvider>().deleteDevicesForFloor(floor.id);
-    if (!context.mounted) return;
-    await context.read<PropertyProvider>().deleteFloor(floor.id);
+    if (approved) {
+      await context.read<PropertyProvider>().deleteFloor(floor.id);
+      if (context.mounted) {
+        await context.read<DeviceProvider>().deleteDevicesForFloor(floor.id);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<PropertyProvider>();
-    if (provider.isLoading) {
-      return const Scaffold(body: AppLoadingState(message: 'Loading floors…'));
-    }
-    if (provider.loadError != null && provider.properties.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Floors')),
-        body: AppStateCard.error(
-          title: 'Could not load floors',
-          message: provider.loadError!,
-          actionLabel: 'Retry',
-          onAction: () => context.read<PropertyProvider>().reload(),
-        ),
-      );
-    }
+    final properties = provider.properties;
 
-    final property = propertyId == null
-        ? provider.properties.firstOrNull
-        : provider.propertyById(propertyId!);
+    final currentPropertyId =
+        widget.propertyId ?? (properties.isNotEmpty ? properties.first.id : '');
 
-    if (property == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Floors')),
-        body: const Center(
-          child: Text(
-            'Add a property before adding floors.',
-            style: TextStyle(color: AppColors.textSecondary),
-          ),
-        ),
-      );
-    }
+    final currentProperty = provider.propertyById(currentPropertyId);
+    final floors = provider.floorsFor(currentPropertyId);
 
-    final floors = provider.floorsFor(property.id);
     return Scaffold(
-      appBar: AppBar(title: Text('${property.name} Floors')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _add(context, property.id),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Floor'),
-      ),
-      body: SearchableManagementList<ManagedFloor>(
-        items: floors,
-        searchHint: 'Search floors',
-        emptyMessage: 'No floors yet. Tap Add Floor to create the first floor.',
-        noResultsMessage: 'No floor matches your search.',
-        matches: (floor, query) =>
-            query.isEmpty ||
-            floor.name.toLowerCase().contains(query.toLowerCase()) ||
-            floor.level.toString() == query,
-        header: [
-          HierarchyBreadcrumbs(
-            items: [
-              HierarchyCrumb(
-                'Properties',
-                onTap: () => Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const HomesScreen()),
-                ),
+      appBar: AppBar(
+        title: Text(currentProperty?.name ?? 'Floors'),
+        actions: [
+          if (currentPropertyId.isNotEmpty)
+            IconButton(
+              tooltip: 'Manage properties',
+              onPressed: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const HomesScreen()),
               ),
-              HierarchyCrumb(property.name),
-            ],
-          ),
-          const SizedBox(height: 8),
+              icon: const Icon(Icons.home_work_outlined),
+            ),
         ],
-        itemBuilder: (context, floor) {
-          final rooms = provider.roomsFor(floor.id);
-          final roomIds = rooms.map((item) => item.id).toSet();
-          final deviceCount = context
-              .watch<DeviceProvider>()
-              .devices
-              .where((item) => roomIds.contains(item.roomId))
-              .length;
-          return _FloorCard(
-            floor: floor,
-            roomCount: rooms.length,
-            deviceCount: deviceCount,
-            onEdit: () => _edit(context, floor),
-            onDelete: () => _delete(context, floor),
-          );
-        },
+      ),
+      floatingActionButton: currentPropertyId.isEmpty
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => _add(context, currentPropertyId),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add Floor'),
+            ),
+      body: SafeArea(
+        top: false,
+        child: provider.isLoading
+            ? const AppLoadingState(message: 'Loading floors…')
+            : currentPropertyId.isEmpty
+                ? const AppStateCard.empty(
+                    title: 'No properties found',
+                    message: 'Add a property first to manage its floors.',
+                  )
+                : _FloorResults(
+                    floors: floors,
+                    onOpen: (f) => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RoomsScreen(
+                          homeId: currentPropertyId,
+                          floorId: f.id,
+                        ),
+                      ),
+                    ),
+                    onEdit: (f) => _edit(context, f),
+                    onDelete: (f) => _delete(context, f),
+                  ),
       ),
     );
   }
 }
 
-class _FloorCard extends StatelessWidget {
-  final ManagedFloor floor;
-  final int roomCount;
-  final int deviceCount;
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
+class _FloorResults extends StatelessWidget {
+  final List<ManagedFloor> floors;
+  final ValueChanged<ManagedFloor> onOpen;
+  final ValueChanged<ManagedFloor> onEdit;
+  final ValueChanged<ManagedFloor> onDelete;
 
-  const _FloorCard({
-    required this.floor,
-    required this.roomCount,
-    required this.deviceCount,
+  const _FloorResults({
+    required this.floors,
+    required this.onOpen,
     required this.onEdit,
     required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
+    if (floors.isEmpty) {
+      return const AppStateCard.empty(
+        title: 'No floors added',
+        message: 'Add your first floor to this property.',
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      itemCount: floors.length,
+      itemBuilder: (context, index) {
+        final f = floors[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _FloorCard(
+            floor: f,
+            onTap: () => onOpen(f),
+            onEdit: () => onEdit(f),
+            onDelete: () => onDelete(f),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _FloorCard extends StatelessWidget {
+  final ManagedFloor floor;
+  final VoidCallback onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  const _FloorCard({
+    required this.floor,
+    required this.onTap,
+    this.onEdit,
+    this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final propertyProvider = context.watch<PropertyProvider>();
+    final deviceProvider = context.watch<DeviceProvider>();
+    final user = context.watch<AuthProvider>().currentUser;
+
+    final roomCount = propertyProvider.roomsFor(floor.id).length;
+    final deviceCount = deviceProvider
+        .visibleDevices(user)
+        .where((d) => d.floorId == floor.id)
+        .length;
+
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => RoomsScreen(floorId: floor.id)),
-        ),
+        side: const BorderSide(color: AppColors.divider),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
               Container(
-                width: 50,
-                height: 50,
-                alignment: Alignment.center,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(14),
+                  color: AppColors.primarySoft,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  '${floor.level}',
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
+                child: const Icon(
+                  Icons.layers_outlined,
+                  color: AppColors.primary,
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

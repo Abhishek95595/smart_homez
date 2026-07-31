@@ -16,7 +16,7 @@ class PropertyProvider extends ChangeNotifier {
   bool _isLoading = true;
   bool _isDisposed = false;
   String? _loadError;
-  String? _clientId; // From AuthProvider
+  String? _clientId; 
 
   PropertyProvider({PropertyRepository? repository, Uuid uuid = const Uuid()})
     : _repository = repository ?? HivePropertyRepository(),
@@ -130,54 +130,11 @@ class PropertyProvider extends ChangeNotifier {
         name: 'Floor 4',
         level: 4,
       ),
-      ManagedFloor(
-        id: 'palm_floor_1',
-        propertyId: 'bldg_B',
-        name: 'Floor 1',
-        level: 1,
-      ),
-      ManagedFloor(
-        id: 'palm_floor_2',
-        propertyId: 'bldg_B',
-        name: 'Floor 2',
-        level: 2,
-      ),
-    ]);
-    _rooms.addAll(const [
-      ManagedRoom(
-        id: 'room_302_living',
-        floorId: 'floor_3',
-        name: 'Living Room',
-        type: 'Living Room',
-      ),
-      ManagedRoom(
-        id: 'room_302_bedroom',
-        floorId: 'floor_3',
-        name: 'Bedroom',
-        type: 'Bedroom',
-      ),
-      ManagedRoom(
-        id: 'room_302_kitchen',
-        floorId: 'floor_3',
-        name: 'Kitchen',
-        type: 'Kitchen',
-      ),
-      ManagedRoom(
-        id: 'room_501_living',
-        floorId: 'palm_floor_1',
-        name: 'Living Room',
-        type: 'Living Room',
-      ),
-      ManagedRoom(
-        id: 'room_601_bedroom',
-        floorId: 'palm_floor_2',
-        name: 'Bedroom',
-        type: 'Bedroom',
-      ),
     ]);
   }
 
   Future<void> syncFromApi(String clientId) async {
+    _clientId = clientId;
     _isLoading = true;
     notifyListeners();
 
@@ -185,40 +142,67 @@ class PropertyProvider extends ChangeNotifier {
       final apiHomes = await _apiRepo.getHomes(clientId);
       if (apiHomes.isNotEmpty) {
         _properties.clear();
-        _floors.clear();
-        _rooms.clear();
-
         for (final h in apiHomes) {
           _properties.add(ManagedProperty(
             id: h.id,
             name: h.name,
             address: h.address,
           ));
-
-          final apiFloors = await _apiRepo.getFloors(clientId, h.id);
-          for (final f in apiFloors) {
-            _floors.add(ManagedFloor(
-              id: f.id,
-              propertyId: h.id,
-              name: f.name,
-              level: f.floorNumber,
-            ));
-
-            final apiRooms = await _apiRepo.getRooms(clientId, h.id, f.id);
-            for (final r in apiRooms) {
-              _rooms.add(ManagedRoom(
-                id: r.id,
-                floorId: f.id,
-                name: r.name,
-                type: 'Other',
-              ));
-            }
-          }
         }
         await _save();
       }
     } catch (e) {
       debugPrint('Sync Error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchFloorsForHome(String homeId) async {
+    if (_clientId == null) return;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final apiFloors = await _apiRepo.getFloors(_clientId!, homeId);
+      _floors.removeWhere((f) => f.propertyId == homeId);
+      for (final f in apiFloors) {
+        _floors.add(ManagedFloor(
+          id: f.id,
+          propertyId: homeId,
+          name: f.name,
+          level: f.floorNumber,
+        ));
+      }
+      await _save();
+    } catch (e) {
+      debugPrint('Fetch Floors Error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchRoomsForFloor(String homeId, String floorId) async {
+    if (_clientId == null) return;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final apiRooms = await _apiRepo.getRooms(_clientId!, homeId, floorId);
+      _rooms.removeWhere((r) => r.floorId == floorId);
+      for (final r in apiRooms) {
+        _rooms.add(ManagedRoom(
+          id: r.id,
+          floorId: floorId,
+          name: r.name,
+          type: 'Other',
+        ));
+      }
+      await _save();
+    } catch (e) {
+      debugPrint('Fetch Rooms Error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -279,7 +263,6 @@ class PropertyProvider extends ChangeNotifier {
     
     String finalId = _uuid.v4();
 
-    // API Integration
     if (_clientId != null) {
       final apiResponse = await _apiRepo.createHome(
         _clientId!,
@@ -351,7 +334,6 @@ class PropertyProvider extends ChangeNotifier {
     final resolvedName = name.trim().isEmpty ? 'Floor $level' : name.trim();
     String finalId = _uuid.v4();
 
-    // API Integration
     if (_clientId != null) {
       final apiResponse = await _apiRepo.createFloor(
         _clientId!,
@@ -396,6 +378,7 @@ class PropertyProvider extends ChangeNotifier {
   }
 
   Future<ManagedRoom> addRoom({
+    required String homeId, // Changed to require homeId
     required String floorId,
     required String name,
     required String type,
@@ -413,12 +396,10 @@ class PropertyProvider extends ChangeNotifier {
 
     String finalId = _uuid.v4();
 
-    // API Integration - Finding propertyId for this floor
-    final floor = floorById(floorId);
-    if (_clientId != null && floor != null) {
+    if (_clientId != null) {
       final apiResponse = await _apiRepo.createRoom(
         _clientId!,
-        floor.propertyId,
+        homeId,
         floorId,
         name: resolvedName,
       );

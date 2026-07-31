@@ -64,6 +64,7 @@ void main() {
       level: 1,
     );
     final room = await properties.addRoom(
+      homeId: property.id,
       floorId: floor.id,
       name: '',
       type: 'Bedroom',

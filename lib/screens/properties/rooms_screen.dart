@@ -2,20 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/property_hierarchy.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_state_widgets.dart';
-import '../../widgets/property_management_widgets.dart';
 import '../devices/devices_screen.dart';
 import 'floors_screen.dart';
 import 'homes_screen.dart';
 import 'management_dialogs.dart';
 
-class RoomsScreen extends StatelessWidget {
+class RoomsScreen extends StatefulWidget {
+  final String? homeId;
   final String? floorId;
 
-  const RoomsScreen({super.key, this.floorId});
+  const RoomsScreen({super.key, this.homeId, this.floorId});
+
+  @override
+  State<RoomsScreen> createState() => _RoomsScreenState();
+}
+
+class _RoomsScreenState extends State<RoomsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.homeId != null && widget.floorId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<PropertyProvider>().fetchRoomsForFloor(
+              widget.homeId!,
+              widget.floorId!,
+            );
+      });
+    }
+  }
 
   Future<void> _add(BuildContext context, ManagedFloor floor) async {
     final provider = context.read<PropertyProvider>();
@@ -25,6 +44,7 @@ class RoomsScreen extends StatelessWidget {
     );
     if (result == null || !context.mounted) return;
     await provider.addRoom(
+      homeId: widget.homeId ?? '',
       floorId: floor.id,
       name: result.name,
       type: result.type,
@@ -40,9 +60,7 @@ class RoomsScreen extends StatelessWidget {
           provider.roomNameExists(room.floorId, name, excludingId: room.id),
     );
     if (result == null || !context.mounted) return;
-    final resolvedName = result.name.trim().isEmpty
-        ? room.name
-        : result.name.trim();
+    final resolvedName = result.name.trim().isEmpty ? room.name : result.name.trim();
     await provider.updateRoom(room, name: resolvedName, type: result.type);
     if (!context.mounted) return;
     await context.read<DeviceProvider>().renameRoom(room.id, resolvedName);
@@ -52,183 +70,175 @@ class RoomsScreen extends StatelessWidget {
     final approved = await confirmDelete(
       context,
       title: 'Delete ${room.name}?',
-      message: 'This will permanently delete the room and every device in it.',
+      message: 'This will unassign all devices in this room.',
     );
-    if (!approved || !context.mounted) return;
-    await context.read<DeviceProvider>().deleteDevicesForRoom(room.id);
-    if (!context.mounted) return;
-    await context.read<PropertyProvider>().deleteRoom(room.id);
+    if (approved) {
+      await context.read<PropertyProvider>().deleteRoom(room.id);
+      if (context.mounted) {
+        await context.read<DeviceProvider>().deleteDevicesForRoom(room.id);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<PropertyProvider>();
-    if (provider.isLoading) {
-      return const Scaffold(body: AppLoadingState(message: 'Loading rooms…'));
-    }
-    if (provider.loadError != null && provider.floors.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Rooms')),
-        body: AppStateCard.error(
-          title: 'Could not load rooms',
-          message: provider.loadError!,
-          actionLabel: 'Retry',
-          onAction: () => context.read<PropertyProvider>().reload(),
-        ),
-      );
-    }
+    final floors = provider.floors;
 
-    final floor = floorId == null
-        ? provider.floors.firstOrNull
-        : provider.floorById(floorId!);
-    if (floor == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Rooms')),
-        body: const Center(
-          child: Text(
-            'Add a floor before adding rooms.',
-            style: TextStyle(color: AppColors.textSecondary),
-          ),
-        ),
-      );
-    }
+    final currentFloorId =
+        widget.floorId ?? (floors.isNotEmpty ? floors.first.id : '');
+    final currentFloor = provider.floorById(currentFloorId);
+    final rooms = provider.roomsFor(currentFloorId);
 
-    final property = provider.propertyById(floor.propertyId);
-    final rooms = provider.roomsFor(floor.id);
     return Scaffold(
-      appBar: AppBar(title: Text('${floor.name} Rooms')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _add(context, floor),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Room'),
-      ),
-      body: SearchableManagementList<ManagedRoom>(
-        items: rooms,
-        searchHint: 'Search rooms',
-        emptyMessage: 'No rooms yet. Tap Add Room to create the first room.',
-        noResultsMessage: 'No room matches your search.',
-        matches: (room, query) =>
-            query.isEmpty ||
-            room.name.toLowerCase().contains(query.toLowerCase()) ||
-            room.type.toLowerCase().contains(query.toLowerCase()),
-        header: [
-          HierarchyBreadcrumbs(
-            items: [
-              HierarchyCrumb(
-                'Properties',
-                onTap: () => Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const HomesScreen()),
-                  (route) => route.isFirst,
+      appBar: AppBar(
+        title: Text(currentFloor?.name ?? 'Rooms'),
+        actions: [
+          if (currentFloorId.isNotEmpty)
+            IconButton(
+              tooltip: 'View all floors',
+              onPressed: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      FloorsScreen(propertyId: currentFloor?.propertyId),
                 ),
               ),
-              HierarchyCrumb(
-                property?.name ?? 'Property',
-                onTap: property == null
-                    ? null
-                    : () => Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => FloorsScreen(propertyId: property.id),
+              icon: const Icon(Icons.layers_outlined),
+            ),
+          IconButton(
+            tooltip: 'View all properties',
+            onPressed: () => Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const HomesScreen()),
+            ),
+            icon: const Icon(Icons.home_work_outlined),
+          ),
+        ],
+      ),
+      floatingActionButton: currentFloor == null
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => _add(context, currentFloor),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add Room'),
+            ),
+      body: SafeArea(
+        top: false,
+        child: provider.isLoading
+            ? const AppLoadingState(message: 'Loading rooms…')
+            : currentFloorId.isEmpty
+                ? const AppStateCard.empty(
+                    title: 'No floors found',
+                    message: 'Add a floor first to manage its rooms.',
+                  )
+                : _RoomResults(
+                    rooms: rooms,
+                    onOpen: (r) => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => DevicesScreen(
+                          title: r.name,
+                          propertyId: currentFloor?.propertyId,
+                          floorId: r.floorId,
+                          roomId: r.id,
+                          roomName: r.name,
                         ),
                       ),
-              ),
-              HierarchyCrumb(floor.name),
-            ],
-          ),
-          const SizedBox(height: 8),
-        ],
-        itemBuilder: (context, room) {
-          final devices = context.watch<DeviceProvider>().devicesForRoom(
-            room.id,
-          );
-          return _RoomCard(
-            property: property,
-            floor: floor,
-            room: room,
-            deviceCount: devices.length,
-            onlineCount: devices
-                .where((item) => item.status.name == 'online')
-                .length,
-            onEdit: () => _edit(context, room),
-            onDelete: () => _delete(context, room),
-          );
-        },
+                    ),
+                    onEdit: (r) => _edit(context, r),
+                    onDelete: (r) => _delete(context, r),
+                  ),
       ),
     );
   }
 }
 
-class _RoomCard extends StatelessWidget {
-  final ManagedProperty? property;
-  final ManagedFloor floor;
-  final ManagedRoom room;
-  final int deviceCount;
-  final int onlineCount;
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
+class _RoomResults extends StatelessWidget {
+  final List<ManagedRoom> rooms;
+  final ValueChanged<ManagedRoom> onOpen;
+  final ValueChanged<ManagedRoom> onEdit;
+  final ValueChanged<ManagedRoom> onDelete;
 
-  const _RoomCard({
-    required this.property,
-    required this.floor,
-    required this.room,
-    required this.deviceCount,
-    required this.onlineCount,
+  const _RoomResults({
+    required this.rooms,
+    required this.onOpen,
     required this.onEdit,
     required this.onDelete,
   });
 
-  IconData get _icon {
-    switch (room.type) {
-      case 'Kitchen':
-        return Icons.kitchen_outlined;
-      case 'Bedroom':
-        return Icons.bed_outlined;
-      case 'Living Room':
-        return Icons.weekend_outlined;
-      case 'Bathroom':
-        return Icons.bathroom_outlined;
-      case 'Office':
-        return Icons.desk_outlined;
-      case 'Garage':
-        return Icons.garage_outlined;
-      default:
-        return Icons.meeting_room_outlined;
+  @override
+  Widget build(BuildContext context) {
+    if (rooms.isEmpty) {
+      return const AppStateCard.empty(
+        title: 'No rooms added',
+        message: 'Add your first room or unit to this floor.',
+      );
     }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      itemCount: rooms.length,
+      itemBuilder: (context, index) {
+        final r = rooms[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _RoomCard(
+            room: r,
+            onTap: () => onOpen(r),
+            onEdit: () => onEdit(r),
+            onDelete: () => onDelete(r),
+          ),
+        );
+      },
+    );
   }
+}
+
+class _RoomCard extends StatelessWidget {
+  final ManagedRoom room;
+  final VoidCallback onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  const _RoomCard({
+    required this.room,
+    required this.onTap,
+    this.onEdit,
+    this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
+    final deviceProvider = context.watch<DeviceProvider>();
+    final devices = deviceProvider.devicesForRoom(room.id);
+
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => DevicesScreen(
-              title: '${room.name} Devices',
-              propertyId: property?.id,
-              floorId: floor.id,
-              roomId: room.id,
-              roomName: room.name,
-            ),
-          ),
-        ),
+        side: const BorderSide(color: AppColors.divider),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(14),
+                  color: AppColors.primarySoft,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(_icon, color: AppColors.primary),
+                child: const Icon(
+                  Icons.meeting_room_outlined,
+                  color: AppColors.primary,
+                ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,23 +252,10 @@ class _RoomCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      room.type,
+                      '${devices.length} devices assigned',
                       style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      deviceCount == 0
-                          ? 'No devices connected'
-                          : '$onlineCount of $deviceCount devices online',
-                      style: TextStyle(
-                        color: deviceCount == 0
-                            ? AppColors.textSecondary
-                            : AppColors.success,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
