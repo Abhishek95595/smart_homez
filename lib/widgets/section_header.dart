@@ -6,12 +6,14 @@ class SectionHeader extends StatelessWidget {
   final String title;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final bool isDark;
 
   const SectionHeader({
     super.key,
     required this.title,
     this.actionLabel,
     this.onAction,
+    this.isDark = false,
   });
 
   @override
@@ -21,15 +23,19 @@ class SectionHeader extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            fontSize: 17, 
+            fontWeight: FontWeight.w700,
+            color: isDark ? Colors.white : AppColors.textPrimary,
+          ),
         ),
         if (actionLabel != null)
           TextButton(
             onPressed: onAction,
             child: Text(
               actionLabel!,
-              style: const TextStyle(
-                color: AppColors.primary,
+              style: TextStyle(
+                color: isDark ? AppColors.primary : AppColors.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),

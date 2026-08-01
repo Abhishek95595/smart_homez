@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/app_user.dart';
-import '../../models/device.dart';
 import '../../models/user_role.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
@@ -12,10 +11,10 @@ import '../../theme/app_theme.dart';
 import '../../widgets/app_state_widgets.dart';
 import '../../widgets/property_summary_card.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/dashboard_templates.dart';
 import '../admin/admin_console_screen.dart';
 import '../alerts/alerts_screen.dart';
 import '../automations/automations_screen.dart';
-import '../devices/device_history_screen.dart';
 import '../devices/devices_screen.dart';
 import '../energy/energy_screen.dart';
 import '../profile/profile_screen.dart';
@@ -26,7 +25,8 @@ import '../water/water_screen.dart';
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
-  String _greeting() {
+  String _greeting(bool isCommercial) {
+    if (isCommercial) return 'Facility Overview';
     final hour = DateTime.now().hour;
     if (hour < 12) return 'Good Morning';
     if (hour < 17) return 'Good Afternoon';
@@ -55,30 +55,35 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().currentUser;
-    final deviceProvider = context.watch<DeviceProvider>();
-    final energy = context.watch<EnergyProvider>();
     final propertyProvider = context.watch<PropertyProvider>();
-    final role = user?.role ?? UserRole.resident;
+    final firstProperty = propertyProvider.properties.firstOrNull;
+    final isCommercial = firstProperty?.isCommercial ?? false;
     final desktop = MediaQuery.sizeOf(context).width >= 1100;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: isCommercial ? const Color(0xFF0F111A) : AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: isCommercial ? const Color(0xFF0F111A) : AppColors.background,
         automaticallyImplyLeading: false,
         toolbarHeight: 74,
         leading: desktop
             ? null
             : Builder(
                 builder: (ctx) => IconButton(
-                  icon: const Icon(Icons.menu_rounded),
+                  icon: Icon(
+                    Icons.menu_rounded,
+                    color: isCommercial ? Colors.white : AppColors.textPrimary,
+                  ),
                   onPressed: () => Scaffold.of(context).openDrawer(),
                 ),
               ),
         titleSpacing: desktop ? 18 : 2,
         title: _AppBarGreeting(
-          greeting: _greeting(),
-          firstName: user?.name.split(' ').first ?? 'User',
+          greeting: _greeting(isCommercial),
+          firstName: isCommercial 
+              ? (firstProperty?.name ?? 'Facility') 
+              : (user?.name.split(' ').first ?? 'User'),
+          isDark: isCommercial,
         ),
         actions: [
           Semantics(
@@ -94,11 +99,11 @@ class DashboardScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: CircleAvatar(
                   radius: 19,
-                  backgroundColor: AppColors.primarySoft,
+                  backgroundColor: isCommercial ? Colors.white10 : AppColors.primarySoft,
                   child: Text(
                     user?.avatarInitials ?? '??',
-                    style: const TextStyle(
-                      color: AppColors.primary,
+                    style: TextStyle(
+                      color: isCommercial ? Colors.white : AppColors.primary,
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                     ),
@@ -111,146 +116,171 @@ class DashboardScreen extends StatelessWidget {
       ),
       body: SafeArea(
         top: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 12, 18, 32),
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const _AmbientOrb(
-                      size: 300,
-                      colors: [Color(0x1800A38E), Colors.transparent],
-                    ),
-                    Positioned(
-                      right: -80,
-                      top: 40,
-                      child: const _AmbientOrb(
-                        size: 240,
-                        colors: [Color(0x12FFB020), Colors.transparent],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'PROPERTY MANAGEMENT',
-                          style: TextStyle(
-                            color: AppColors.textFaint,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _CompactStat(
-                                label: 'Properties',
-                                value: '${propertyProvider.properties.length}',
-                                icon: Icons.home_work_outlined,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _CompactStat(
-                                label: 'Online',
-                                value: '${deviceProvider.onlineCount}',
-                                icon: Icons.cloud_done_outlined,
-                                color: AppColors.success,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _CompactStat(
-                                label: 'Issues',
-                                value: '${deviceProvider.offlineCount}',
-                                icon: Icons.error_outline_rounded,
-                                color: AppColors.warning,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                SectionHeader(
-                  title: 'My Properties',
-                  actionLabel: 'Add Property',
-                  onAction: () => _addProperty(context),
-                ),
-                const SizedBox(height: 14),
-                if (propertyProvider.properties.isEmpty)
-                  const AppStateCard.empty(
-                    title: 'No properties mapped',
-                    message: 'Add your first property to start monitoring.',
-                  )
-                else
-                  ...propertyProvider.properties.take(2).map((p) {
-                    final floors = propertyProvider.floorsFor(p.id);
-                    final floorIds = floors.map((f) => f.id).toSet();
-                    final rooms = propertyProvider.rooms.where(
-                      (r) => floorIds.contains(r.floorId),
-                    );
-                    final devices = deviceProvider.visibleDevicesAt(user, buildingId: p.id);
+        child: isCommercial 
+            ? _CommercialDashboard(user: user) 
+            : _ResidentialDashboard(user: user),
+      ),
+    );
+  }
+}
 
-                    return PropertySummaryCard(
-                      property: p,
-                      floorCount: floors.length,
-                      roomCount: rooms.length,
-                      deviceCount: devices.length,
-                      onlineDeviceCount: devices.where((d) => d.status == DeviceStatus.online).length,
-                      onOpen: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => FloorsScreen(propertyId: p.id),
-                        ),
-                      ),
-                      onHistory: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => DeviceHistoryScreen(propertyId: p.id),
-                        ),
-                      ),
-                      onEdit: () {}, 
-                      onDelete: () {},
-                    );
-                  }),
-                const SizedBox(height: 32),
-                const SectionHeader(title: 'Quick Controls'),
-                const SizedBox(height: 12),
-                _SmartControlGrid(showEnergy: role.canViewEnergy),
-                const SizedBox(height: 28),
-                if (role.canAccessAdminConsole) ...[
-                  _AdminConsoleCard(deviceProvider: deviceProvider),
-                  const SizedBox(height: 24),
-                ],
-                SectionHeader(
-                  title: 'System Health',
-                  actionLabel: 'View devices',
-                  onAction: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const DevicesScreen()),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _SystemHealthPanel(deviceProvider: deviceProvider, user: user),
-                const SizedBox(height: 24),
-                if (role.canViewEnergy) ...[
-                  const SectionHeader(title: 'Energy Consumption'),
-                  const SizedBox(height: 12),
-                  _EnergyConsumptionCard(energy: energy),
-                  const SizedBox(height: 24),
-                ],
-              ],
+class _ResidentialDashboard extends StatelessWidget {
+  final AppUser? user;
+  const _ResidentialDashboard({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    final deviceProvider = context.watch<DeviceProvider>();
+    final energy = context.watch<EnergyProvider>();
+    final propertyProvider = context.watch<PropertyProvider>();
+    final role = user?.role ?? UserRole.resident;
+
+    return DashboardLayoutWrapper(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'MY HOME AT A GLANCE',
+            style: TextStyle(
+              color: AppColors.textFaint,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
             ),
+          ),
+          const SizedBox(height: 12),
+          DashboardStatGrid(
+            children: [
+              _CompactStat(
+                label: 'Devices',
+                value: '${deviceProvider.totalCount}',
+                icon: Icons.devices_other_rounded,
+              ),
+              _CompactStat(
+                label: 'Online',
+                value: '${deviceProvider.onlineCount}',
+                icon: Icons.cloud_done_outlined,
+                color: AppColors.success,
+              ),
+              _CompactStat(
+                label: 'Alerts',
+                value: '${deviceProvider.offlineCount}',
+                icon: Icons.notifications_active_outlined,
+                color: AppColors.warning,
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          SectionHeader(
+            title: 'Your Properties',
+            actionLabel: 'View All',
+            onAction: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const FloorsScreen()),
+            ),
+          ),
+          const SizedBox(height: 14),
+          if (propertyProvider.properties.isEmpty)
+            const AppStateCard.empty(
+              title: 'No properties mapped',
+              message: 'Add your first property to start monitoring.',
+            )
+          else
+            ...propertyProvider.properties.take(2).map((p) {
+              final floors = propertyProvider.floorsFor(p.id);
+              return PropertySummaryCard(
+                property: p,
+                floorCount: floors.length,
+                roomCount: propertyProvider.rooms.where((r) => floors.any((f) => f.id == r.floorId)).length,
+                deviceCount: deviceProvider.visibleDevicesAt(user, buildingId: p.id).length,
+                onlineDeviceCount: deviceProvider.onlineCountFor(user),
+                onOpen: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FloorsScreen(propertyId: p.id))),
+                onHistory: () {},
+                onEdit: () {},
+                onDelete: () {},
+              );
+            }),
+          const SizedBox(height: 32),
+          const SectionHeader(title: 'Quick Controls'),
+          const SizedBox(height: 12),
+          _SmartControlGrid(showEnergy: role.canViewEnergy),
+          const SizedBox(height: 24),
+          if (role.canViewEnergy) ...[
+            const SectionHeader(title: 'Energy Consumption'),
+            const SizedBox(height: 12),
+            _EnergyConsumptionCard(energy: energy),
           ],
-        ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CommercialDashboard extends StatelessWidget {
+  final AppUser? user;
+  const _CommercialDashboard({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    final deviceProvider = context.watch<DeviceProvider>();
+    final propertyProvider = context.watch<PropertyProvider>();
+    final energy = context.watch<EnergyProvider>();
+    final role = user?.role ?? UserRole.facilityManager;
+
+    return DashboardLayoutWrapper(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'FACILITY PERFORMANCE',
+            style: TextStyle(
+              color: Colors.white38,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          DashboardStatGrid(
+            children: [
+              CommercialStatCard(
+                label: 'Total Floors',
+                value: '${propertyProvider.floors.length}',
+                icon: Icons.layers_outlined,
+                color: const Color(0xFF6366F1),
+              ),
+              CommercialStatCard(
+                label: 'System Health',
+                value: '${deviceProvider.totalCount == 0 ? 0 : (deviceProvider.onlineCount / deviceProvider.totalCount * 100).toInt()}%',
+                icon: Icons.analytics_outlined,
+                color: AppColors.success,
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          const SectionHeader(
+            title: 'Infrastructure',
+            isDark: true,
+          ),
+          const SizedBox(height: 16),
+          _CommercialQuickActions(role: role),
+          const SizedBox(height: 32),
+          const SectionHeader(
+            title: 'Critical Alerts',
+            isDark: true,
+          ),
+          const SizedBox(height: 12),
+          _SystemHealthPanel(deviceProvider: deviceProvider, user: user, isDark: true),
+          const SizedBox(height: 32),
+          if (role.canViewEnergy) ...[
+            const SectionHeader(
+              title: 'Energy Management',
+              isDark: true,
+            ),
+            const SizedBox(height: 12),
+            _EnergyConsumptionCard(energy: energy, isDark: true),
+          ],
+        ],
       ),
     );
   }
@@ -259,8 +289,13 @@ class DashboardScreen extends StatelessWidget {
 class _AppBarGreeting extends StatelessWidget {
   final String greeting;
   final String firstName;
+  final bool isDark;
 
-  const _AppBarGreeting({required this.greeting, required this.firstName});
+  const _AppBarGreeting({
+    required this.greeting, 
+    required this.firstName,
+    this.isDark = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -269,8 +304,8 @@ class _AppBarGreeting extends StatelessWidget {
       children: [
         Text(
           greeting.toUpperCase(),
-          style: const TextStyle(
-            color: AppColors.textFaint,
+          style: TextStyle(
+            color: isDark ? Colors.white38 : AppColors.textFaint,
             fontSize: 10,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.1,
@@ -279,8 +314,8 @@ class _AppBarGreeting extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           firstName,
-          style: const TextStyle(
-            color: AppColors.textPrimary,
+          style: TextStyle(
+            color: isDark ? Colors.white : AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w900,
           ),
@@ -327,27 +362,6 @@ class _CompactStat extends StatelessWidget {
             style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _AmbientOrb extends StatelessWidget {
-  final double size;
-  final List<Color> colors;
-
-  const _AmbientOrb({required this.size, required this.colors});
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(colors: colors),
-        ),
       ),
     );
   }
@@ -455,16 +469,22 @@ class _ControlTile extends StatelessWidget {
 class _SystemHealthPanel extends StatelessWidget {
   final DeviceProvider deviceProvider;
   final AppUser? user;
-  const _SystemHealthPanel({required this.deviceProvider, this.user});
+  final bool isDark;
+
+  const _SystemHealthPanel({
+    required this.deviceProvider, 
+    this.user,
+    this.isDark = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: isDark ? const Color(0xFF1B1E2A) : AppColors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: isDark ? Colors.white10 : AppColors.divider),
       ),
       child: Row(
         children: [
@@ -477,27 +497,31 @@ class _SystemHealthPanel extends StatelessWidget {
           _HealthIndicator(
             label: 'Offline',
             value: '${deviceProvider.offlineCount}',
-            color: AppColors.textFaint,
+            color: isDark ? Colors.white24 : AppColors.textFaint,
           ),
           const Spacer(),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Text(
+              Text(
                 'SYSTEM STATUS',
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w900,
-                  color: AppColors.textFaint,
+                  color: isDark ? Colors.white38 : AppColors.textFaint,
                   letterSpacing: 1.1,
                 ),
               ),
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Text(
+                  Text(
                     'Operational',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800, 
+                      fontSize: 13,
+                      color: isDark ? Colors.white : AppColors.textPrimary,
+                    ),
                   ),
                   const SizedBox(width: 6),
                   Container(
@@ -553,7 +577,9 @@ class _HealthIndicator extends StatelessWidget {
 
 class _EnergyConsumptionCard extends StatelessWidget {
   final EnergyProvider energy;
-  const _EnergyConsumptionCard({required this.energy});
+  final bool isDark;
+
+  const _EnergyConsumptionCard({required this.energy, this.isDark = false});
 
   @override
   Widget build(BuildContext context) {
@@ -566,20 +592,23 @@ class _EnergyConsumptionCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF151722), AppColors.primaryDark, AppColors.primary],
-            stops: [0, 0.56, 1],
+          gradient: LinearGradient(
+            colors: isDark 
+                ? [const Color(0xFF1B1E2A), const Color(0xFF262A38)]
+                : [const Color(0xFF151722), AppColors.primaryDark, AppColors.primary],
+            stops: isDark ? null : [0, 0.56, 1],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(22),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: Color(0x33FF7A18),
+              color: isDark ? Colors.black26 : const Color(0x33FF7A18),
               blurRadius: 26,
-              offset: Offset(0, 13),
+              offset: const Offset(0, 13),
             ),
           ],
+          border: isDark ? Border.all(color: Colors.white10) : null,
         ),
         child: Row(
           children: [
@@ -587,9 +616,12 @@ class _EnergyConsumptionCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Current Load',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                    style: TextStyle(
+                      color: isDark ? Colors.white38 : Colors.white70, 
+                      fontSize: 12,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -603,7 +635,10 @@ class _EnergyConsumptionCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     "Today: ${energy.todayKwh.toStringAsFixed(1)} kWh",
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    style: TextStyle(
+                      color: isDark ? Colors.white38 : Colors.white70, 
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -627,59 +662,70 @@ class _EnergyConsumptionCard extends StatelessWidget {
   }
 }
 
-class _AdminConsoleCard extends StatelessWidget {
-  final DeviceProvider deviceProvider;
-  const _AdminConsoleCard({required this.deviceProvider});
+class _CommercialQuickActions extends StatelessWidget {
+  final UserRole role;
+  const _CommercialQuickActions({required this.role});
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 2.2,
+      children: [
+        _CommercialTile(
+          label: 'Floors',
+          icon: Icons.layers_outlined,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FloorsScreen())),
+        ),
+        _CommercialTile(
+          label: 'Devices',
+          icon: Icons.devices_other_rounded,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DevicesScreen())),
+        ),
+        _CommercialTile(
+          label: 'Automations',
+          icon: Icons.auto_awesome_outlined,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AutomationsScreen())),
+        ),
+        if (role.canAccessAdminConsole)
+          _CommercialTile(
+            label: 'Access Control',
+            icon: Icons.admin_panel_settings_outlined,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminConsoleScreen())),
+          ),
+      ],
+    );
+  }
+}
+
+class _CommercialTile extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CommercialTile({required this.label, required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.sideBackground,
-      borderRadius: BorderRadius.circular(24),
+      color: const Color(0xFF1B1E2A),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AdminConsoleScreen()),
-        ),
-        borderRadius: BorderRadius.circular(24),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
         child: Padding(
-          padding: const EdgeInsets.all(22),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.admin_panel_settings_outlined,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 18),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Admin Console',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    Text(
-                      'Manage users, roles and buildings',
-                      style: TextStyle(color: Colors.white60, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.white38,
+              Icon(icon, color: AppColors.primary, size: 20),
+              const SizedBox(width: 12),
+              Text(
+                label,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
               ),
             ],
           ),
