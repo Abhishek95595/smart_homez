@@ -16,45 +16,43 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  UserRole _selectedRole = UserRole.resident;
+  final UserRole _selectedRole = UserRole.resident;
   bool _loading = false;
   bool _obscureSecret = true;
 
   final _clientIdCtrl = TextEditingController();
   final _secretCtrl = TextEditingController();
-  final _emailCtrl = TextEditingController(text: 'demo@smarthomez.in');
-  final _passCtrl = TextEditingController(text: '••••••••');
 
   @override
   void dispose() {
     _clientIdCtrl.dispose();
     _secretCtrl.dispose();
-    _emailCtrl.dispose();
-    _passCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
+    final identifier = _clientIdCtrl.text.trim();
+    final secret = _secretCtrl.text.trim();
+
+    if (identifier.isEmpty || secret.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter both your Client ID/Email and Secret/Password.'),
+          backgroundColor: AppColors.critical,
+        ),
+      );
+      return;
+    }
+
     setState(() => _loading = true);
     
-    final clientId = _clientIdCtrl.text.trim();
-    final secret = _secretCtrl.text.trim();
-    
-    String? error;
-    
-    if (clientId.isNotEmpty && secret.isNotEmpty) {
-      // Manual API login
-      error = await context.read<AuthProvider>().loginWithApi(
-        clientId, 
-        secret, 
-        _selectedRole,
-        propertyProvider: context.read<PropertyProvider>(),
-        deviceProvider: context.read<DeviceProvider>(),
-      );
-    } else {
-      // Fallback to demo login
-      await context.read<AuthProvider>().loginAs(_selectedRole);
-    }
+    final error = await context.read<AuthProvider>().loginWithApi(
+      identifier, 
+      secret, 
+      _selectedRole,
+      propertyProvider: context.read<PropertyProvider>(),
+      deviceProvider: context.read<DeviceProvider>(),
+    );
     
     if (!mounted) return;
     setState(() => _loading = false);
@@ -143,31 +141,32 @@ class _LoginScreenState extends State<LoginScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Connect to Backend',
+            'Secure Access',
             style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 6),
           const Text(
-            'Enter your Client ID and Secret to sync with real data.',
+            'Connect to your smart property using your AuraBrain credentials.',
             style: TextStyle(color: AppColors.textSecondary, fontSize: 13.5),
           ),
           const SizedBox(height: 26),
-          const _FormLabel('Client ID'),
+          const _FormLabel('Client ID / Email'),
           TextField(
             controller: _clientIdCtrl,
+            keyboardType: TextInputType.emailAddress,
             decoration: const InputDecoration(
-              hintText: 'e.g. anvyaaai_567A',
-              prefixIcon: Icon(Icons.badge_outlined),
+              hintText: 'e.g. anvyaaai_AEB3 or name@mail.com',
+              prefixIcon: Icon(Icons.person_outline_rounded),
             ),
           ),
           const SizedBox(height: 16),
-          const _FormLabel('Client Secret'),
+          const _FormLabel('Secret / Password'),
           TextField(
             controller: _secretCtrl,
             obscureText: _obscureSecret,
             decoration: InputDecoration(
-              hintText: 'Enter your API secret',
-              prefixIcon: const Icon(Icons.key_rounded),
+              hintText: 'Enter your access key',
+              prefixIcon: const Icon(Icons.lock_outline_rounded),
               suffixIcon: IconButton(
                 tooltip: _obscureSecret ? 'Show secret' : 'Hide secret',
                 onPressed: () =>
@@ -180,39 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          const Divider(),
-          const SizedBox(height: 12),
-          const Text(
-            'OR USE DEMO ACCESS',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              color: AppColors.textFaint,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: UserRole.values.map((role) {
-              final selected = role == _selectedRole;
-              return ChoiceChip(
-                label: Text(role.label),
-                selected: selected,
-                onSelected: (_) => setState(() => _selectedRole = role),
-                selectedColor: AppColors.primarySoft,
-                labelStyle: TextStyle(
-                  color: selected
-                      ? AppColors.primaryDark
-                      : AppColors.textSecondary,
-                  fontWeight: FontWeight.w700,
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -227,10 +194,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     )
                   : const Icon(Icons.login_rounded),
-              label: Text(_clientIdCtrl.text.isNotEmpty ? 'Connect & Sign In' : 'Sign In as Demo'),
+              label: const Text('Connect & Sign In'),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -238,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(width: 6),
               Flexible(
                 child: Text(
-                  'Encrypted connection to saajsajja.in',
+                  'Production connection to saajsajja.in',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.textFaint, fontSize: 11.5),
                 ),
