@@ -22,7 +22,18 @@ class AuthResponse {
     this.error,
   });
 
-  factory AuthResponse.fromJson(Map<String, dynamic> json) =>
-      _$AuthResponseFromJson(json);
+  /// 4. Replace unsafe casts with safe parsing
+  factory AuthResponse.fromJson(Map<String, dynamic> json) {
+    return AuthResponse(
+      success: json['success'] == true,
+      token: json['token']?.toString(),
+      expiresAt: json['expiresAt']?.toString(),
+      clientName: json['clientName']?.toString(),
+      clientId: json['clientId']?.toString(),
+      permissionLevel: json['permissionLevel']?.toString(),
+      error: json['error']?.toString(),
+    );
+  }
+
   Map<String, dynamic> toJson() => _$AuthResponseToJson(this);
 }

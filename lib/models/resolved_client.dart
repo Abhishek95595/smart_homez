@@ -9,9 +9,22 @@ class ResolvedClient {
   final String? email;
   final String? phone;
 
-  ResolvedClient({required this.id, this.name, this.email, this.phone});
+  ResolvedClient({
+    required this.id,
+    this.name,
+    this.email,
+    this.phone,
+  });
 
-  factory ResolvedClient.fromJson(Map<String, dynamic> json) =>
-      _$ResolvedClientFromJson(json);
+  /// Defensive parsing to prevent "Null is not a subtype of type String" in type cast
+  factory ResolvedClient.fromJson(Map<String, dynamic> json) {
+    return ResolvedClient(
+      id: (json['id'] ?? json['clientId'] ?? '').toString(),
+      name: json['name']?.toString(),
+      email: json['email']?.toString(),
+      phone: json['phone']?.toString(),
+    );
+  }
+
   Map<String, dynamic> toJson() => _$ResolvedClientToJson(this);
 }
