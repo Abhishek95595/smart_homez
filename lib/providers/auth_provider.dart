@@ -51,19 +51,33 @@ class AuthProvider extends ChangeNotifier {
       );
 
       if (resolvedClient == null) {
-        return 'Could not resolve client identity. Please contact support.';
+        return 'Could not verify identity. Please contact support.';
       }
 
       _resolvedClientUuid = resolvedClient.id;
       
+      // Defensive Initials Generation
+      final String displayName = resolvedClient.name ?? authResponse.clientName ?? 'User';
+      String initials = 'US';
+      if (displayName.trim().isNotEmpty) {
+        final parts = displayName.trim().split(' ');
+        if (parts.length >= 2) {
+          initials = (parts[0][0] + parts[1][0]).toUpperCase();
+        } else if (parts[0].length >= 2) {
+          initials = parts[0].substring(0, 2).toUpperCase();
+        } else {
+          initials = parts[0][0].toUpperCase();
+        }
+      }
+
       _currentUser = AppUser(
         id: resolvedClient.id,
-        name: resolvedClient.name ?? authResponse.clientName ?? 'User',
+        name: displayName,
         email: resolvedClient.email ?? (isEmail ? identifier : ''),
         phone: resolvedClient.phone ?? '',
         role: targetRole,
         tenantId: 'aurabrain',
-        avatarInitials: (resolvedClient.name ?? 'AM').substring(0, 2).toUpperCase(),
+        avatarInitials: initials,
       );
 
       // Trigger Hierarchy Sync using the real UUID
@@ -75,7 +89,11 @@ class AuthProvider extends ChangeNotifier {
       return null; // Success
     } catch (e) {
       debugPrint('[Auth Error] $e');
-      return e.toString();
+      // Extract a readable message from the exception
+      final String msg = e.toString();
+      if (msg.contains('401')) return 'Invalid credentials. Please try again.';
+      if (msg.contains('404')) return 'Account setup incomplete on backend.';
+      return msg.startsWith('ApiException:') ? msg.replaceFirst('ApiException: ', '') : msg;
     }
   }
 
