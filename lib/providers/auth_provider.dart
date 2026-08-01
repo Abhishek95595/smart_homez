@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 import '../data/mock_data.dart';
 import '../models/app_user.dart';
@@ -10,11 +8,9 @@ import '../services/tenant_api_repository.dart';
 import 'device_provider.dart';
 import 'property_provider.dart';
 
-/// Handles login/session state. In production this will call the
-/// Auth API (login/signup/token refresh) described in the PRD.
+/// Handles login/session state.
 class AuthProvider extends ChangeNotifier {
   AppUser? _currentUser;
-  String? _token;
   String? _resolvedClientId;
   final ApiService _apiService = ApiService();
   final TenantApiRepository _apiRepo = TenantApiRepository();
@@ -22,45 +18,55 @@ class AuthProvider extends ChangeNotifier {
   AppUser? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
   UserRole get role => _currentUser?.role ?? UserRole.resident;
-  String? get token => _token;
   String? get resolvedClientId => _resolvedClientId;
 
-  /// Authenticate with the real backend API using the /api/Auth/token exchange flow.
-  /// Returns null on success, or an error message on failure.
+  /// Authenticate with the real backend API using the refined Dio flow.
   Future<String?> loginWithApi(
-    String clientId, 
-    String clientSecret, 
+    String email, 
+    String password, 
     UserRole targetRole,
     {required PropertyProvider propertyProvider, required DeviceProvider deviceProvider}
   ) async {
     try {
-      // 1. Exchange ClientId/Secret for JWT token (Official Flow)
-      final success = await _apiService.fetchToken(clientId, clientSecret);
+      // 1. Perform Secure Mobile Login
+      final response = await _apiService.mobileLogin(email, password);
       
-      if (!success) {
-        // Fallback: Try the legacy login if token exchange fails
-        final legacyToken = await _apiService.login(clientId, clientSecret);
-        if (legacyToken == null) {
-          return 'Authentication failed. Please check your Client ID and Secret.';
-        }
+      if (response.statusCode != 200) {
+        return 'Login failed. Please check your credentials.';
       }
 
-      // 2. Resolve the client identity using the fresh token
-      final resolveResponse = await _apiRepo.resolveClient(
-        email: 'app_user@aurabrain.com', 
-        name: 'Smart Homez Manager',
-      );
+      final loginData = response.data;
+      if (loginData['success'] != true || loginData['token'] == null) {
+        return loginData['error'] ?? 'Login failed. Please check your credentials.';
+      }
+
+      final String? apiClientId = loginData['clientId'];
+      final String? apiClientName = loginData['clientName'];
+      final String? userType = loginData['userType'];
+
+      // Also set credentials for background refresh
+      _apiService.setCredentials(email, password);
       
-      String finalId = '';
-      String finalName = '';
+      // 2. Handle Identity Resolution
+      String finalId = apiClientId ?? '';
+      String finalName = apiClientName ?? 'Smart Homez Manager';
       
-      if (resolveResponse != null) {
-        finalId = resolveResponse.id;
-        finalName = resolveResponse.name ?? 'App Manager';
-      } else {
-        // Fallback for Tenant accounts that might not have a specific clientId
-        finalName = 'Smart Homez Manager';
-        finalId = 'tenant_root'; 
+      if (finalId.isEmpty) {
+        debugPrint('[Auth] No clientId in login response. Attempting to resolve via API...');
+        final resolveResponse = await _apiRepo.resolveClient(
+          email: email, 
+          name: 'Smart Homez Manager',
+        );
+        
+        if (resolveResponse != null) {
+          finalId = resolveResponse.id;
+          finalName = resolveResponse.name ?? finalName;
+        } else if (userType == 'Tenant') {
+          debugPrint('[Auth] Client resolution failed for Tenant. Using fallback scope.');
+          finalId = 'tenant_root'; 
+        } else {
+          return 'Could not verify client identity. Please contact support.';
+        }
       }
       
       _resolvedClientId = finalId;
@@ -69,14 +75,14 @@ class AuthProvider extends ChangeNotifier {
       _currentUser = AppUser(
         id: finalId,
         name: finalName,
-        email: clientId,
+        email: email,
         phone: '',
         role: targetRole,
         tenantId: 'aurabrain',
         avatarInitials: finalName.length >= 2 ? finalName.substring(0, 2).toUpperCase() : 'AM',
       );
 
-      // 4. Trigger Automatic Sync (Graceful)
+      // 4. Trigger Automatic Sync
       propertyProvider.setClientId(finalId);
       try {
         await propertyProvider.syncFromApi(finalId);
@@ -104,11 +110,10 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void logout() {
+  void logout() async {
     _currentUser = null;
-    _token = null;
     _resolvedClientId = null;
-    _apiService.setToken('');
+    await _apiService.clearAuth();
     notifyListeners();
   }
 }

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import '../models/api_models.dart';
 import 'api_service.dart';
 
@@ -16,9 +15,9 @@ class TenantApiRepository {
     );
 
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body['success'] == true && body['data'] != null) {
-        return ClientResolveResponse.fromJson(body['data']);
+      final data = response.data;
+      if (data['success'] == true && data['data'] != null) {
+        return ClientResolveResponse.fromJson(data['data']);
       }
     }
     return null;
@@ -27,9 +26,9 @@ class TenantApiRepository {
   Future<List<ApiHomeResponse>> getHomes(String clientId) async {
     final response = await _api.get('/api/v1/clients/$clientId/homes');
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body['success'] == true && body['data'] != null) {
-        return (body['data'] as List)
+      final data = response.data;
+      if (data['success'] == true && data['data'] != null) {
+        return (data['data'] as List)
             .map((item) => ApiHomeResponse.fromJson(item))
             .toList();
       }
@@ -40,9 +39,9 @@ class TenantApiRepository {
   Future<List<ApiFloorResponse>> getFloors(String clientId, String homeId) async {
     final response = await _api.get('/api/v1/clients/$clientId/homes/$homeId/floors');
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body['success'] == true && body['data'] != null) {
-        return (body['data'] as List)
+      final data = response.data;
+      if (data['success'] == true && data['data'] != null) {
+        return (data['data'] as List)
             .map((item) => ApiFloorResponse.fromJson(item))
             .toList();
       }
@@ -53,9 +52,9 @@ class TenantApiRepository {
   Future<List<ApiRoomResponse>> getRooms(String clientId, String homeId, String floorId) async {
     final response = await _api.get('/api/v1/clients/$clientId/homes/$homeId/floors/$floorId/rooms');
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body['success'] == true && body['data'] != null) {
-        return (body['data'] as List)
+      final data = response.data;
+      if (data['success'] == true && data['data'] != null) {
+        return (data['data'] as List)
             .map((item) => ApiRoomResponse.fromJson(item))
             .toList();
       }
@@ -66,9 +65,9 @@ class TenantApiRepository {
   Future<List<ApiDeviceResponse>> getDevices(String clientId) async {
     final response = await _api.get('/api/v1/clients/$clientId/devices');
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body['success'] == true && body['data'] != null) {
-        return (body['data'] as List)
+      final data = response.data;
+      if (data['success'] == true && data['data'] != null) {
+        return (data['data'] as List)
             .map((item) => ApiDeviceResponse.fromJson(item))
             .toList();
       }
@@ -95,9 +94,9 @@ class TenantApiRepository {
   Future<List<ApiAutomationResponse>> getAutomations() async {
     final response = await _api.get('/api/v1/automations');
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body['success'] == true && body['data'] != null) {
-        return (body['data'] as List)
+      final data = response.data;
+      if (data['success'] == true && data['data'] != null) {
+        return (data['data'] as List)
             .map((item) => ApiAutomationResponse.fromJson(item))
             .toList();
       }
@@ -116,9 +115,9 @@ class TenantApiRepository {
   Future<List<ApiSceneResponse>> getScenes() async {
     final response = await _api.get('/api/v1/scenes');
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body['success'] == true && body['data'] != null) {
-        return (body['data'] as List)
+      final data = response.data;
+      if (data['success'] == true && data['data'] != null) {
+        return (data['data'] as List)
             .map((item) => ApiSceneResponse.fromJson(item))
             .toList();
       }
@@ -149,9 +148,9 @@ class TenantApiRepository {
     );
 
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body['success'] == true && body['data'] != null) {
-        return ApiHomeResponse.fromJson(body['data']);
+      final data = response.data;
+      if (data['success'] == true && data['data'] != null) {
+        return ApiHomeResponse.fromJson(data['data']);
       }
     }
     return null;
@@ -169,9 +168,9 @@ class TenantApiRepository {
     );
 
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body['success'] == true && body['data'] != null) {
-        return ApiFloorResponse.fromJson(body['data']);
+      final data = response.data;
+      if (data['success'] == true && data['data'] != null) {
+        return ApiFloorResponse.fromJson(data['data']);
       }
     }
     return null;
@@ -189,9 +188,9 @@ class TenantApiRepository {
     );
 
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body['success'] == true && body['data'] != null) {
-        return ApiRoomResponse.fromJson(body['data']);
+      final data = response.data;
+      if (data['success'] == true && data['data'] != null) {
+        return ApiRoomResponse.fromJson(data['data']);
       }
     }
     return null;
