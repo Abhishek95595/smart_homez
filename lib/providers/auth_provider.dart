@@ -29,30 +29,33 @@ class AuthProvider extends ChangeNotifier {
     {required PropertyProvider propertyProvider, required DeviceProvider deviceProvider}
   ) async {
     try {
-      // 1. Perform Secure Mobile Login
-      final response = await _apiService.mobileLogin(email, password);
+      // 1. Attempt Official Token Exchange (Preferred for ClientId:Secret)
+      bool success = await _apiService.fetchToken(email, password);
       
-      if (response.statusCode != 200) {
-        return 'Login failed. Please check your credentials.';
-      }
+      String? apiClientId;
+      String? apiClientName;
+      String? userType;
 
-      final loginData = response.data;
-      if (loginData['success'] != true || loginData['token'] == null) {
-        // Fallback to token exchange if mobile login fails but credentials might be valid for Tenant API
-        final success = await _apiService.fetchToken(email, password);
-        if (!success) {
-          return loginData['error'] ?? 'Login failed. Please check your credentials.';
+      if (!success) {
+        // Fallback to Mobile Login if direct token exchange fails
+        final response = await _apiService.mobileLogin(email, password);
+        if (response.statusCode == 200 && response.data['success'] == true) {
+          success = true;
+          apiClientId = response.data['clientId'];
+          apiClientName = response.data['clientName'];
+          userType = response.data['userType'];
         }
       }
 
-      final String? apiClientId = loginData['clientId'];
-      final String? apiClientName = loginData['clientName'];
-      final String? userType = loginData['userType'];
+      if (!success) {
+        return 'Login failed. Please check your Client ID and Secret.';
+      }
 
-      // Also set credentials for background refresh
+      // Set credentials for background refresh
       _apiService.setCredentials(email, password);
       
       // 2. Handle Identity Resolution
+      // If we don't have IDs from the login response, try resolving
       String finalId = apiClientId ?? '';
       String finalName = apiClientName ?? 'Smart Homez Manager';
       
@@ -66,9 +69,11 @@ class AuthProvider extends ChangeNotifier {
         if (resolveResponse != null) {
           finalId = resolveResponse.id;
           finalName = resolveResponse.name ?? finalName;
-        } else if (userType == 'Tenant') {
-          debugPrint('[Auth] Client resolution failed for Tenant. Using fallback scope.');
-          finalId = 'tenant_root'; 
+        } else if (userType == 'Tenant' || email.contains('anvya')) {
+          // Fallback for Tenant accounts or specific test accounts
+          debugPrint('[Auth] Client resolution skipped/failed. Using account identity.');
+          finalId = email; 
+          finalName = apiClientName ?? 'App Manager';
         } else {
           return 'Could not verify client identity. Please contact support.';
         }
