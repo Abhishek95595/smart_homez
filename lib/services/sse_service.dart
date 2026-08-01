@@ -21,9 +21,10 @@ class SseService {
     debugPrint('[SSE] Connecting to stream: $url');
 
     try {
-      // Use dynamic to bypass the undefined SSERequestType error in some environments
+      // Use dynamic to bypass the undefined SSERequestType error in this environment
+      // method: 0 corresponds to GET in the package's internal structure
       _subscription = (SSEClient as dynamic).subscribeToSSE(
-        method: 0, // 0 usually maps to GET in internal package structure
+        method: 0, 
         url: url,
         header: {
           "Accept": "text/event-stream",
@@ -31,7 +32,8 @@ class SseService {
         },
       ).listen(
         (event) {
-          final data = (event as dynamic).data;
+          // In some versions, 'event' might need to be cast to dynamic to access 'data'
+          final String? data = (event as dynamic).data;
           debugPrint('[SSE Event] Data: $data');
           if (data != null && data.isNotEmpty) {
             try {
