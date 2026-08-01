@@ -25,7 +25,7 @@ class AuthProvider extends ChangeNotifier {
   String? get token => _token;
   String? get resolvedClientId => _resolvedClientId;
 
-  /// Authenticate with the real backend API.
+  /// Authenticate with the real backend API using the /api/Auth/token exchange flow.
   /// Returns null on success, or an error message on failure.
   Future<String?> loginWithApi(
     String clientId, 
@@ -34,55 +34,38 @@ class AuthProvider extends ChangeNotifier {
     {required PropertyProvider propertyProvider, required DeviceProvider deviceProvider}
   ) async {
     try {
-      // 1. Set credentials in service
-      _apiService.setCredentials(clientId, clientSecret);
+      // 1. Exchange ClientId/Secret for JWT token (Official Flow)
+      final success = await _apiService.fetchToken(clientId, clientSecret);
       
-      // 2. Attempt real login (JWT)
-      final loginResponse = await _baseUrlPost('/api/Auth/login', {'email': clientId, 'password': clientSecret});
-      
-      if (loginResponse.statusCode != 200) {
-        return 'Login failed. Please check your credentials.';
-      }
-
-      final loginData = jsonDecode(loginResponse.body);
-      if (loginData['success'] != true || loginData['token'] == null) {
-        return loginData['error'] ?? 'Login failed. Please check your credentials.';
-      }
-
-      final String token = loginData['token'];
-      final String? apiClientId = loginData['clientId'];
-      final String? apiClientName = loginData['clientName'];
-      final String? userType = loginData['userType'];
-
-      _token = token;
-      _apiService.setToken(token);
-      
-      // 3. Handle Identity Resolution
-      String finalId = apiClientId ?? '';
-      String finalName = apiClientName ?? 'Smart Homez Manager';
-      
-      if (finalId.isEmpty) {
-        debugPrint('[Auth] No clientId in login response. Attempting to resolve via API...');
-        final resolveResponse = await _apiRepo.resolveClient(
-          email: clientId, 
-          name: 'Smart Homez Manager',
-        );
-        
-        if (resolveResponse != null) {
-          finalId = resolveResponse.id;
-          finalName = resolveResponse.name ?? finalName;
-        } else if (userType == 'Tenant') {
-          // If we can't resolve but we are a Tenant, use a fallback scope
-          debugPrint('[Auth] Client resolution failed for Tenant. Using fallback scope.');
-          finalId = 'tenant_root'; 
-        } else {
-          return 'Could not verify client identity. Please contact support.';
+      if (!success) {
+        // Fallback: Try the legacy login if token exchange fails
+        final legacyToken = await _apiService.login(clientId, clientSecret);
+        if (legacyToken == null) {
+          return 'Authentication failed. Please check your Client ID and Secret.';
         }
+      }
+
+      // 2. Resolve the client identity using the fresh token
+      final resolveResponse = await _apiRepo.resolveClient(
+        email: 'app_user@aurabrain.com', 
+        name: 'Smart Homez Manager',
+      );
+      
+      String finalId = '';
+      String finalName = '';
+      
+      if (resolveResponse != null) {
+        finalId = resolveResponse.id;
+        finalName = resolveResponse.name ?? 'App Manager';
+      } else {
+        // Fallback for Tenant accounts that might not have a specific clientId
+        finalName = 'Smart Homez Manager';
+        finalId = 'tenant_root'; 
       }
       
       _resolvedClientId = finalId;
       
-      // 4. Update the user profile
+      // 3. Update the user profile
       _currentUser = AppUser(
         id: finalId,
         name: finalName,
@@ -93,14 +76,13 @@ class AuthProvider extends ChangeNotifier {
         avatarInitials: finalName.length >= 2 ? finalName.substring(0, 2).toUpperCase() : 'AM',
       );
 
-      // 5. Trigger Automatic Sync (Graceful)
+      // 4. Trigger Automatic Sync (Graceful)
       propertyProvider.setClientId(finalId);
       try {
         await propertyProvider.syncFromApi(finalId);
         await deviceProvider.syncFromApi(finalId);
       } catch (syncError) {
         debugPrint('[Auth Sync Error] $syncError');
-        // We still allow login even if sync fails partially
       }
 
       notifyListeners();
@@ -109,14 +91,6 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('[Auth Provider Error] $e');
       return 'Connection Error: ${e.toString().split('\n').first}';
     }
-  }
-
-  Future<http.Response> _baseUrlPost(String path, Map<String, dynamic> body) async {
-    return http.post(
-      Uri.parse('${_apiService.baseUrl}$path'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
   }
 
   /// Simulated login: pick a demo user by role.
