@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
@@ -8,15 +7,14 @@ import '../models/device.dart';
 import '../models/telemetry.dart';
 import '../models/user_role.dart';
 import '../services/device_repository.dart';
-import '../services/tenant_api_repository.dart';
+import '../services/device_service.dart';
 import '../services/sse_service.dart';
 
-/// Manages device registry + live state. Wraps command sending.
 class DeviceProvider extends ChangeNotifier {
   final DeviceRepository _repository;
-  final TenantApiRepository _apiRepo = TenantApiRepository();
+  final DeviceService _deviceService = DeviceService();
   final SseService _sseService = SseService();
-  final List<Device> _devices = MockData.demoDevices();
+  final List<Device> _devices = [];
   final Map<String, Telemetry> _latestTelemetry = {};
   StreamSubscription<Map<String, dynamic>>? _sseSubscription;
   bool _isLoading = true;
@@ -34,7 +32,12 @@ class DeviceProvider extends ChangeNotifier {
   String? get loadError => _loadError;
 
   void setClientId(String? id) {
-    // Retained for logic compatibility
+    _clientId = id;
+    if (id != null) {
+      _devices.clear();
+      _latestTelemetry.clear();
+      notifyListeners();
+    }
   }
 
   List<Device> get controllableDevices =>
@@ -74,41 +77,40 @@ class DeviceProvider extends ChangeNotifier {
   Future<void> reload() async {
     _isLoading = true;
     _loadError = null;
-    _devices
-      ..clear()
-      ..addAll(MockData.demoDevices());
+    _devices.clear();
     _latestTelemetry.clear();
     notifyListeners();
     await _load();
   }
 
+  /// Real Device Sync (Phase 6)
   Future<void> syncFromApi(String clientId) async {
     _clientId = clientId;
     _isLoading = true;
     notifyListeners();
 
     try {
-      final apiDevices = await _apiRepo.getDevices(clientId);
-      if (apiDevices.isNotEmpty) {
-        _devices.clear();
-        for (final d in apiDevices) {
-          _devices.add(Device(
-            deviceId: d.id,
-            name: d.name,
-            type: _mapType(d.type),
-            status: _mapStatus(d.status),
-            buildingId: d.homeId ?? '',
-            floorId: d.floorId,
-            roomId: d.roomId,
-            zone: d.zone ?? 'Unassigned',
-            lastHeartbeat: DateTime.now(),
-            firmwareVersion: '1.0.0',
-            macAddress: 'UNKNOWN',
-            tenantId: clientId,
-          ));
-        }
-        await _save();
+      final apiDevices = await _deviceService.getDevices(clientId);
+      _devices.clear();
+      for (final d in apiDevices) {
+        _devices.add(Device(
+          deviceId: d.id,
+          name: d.name,
+          type: _mapType(d.type),
+          status: _mapStatus(d.status),
+          buildingId: d.homeId ?? '',
+          floorId: d.floorId,
+          roomId: d.roomId,
+          zone: d.zone ?? 'Unassigned',
+          lastHeartbeat: DateTime.now(),
+          firmwareVersion: '1.0.0',
+          macAddress: 'UNKNOWN',
+          tenantId: clientId,
+          isOn: d.value == 1 || d.value == true || d.value == "on",
+          dimLevel: (d.value is num) ? d.value.toDouble() : 0.0,
+        ));
       }
+      await _save();
     } catch (e) {
       debugPrint('Device Sync Error: $e');
     } finally {
@@ -142,7 +144,6 @@ class DeviceProvider extends ChangeNotifier {
       _devices.where((d) => d.status == DeviceStatus.offline).length;
   int get totalCount => _devices.length;
 
-  /// Start real-time sync via SSE
   void startRealtime(String token) {
     _sseService.startListening(token);
     _sseSubscription = _sseService.eventStream.listen((event) {
@@ -151,7 +152,6 @@ class DeviceProvider extends ChangeNotifier {
 
       final index = _devices.indexWhere((d) => d.deviceId == deviceId);
       if (index != -1) {
-        // Update device status and simple state
         final bool? isOn = event['is_on'];
         final double? brightness = event['brightness']?.toDouble();
         
@@ -162,7 +162,6 @@ class DeviceProvider extends ChangeNotifier {
           if (brightness != null) _devices[index].dimLevel = brightness;
         }
 
-        // Update telemetry data
         final telemetry = Telemetry(
           deviceId: deviceId,
           timestamp: DateTime.now(),
@@ -212,9 +211,7 @@ class DeviceProvider extends ChangeNotifier {
     final residentFlat = user.flatId;
     final deviceFlat = device.flatId;
     if (residentFlat == null || deviceFlat == null) return false;
-    return deviceFlat == residentFlat ||
-        deviceFlat == 'flat_$residentFlat' ||
-        deviceFlat.endsWith('_$residentFlat');
+    return deviceFlat == residentFlat;
   }
 
   bool canControlDevice(Device device, AppUser? user) {
@@ -275,7 +272,7 @@ class DeviceProvider extends ChangeNotifier {
 
   int totalCountFor(AppUser? user) => visibleDevices(user).length;
 
-  /// Toggles device on/off using standardized executeDeviceCommand
+  /// Toggles device using executeDeviceCommand (Phase 7)
   Future<void> toggleDevice(Device device, {String requestedBy = 'app_user'}) async {
     final idx = _devices.indexWhere((d) => d.deviceId == device.deviceId);
     if (idx == -1) return;
@@ -283,17 +280,15 @@ class DeviceProvider extends ChangeNotifier {
     final newState = !_devices[idx].isOn;
     final String command = newState ? 'on' : 'off';
     
-    // API Call using the official clientId if available, or fallback
-    final success = await _apiRepo.executeDeviceCommand(
-      _clientId ?? 'tenant_root',
+    final success = await _deviceService.sendCommand(
+      _clientId ?? '',
       device.deviceId, 
       command,
       null
     );
 
     if (success) {
-      final updated = _devices[idx].copyWith(isOn: newState);
-      _devices[idx] = updated;
+      _devices[idx] = _devices[idx].copyWith(isOn: newState);
       _save();
       notifyListeners();
     }
@@ -303,9 +298,8 @@ class DeviceProvider extends ChangeNotifier {
     final idx = _devices.indexWhere((d) => d.deviceId == device.deviceId);
     if (idx == -1) return;
 
-    // API Call
-    final success = await _apiRepo.executeDeviceCommand(
-      _clientId ?? 'tenant_root',
+    final success = await _deviceService.sendCommand(
+      _clientId ?? '',
       device.deviceId, 
       'brightness',
       value.toInt()
@@ -361,18 +355,10 @@ class DeviceProvider extends ChangeNotifier {
       macAddress: macAddress.trim().toUpperCase(),
       tenantId: 'aurabrain',
       buildingId: propertyId?.trim() ?? '',
-      floorId: resolvedFloorId == null || resolvedFloorId.isEmpty
-          ? null
-          : resolvedFloorId,
-      roomId: resolvedRoomId == null || resolvedRoomId.isEmpty
-          ? null
-          : resolvedRoomId,
-      towerId: resolvedFloorId == null || resolvedFloorId.isEmpty
-          ? null
-          : resolvedFloorId,
-      zone: roomName?.trim().isNotEmpty == true
-          ? roomName!.trim()
-          : 'Unassigned',
+      floorId: resolvedFloorId,
+      roomId: resolvedRoomId,
+      towerId: resolvedFloorId,
+      zone: roomName?.trim().isNotEmpty == true ? roomName!.trim() : 'Unassigned',
       lastHeartbeat: DateTime.now(),
     );
     _devices.add(item);
@@ -405,44 +391,26 @@ class DeviceProvider extends ChangeNotifier {
   }
 
   Future<void> renameRoom(String roomId, String roomName) async {
-    var changed = false;
-    for (var index = 0; index < _devices.length; index++) {
-      final item = _devices[index];
-      if (item.roomId == roomId && item.zone != roomName.trim()) {
-        _devices[index] = item.copyWith(zone: roomName.trim());
-        changed = true;
+    for (var i = 0; i < _devices.length; i++) {
+      if (_devices[i].roomId == roomId) {
+        _devices[i] = _devices[i].copyWith(zone: roomName);
       }
     }
-    if (changed) await _saveAndNotify();
+    await _saveAndNotify();
   }
 
   Future<void> deleteDevicesForRoom(String roomId) async {
-    final ids = _devices
-        .where((item) => item.roomId == roomId)
-        .map((item) => item.deviceId)
-        .toSet();
-    _devices.removeWhere((item) => ids.contains(item.deviceId));
-    _latestTelemetry.removeWhere((key, value) => ids.contains(key));
+    _devices.removeWhere((item) => item.roomId == roomId);
     await _saveAndNotify();
   }
 
   Future<void> deleteDevicesForFloor(String floorId) async {
-    final ids = _devices
-        .where((item) => item.floorId == floorId)
-        .map((item) => item.deviceId)
-        .toSet();
-    _devices.removeWhere((item) => ids.contains(item.deviceId));
-    _latestTelemetry.removeWhere((key, value) => ids.contains(key));
+    _devices.removeWhere((item) => item.floorId == floorId);
     await _saveAndNotify();
   }
 
   Future<void> deleteDevicesForProperty(String propertyId) async {
-    final ids = _devices
-        .where((item) => item.buildingId == propertyId)
-        .map((item) => item.deviceId)
-        .toSet();
-    _devices.removeWhere((item) => ids.contains(item.deviceId));
-    _latestTelemetry.removeWhere((key, value) => ids.contains(key));
+    _devices.removeWhere((item) => item.buildingId == propertyId);
     await _saveAndNotify();
   }
 
@@ -450,9 +418,9 @@ class DeviceProvider extends ChangeNotifier {
     try {
       final stored = await _repository.load();
       if (stored != null) {
-        _devices
-          ..clear()
-          ..addAll(stored);
+        _devices..clear()..addAll(stored);
+      } else {
+        _devices..clear()..addAll(MockData.demoDevices());
       }
     } catch (error) {
       _loadError = 'Could not load saved devices: $error';

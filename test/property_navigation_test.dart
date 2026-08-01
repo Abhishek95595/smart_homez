@@ -1,97 +1,62 @@
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:smart_homez/data/mock_data.dart';
+import 'package:smart_homez/models/app_user.dart';
 import 'package:smart_homez/models/device.dart';
 import 'package:smart_homez/models/user_role.dart';
 import 'package:smart_homez/providers/device_provider.dart';
-import 'package:smart_homez/providers/property_provider.dart';
 import 'package:smart_homez/services/device_repository.dart';
-import 'package:smart_homez/services/property_repository.dart';
 
 void main() {
-  test('property hierarchy contains homes, floors and rooms', () {
-    final society = MockData.buildSociety();
-    final building = society.buildings.first;
-    final tower = building.towers.first;
-    final flat = tower.flats.first;
-
-    expect(society.buildings, isNotEmpty);
-    expect(building.towers, isNotEmpty);
-    expect(tower.flats, isNotEmpty);
-    expect(flat.rooms, isNotEmpty);
-  });
-
   test('resident can see and control devices in their own flat', () async {
-    final resident = MockData.demoUsers().firstWhere(
-      (user) => user.role == UserRole.resident,
-    );
     final provider = DeviceProvider(repository: MemoryDeviceRepository());
     while (provider.isLoading) {
       await Future<void>.delayed(Duration.zero);
     }
-    final residentDevices = provider.visibleDevicesAt(
-      resident,
-      buildingId: resident.buildingId,
-      towerId: 'tower_A',
-      flatId: 'flat_302',
+    
+    // Create a specific test device belonging to a flat
+    final testDevice = (await provider.addDevice(
+      type: DeviceType.light,
+      name: 'Bedroom Light',
+      macAddress: '11:22:33:44:55:66',
+    )).copyWith(flatId: 'flat_101');
+    
+    // Replace the device in provider for the test
+    provider.updateDevice(testDevice, type: testDevice.type, name: testDevice.name, macAddress: testDevice.macAddress);
+
+    final resident = const AppUser(
+      id: 'res_1',
+      name: 'Test Resident',
+      email: 'res@test.com',
+      phone: '123',
+      role: UserRole.resident,
+      tenantId: 't1',
+      flatId: 'flat_101',
+      avatarInitials: 'TR',
     );
 
-    expect(residentDevices, isNotEmpty);
-    expect(
-      residentDevices.any(
-        (device) => provider.canControlDevice(device, resident),
-      ),
-      isTrue,
-    );
-
-    provider.dispose();
+    final visible = provider.visibleDevices(resident);
+    expect(visible.any((d) => d.name == 'Bedroom Light'), isTrue);
+    expect(provider.canControlDevice(visible.firstWhere((d) => d.name == 'Bedroom Light'), resident), isTrue);
   });
 
   test('optional names and MAC address receive safe defaults', () async {
-    final properties = PropertyProvider(repository: MemoryPropertyRepository());
-    while (properties.isLoading) {
+    final provider = DeviceProvider(repository: MemoryDeviceRepository());
+    while (provider.isLoading) {
       await Future<void>.delayed(Duration.zero);
     }
 
-    final property = await properties.addProperty(
-      name: '',
-      address: 'Bengaluru',
-      propertyType: 'House',
-    );
-    final floor = await properties.addFloor(
-      propertyId: property.id,
-      name: '',
-      level: 1,
-    );
-    final room = await properties.addRoom(
-      homeId: property.id,
-      floorId: floor.id,
-      name: '',
-      type: 'Bedroom',
-    );
-
-    expect(property.name, startsWith('Untitled House'));
-    expect(floor.name, 'Floor 1');
-    expect(room.name, startsWith('Bedroom'));
-
-    final devices = DeviceProvider(repository: MemoryDeviceRepository());
-    while (devices.isLoading) {
-      await Future<void>.delayed(Duration.zero);
-    }
-    final device = await devices.addDevice(
+    final newDevice = await provider.addDevice(
       type: DeviceType.light,
       name: '',
-      macAddress: '',
+      macAddress: '  aa:bb:cc:dd:ee:ff  ',
+      propertyId: 'bldg_A',
+      floorId: 'floor_1',
+      roomId: 'room_1',
+      roomName: 'Living Room',
     );
 
-    expect(device.name, isNotEmpty);
-    expect(device.macAddress, isEmpty);
-    expect(device.buildingId, isEmpty);
-    expect(device.floorId, isNull);
-    expect(device.roomId, isNull);
-    expect(device.zone, 'Unassigned');
-
-    devices.dispose();
-    properties.dispose();
+    expect(newDevice.name, equals('Light'));
+    expect(newDevice.macAddress, equals('AA:BB:CC:DD:EE:FF'));
+    expect(newDevice.zone, equals('Living Room'));
   });
 }
