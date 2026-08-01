@@ -7,21 +7,22 @@ import '../models/app_user.dart';
 import '../models/device.dart';
 import '../models/telemetry.dart';
 import '../models/user_role.dart';
-import '../services/realtime_service.dart';
 import '../services/device_repository.dart';
 import '../services/tenant_api_repository.dart';
+import '../services/sse_service.dart';
 
-/// Manages device registry + live state. Wraps command sending
-/// (would publish to anvya/{tenant}/{building}/{device}/command in prod).
+/// Manages device registry + live state. Wraps command sending.
 class DeviceProvider extends ChangeNotifier {
   final DeviceRepository _repository;
   final TenantApiRepository _apiRepo = TenantApiRepository();
+  final SseService _sseService = SseService();
   final List<Device> _devices = MockData.demoDevices();
   final Map<String, Telemetry> _latestTelemetry = {};
-  StreamSubscription<Telemetry>? _sub;
+  StreamSubscription<Map<String, dynamic>>? _sseSubscription;
   bool _isLoading = true;
   bool _isDisposed = false;
   String? _loadError;
+  String? _clientId;
 
   DeviceProvider({DeviceRepository? repository})
     : _repository = repository ?? HiveDeviceRepository() {
@@ -33,7 +34,7 @@ class DeviceProvider extends ChangeNotifier {
   String? get loadError => _loadError;
 
   void setClientId(String? id) {
-    // Retained for logic compatibility, though not currently used for filtering
+    // Retained for logic compatibility
   }
 
   List<Device> get controllableDevices =>
@@ -82,6 +83,7 @@ class DeviceProvider extends ChangeNotifier {
   }
 
   Future<void> syncFromApi(String clientId) async {
+    _clientId = clientId;
     _isLoading = true;
     notifyListeners();
 
@@ -140,17 +142,44 @@ class DeviceProvider extends ChangeNotifier {
       _devices.where((d) => d.status == DeviceStatus.offline).length;
   int get totalCount => _devices.length;
 
-  void startRealtime() {
-    RealtimeService.instance.start(_devices);
-    _sub = RealtimeService.instance.telemetryStream.listen((t) {
-      _latestTelemetry[t.deviceId] = t;
-      notifyListeners();
+  /// Start real-time sync via SSE
+  void startRealtime(String token) {
+    _sseService.startListening(token);
+    _sseSubscription = _sseService.eventStream.listen((event) {
+      final String? deviceId = event['device_id'];
+      if (deviceId == null) return;
+
+      final index = _devices.indexWhere((d) => d.deviceId == deviceId);
+      if (index != -1) {
+        // Update device status and simple state
+        final bool? isOn = event['is_on'];
+        final double? brightness = event['brightness']?.toDouble();
+        
+        if (isOn != null || brightness != null) {
+          _devices[index] = _devices[index].copyWith(
+            isOn: isOn ?? _devices[index].isOn,
+          );
+          if (brightness != null) _devices[index].dimLevel = brightness;
+        }
+
+        // Update telemetry data
+        final telemetry = Telemetry(
+          deviceId: deviceId,
+          timestamp: DateTime.now(),
+          power: event['power']?.toDouble(),
+          gasPpm: event['gas_ppm']?.toDouble(),
+          temperature: event['temperature']?.toDouble(),
+        );
+        _latestTelemetry[deviceId] = telemetry;
+
+        notifyListeners();
+      }
     });
   }
 
   void stopRealtime() {
-    _sub?.cancel();
-    RealtimeService.instance.stop();
+    _sseSubscription?.cancel();
+    _sseService.stopListening();
   }
 
   List<Device> devicesForZone(String zone) =>
@@ -161,15 +190,6 @@ class DeviceProvider extends ChangeNotifier {
 
   List<String> get zones => _devices.map((d) => d.zone).toSet().toList();
 
-  // ---------------------------------------------------------------------
-  // Role-based scoping (RBAC)
-  // ---------------------------------------------------------------------
-
-  /// Devices visible to the given user, per PRD role matrix:
-  /// - Super Admin / Facility Manager: full building/tower hierarchy.
-  /// - Maintenance: full visibility (needs to diagnose/fix any device).
-  /// - Security: only safety sensors + common-area devices (no private flats).
-  /// - Resident: only their own flat's devices + shared/common devices.
   List<Device> visibleDevices(AppUser? user) {
     if (user == null) return const [];
     switch (user.role) {
@@ -197,12 +217,6 @@ class DeviceProvider extends ChangeNotifier {
         deviceFlat.endsWith('_$residentFlat');
   }
 
-  /// Whether [user] is permitted to issue a command (toggle/dim) to [device].
-  /// - Super Admin / Facility Manager: any controllable device.
-  /// - Maintenance: common/shared infrastructure (pumps, scenes) — not
-  ///   private in-flat devices belonging to residents.
-  /// - Resident: only controllable devices inside their own flat.
-  /// - Security: view-only, cannot control anything.
   bool canControlDevice(Device device, AppUser? user) {
     if (user == null || !device.type.isControllable) return false;
     switch (user.role) {
@@ -224,8 +238,6 @@ class DeviceProvider extends ChangeNotifier {
   List<Device> devicesForZoneScoped(String zone, AppUser? user) =>
       visibleDevices(user).where((d) => d.zone == zone).toList();
 
-  /// Returns the role-visible devices at one level of the property hierarchy.
-  /// Any omitted location field is treated as "all" for that level.
   List<Device> visibleDevicesAt(
     AppUser? user, {
     String? buildingId,
@@ -263,18 +275,20 @@ class DeviceProvider extends ChangeNotifier {
 
   int totalCountFor(AppUser? user) => visibleDevices(user).length;
 
-  /// Toggles device on/off; in production sends MQTT command payload via
-  /// device.buildCommandPayload(command: 'relay_on'/'relay_off', ...).
+  /// Toggles device on/off using standardized executeDeviceCommand
   Future<void> toggleDevice(Device device, {String requestedBy = 'app_user'}) async {
     final idx = _devices.indexWhere((d) => d.deviceId == device.deviceId);
     if (idx == -1) return;
     
     final newState = !_devices[idx].isOn;
+    final String command = newState ? 'on' : 'off';
     
-    // API Call
-    final success = await _apiRepo.toggleDevice(
+    // API Call using the official clientId if available, or fallback
+    final success = await _apiRepo.executeDeviceCommand(
+      _clientId ?? 'tenant_root',
       device.deviceId, 
-      state: newState ? 1 : 0
+      command,
+      null
     );
 
     if (success) {
@@ -290,9 +304,11 @@ class DeviceProvider extends ChangeNotifier {
     if (idx == -1) return;
 
     // API Call
-    final success = await _apiRepo.toggleDevice(
+    final success = await _apiRepo.executeDeviceCommand(
+      _clientId ?? 'tenant_root',
       device.deviceId, 
-      brightness: value.toInt()
+      'brightness',
+      value.toInt()
     );
 
     if (success) {
@@ -343,7 +359,7 @@ class DeviceProvider extends ChangeNotifier {
       name: resolvedName,
       firmwareVersion: '1.0.0',
       macAddress: macAddress.trim().toUpperCase(),
-      tenantId: MockData.tenantId,
+      tenantId: 'aurabrain',
       buildingId: propertyId?.trim() ?? '',
       floorId: resolvedFloorId == null || resolvedFloorId.isEmpty
           ? null
@@ -433,10 +449,7 @@ class DeviceProvider extends ChangeNotifier {
   Future<void> _load() async {
     try {
       final stored = await _repository.load();
-      if (stored == null) {
-        _attachLegacyRoomIds();
-        await _save();
-      } else {
+      if (stored != null) {
         _devices
           ..clear()
           ..addAll(stored);
@@ -446,29 +459,6 @@ class DeviceProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       if (!_isDisposed) notifyListeners();
-    }
-  }
-
-  void _attachLegacyRoomIds() {
-    for (var index = 0; index < _devices.length; index++) {
-      final device = _devices[index];
-      String? roomId;
-      if (device.flatId == 'flat_302') {
-        switch (device.zone.toLowerCase()) {
-          case 'living room':
-            roomId = 'room_302_living';
-            break;
-          case 'bedroom':
-            roomId = 'room_302_bedroom';
-            break;
-          case 'kitchen':
-            roomId = 'room_302_kitchen';
-            break;
-        }
-      }
-      if (roomId != null) {
-        _devices[index] = device.copyWith(floorId: 'floor_3', roomId: roomId);
-      }
     }
   }
 
@@ -482,8 +472,8 @@ class DeviceProvider extends ChangeNotifier {
   @override
   void dispose() {
     _isDisposed = true;
-    _sub?.cancel();
-    RealtimeService.instance.stop();
+    _sseSubscription?.cancel();
+    _sseService.stopListening();
     super.dispose();
   }
 }

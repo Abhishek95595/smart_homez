@@ -19,6 +19,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoggedIn => _currentUser != null;
   UserRole get role => _currentUser?.role ?? UserRole.resident;
   String? get resolvedClientId => _resolvedClientId;
+  String? get token => _apiService.token;
 
   /// Authenticate with the real backend API using the refined Dio flow.
   Future<String?> loginWithApi(
@@ -37,7 +38,11 @@ class AuthProvider extends ChangeNotifier {
 
       final loginData = response.data;
       if (loginData['success'] != true || loginData['token'] == null) {
-        return loginData['error'] ?? 'Login failed. Please check your credentials.';
+        // Fallback to token exchange if mobile login fails but credentials might be valid for Tenant API
+        final success = await _apiService.fetchToken(email, password);
+        if (!success) {
+          return loginData['error'] ?? 'Login failed. Please check your credentials.';
+        }
       }
 
       final String? apiClientId = loginData['clientId'];
@@ -86,7 +91,10 @@ class AuthProvider extends ChangeNotifier {
       propertyProvider.setClientId(finalId);
       try {
         await propertyProvider.syncFromApi(finalId);
-        await deviceProvider.syncFromApi(finalId);
+        // Start real-time sync with the fresh token
+        if (_apiService.token != null) {
+          deviceProvider.startRealtime(_apiService.token!);
+        }
       } catch (syncError) {
         debugPrint('[Auth Sync Error] $syncError');
       }

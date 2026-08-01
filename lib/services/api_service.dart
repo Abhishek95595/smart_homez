@@ -9,6 +9,7 @@ class ApiService {
   
   String? _clientId;
   String? _clientSecret;
+  String? _cachedToken;
 
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
@@ -26,6 +27,7 @@ class ApiService {
         final token = await _storage.read(key: 'jwt_token');
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
+          _cachedToken = token;
         }
         debugPrint('[API Request] ${options.method} ${options.path}');
         return handler.next(options);
@@ -37,7 +39,6 @@ class ApiService {
       onError: (DioException e, handler) async {
         debugPrint('[API Error] ${e.type} | ${e.message}');
         
-        // Handle 401 Unauthorized by attempting a token refresh
         if (e.response?.statusCode == 401 && _clientId != null && _clientSecret != null) {
           debugPrint('[API Auth] 401 Unauthorized. Attempting automatic token refresh...');
           
@@ -45,12 +46,10 @@ class ApiService {
           if (success) {
             debugPrint('[API Auth] Token refreshed, retrying original request...');
             
-            // Re-fetch the token and update the original request options
             final newToken = await _storage.read(key: 'jwt_token');
             final options = e.requestOptions;
             options.headers['Authorization'] = 'Bearer $newToken';
             
-            // Clone the request for retry
             final response = await _dio.fetch(options);
             return handler.resolve(response);
           }
@@ -65,11 +64,11 @@ class ApiService {
     _clientSecret = secret;
   }
 
+  String? get token => _cachedToken;
+
   Future<Response> post(String path, dynamic body) => _dio.post(path, data: body);
   Future<Response> get(String path) => _dio.get(path);
 
-  /// Official method to POST /api/v1/mobile/login with email and password.
-  /// Saves the returned JWT token securely.
   Future<Response> mobileLogin(String email, String password) async {
     final response = await _dio.post('/api/v1/mobile/login', data: {
       'email': email,
@@ -80,12 +79,12 @@ class ApiService {
       final token = response.data['token'];
       if (token != null) {
         await _storage.write(key: 'jwt_token', value: token);
+        _cachedToken = token;
       }
     }
     return response;
   }
 
-  /// Official method to exchange ClientId/Secret for a JWT token.
   Future<bool> fetchToken(String clientId, String clientSecret) async {
     _clientId = clientId;
     _clientSecret = clientSecret;
@@ -100,6 +99,7 @@ class ApiService {
         final token = response.data['token'];
         if (token != null) {
           await _storage.write(key: 'jwt_token', value: token);
+          _cachedToken = token;
           return true;
         }
       }
@@ -109,7 +109,6 @@ class ApiService {
     return false;
   }
 
-  /// Legacy login fallback
   Future<Response> login(String email, String password) async {
     final response = await _dio.post('/api/Auth/login', data: {
       'email': email,
@@ -120,6 +119,7 @@ class ApiService {
       final token = response.data['token'];
       if (token != null) {
         await _storage.write(key: 'jwt_token', value: token);
+        _cachedToken = token;
       }
     }
     return response;
@@ -127,6 +127,7 @@ class ApiService {
 
   Future<void> clearAuth() async {
     await _storage.delete(key: 'jwt_token');
+    _cachedToken = null;
     _clientId = null;
     _clientSecret = null;
   }

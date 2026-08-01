@@ -75,18 +75,28 @@ class TenantApiRepository {
     return [];
   }
 
-  Future<bool> toggleDevice(String deviceId, {int? state, int? brightness}) async {
+  /// Official method to send a device command per Swagger:
+  /// POST /api/v1/clients/{clientId}/devices/{deviceId}/command
+  Future<bool> executeDeviceCommand(
+    String clientId, 
+    String deviceId, 
+    String command, 
+    [dynamic value]
+  ) async {
     final response = await _api.post(
-      '/api/v1/devices/toggle',
-      ToggleRequest(deviceId: deviceId, state: state, brightness: brightness),
+      '/api/v1/clients/$clientId/devices/$deviceId/command',
+      {
+        'command': command,
+        'value': value,
+      },
     );
     return response.statusCode == 200;
   }
 
-  Future<bool> sendDeviceCommand(String clientId, String deviceId, String command, dynamic value) async {
+  Future<bool> toggleDevice(String deviceId, {int? state, int? brightness}) async {
     final response = await _api.post(
-      '/api/v1/clients/$clientId/devices/$deviceId/command',
-      DeviceCommandRequestV1(command: command, value: value),
+      '/api/v1/devices/toggle',
+      ToggleRequest(deviceId: deviceId, state: state, brightness: brightness),
     );
     return response.statusCode == 200;
   }

@@ -33,7 +33,11 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    context.read<DeviceProvider>().startRealtime();
+    // Start real-time sync with JWT token
+    final auth = context.read<AuthProvider>();
+    if (auth.token != null) {
+      context.read<DeviceProvider>().startRealtime(auth.token!);
+    }
     context.read<AlertProvider>().listenRealtime();
   }
 
@@ -45,7 +49,6 @@ class _MainShellState extends State<MainShell> {
 
   void _onTabTapped(int index) {
     if (_index == index) {
-      // Pop to root if the same tab is tapped
       _navigatorKeys[index].currentState?.popUntil((route) => route.isFirst);
     } else {
       setState(() => _index = index);
@@ -100,7 +103,6 @@ class _MainShellState extends State<MainShell> {
     final auth = context.watch<AuthProvider>();
     final role = auth.role;
     
-    // Sync clientId to PropertyProvider
     context.read<PropertyProvider>().setClientId(auth.resolvedClientId);
 
     final tabs = _tabsFor(role);
@@ -114,15 +116,8 @@ class _MainShellState extends State<MainShell> {
         if (navigator != null && navigator.canPop()) {
           navigator.pop();
         } else {
-          // If we can't pop anymore in the current tab, we could either switch to home
-          // or allow the app to close. For now, let's just let it close if at home root.
           if (safeIndex != 0) {
             setState(() => _index = 0);
-          } else {
-            // If at home root, we could minimize app or exit
-            // For now, let's exit the app context (requires SystemNavigator.pop or similar)
-            // But usually, setting canPop to true would handle this. 
-            // Since we use PopScope(canPop: false), we need to manually handle exit.
           }
         }
       },
