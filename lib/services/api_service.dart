@@ -19,6 +19,11 @@ class ApiService {
       baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
+      // Fix 415 error by ensuring Content-Type is always application/json
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
       validateStatus: (status) => status != null && status < 500,
     ));
 
@@ -29,6 +34,11 @@ class ApiService {
           options.headers['Authorization'] = 'Bearer $token';
           _cachedToken = token;
         }
+        // Double-check Content-Type for write operations
+        if (options.method == 'POST' || options.method == 'PUT' || options.method == 'PATCH') {
+          options.headers['Content-Type'] = 'application/json';
+        }
+
         debugPrint('[API Request] ${options.method} ${options.path}');
         return handler.next(options);
       },

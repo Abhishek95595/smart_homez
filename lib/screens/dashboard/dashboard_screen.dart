@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/app_user.dart';
+import '../../models/device.dart';
 import '../../models/user_role.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
@@ -19,6 +20,7 @@ import '../devices/devices_screen.dart';
 import '../energy/energy_screen.dart';
 import '../profile/profile_screen.dart';
 import '../properties/floors_screen.dart';
+import '../properties/homes_screen.dart';
 import '../properties/management_dialogs.dart';
 import '../water/water_screen.dart';
 
@@ -31,25 +33,6 @@ class DashboardScreen extends StatelessWidget {
     if (hour < 12) return 'Good Morning';
     if (hour < 17) return 'Good Afternoon';
     return 'Good Evening';
-  }
-
-  Future<void> _addProperty(BuildContext context) async {
-    final provider = context.read<PropertyProvider>();
-    final result = await showPropertyForm(
-      context,
-      nameExists: provider.propertyNameExists,
-    );
-    if (result == null || !context.mounted) return;
-    await provider.addProperty(
-      name: result.name,
-      address: result.address,
-      category: result.category,
-      propertyType: result.propertyType,
-      timezone: result.timezone,
-      currency: result.currency,
-      businessStart: result.businessStart,
-      businessEnd: result.businessEnd,
-    );
   }
 
   @override
@@ -176,11 +159,16 @@ class _ResidentialDashboard extends StatelessWidget {
             actionLabel: 'View All',
             onAction: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const FloorsScreen()),
+              MaterialPageRoute(builder: (_) => const HomesScreen()),
             ),
           ),
           const SizedBox(height: 14),
-          if (propertyProvider.properties.isEmpty)
+          if (propertyProvider.isLoading && propertyProvider.properties.isEmpty)
+            const Center(child: Padding(
+              padding: EdgeInsets.all(24.0),
+              child: CircularProgressIndicator(),
+            ))
+          else if (propertyProvider.properties.isEmpty)
             const AppStateCard.empty(
               title: 'No properties mapped',
               message: 'Add your first property to start monitoring.',
@@ -188,13 +176,22 @@ class _ResidentialDashboard extends StatelessWidget {
           else
             ...propertyProvider.properties.take(2).map((p) {
               final floors = propertyProvider.floorsFor(p.id);
+              final floorIds = floors.map((f) => f.id).toSet();
+              final rooms = propertyProvider.rooms.where(
+                (r) => floorIds.contains(r.floorId),
+              ).toList();
+              final devices = deviceProvider.visibleDevicesAt(user, buildingId: p.id);
+
               return PropertySummaryCard(
                 property: p,
                 floorCount: floors.length,
-                roomCount: propertyProvider.rooms.where((r) => floors.any((f) => f.id == r.floorId)).length,
-                deviceCount: deviceProvider.visibleDevicesAt(user, buildingId: p.id).length,
-                onlineDeviceCount: deviceProvider.onlineCountFor(user),
-                onOpen: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FloorsScreen(propertyId: p.id))),
+                roomCount: rooms.length,
+                deviceCount: devices.length,
+                onlineDeviceCount: devices.where((d) => d.status == DeviceStatus.online).length,
+                onOpen: () => Navigator.push(
+                  context, 
+                  MaterialPageRoute(builder: (_) => FloorsScreen(propertyId: p.id))
+                ),
                 onHistory: () {},
                 onEdit: () {},
                 onDelete: () {},
@@ -646,7 +643,7 @@ class _EnergyConsumptionCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
+                color: Colors.white10,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
