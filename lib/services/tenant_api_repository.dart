@@ -32,6 +32,9 @@ class TenantApiRepository {
             .map((item) => ApiHomeResponse.fromJson(item))
             .toList();
       }
+    } else if (response.statusCode == 404) {
+      // Return empty list if client has no homes
+      return [];
     }
     return [];
   }
@@ -45,6 +48,8 @@ class TenantApiRepository {
             .map((item) => ApiFloorResponse.fromJson(item))
             .toList();
       }
+    } else if (response.statusCode == 404) {
+      return [];
     }
     return [];
   }
@@ -58,6 +63,8 @@ class TenantApiRepository {
             .map((item) => ApiRoomResponse.fromJson(item))
             .toList();
       }
+    } else if (response.statusCode == 404) {
+      return [];
     }
     return [];
   }
@@ -71,6 +78,8 @@ class TenantApiRepository {
             .map((item) => ApiDeviceResponse.fromJson(item))
             .toList();
       }
+    } else if (response.statusCode == 404) {
+      return [];
     }
     return [];
   }
@@ -110,6 +119,8 @@ class TenantApiRepository {
             .map((item) => ApiAutomationResponse.fromJson(item))
             .toList();
       }
+    } else if (response.statusCode == 404) {
+      return [];
     }
     return [];
   }
@@ -131,6 +142,8 @@ class TenantApiRepository {
             .map((item) => ApiSceneResponse.fromJson(item))
             .toList();
       }
+    } else if (response.statusCode == 404) {
+      return [];
     }
     return [];
   }

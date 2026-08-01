@@ -26,6 +26,13 @@ class PropertyProvider extends ChangeNotifier {
 
   void setClientId(String? id) {
     _clientId = id;
+    if (id != null) {
+      // Clear mock data immediately when a real client ID is set
+      _properties.clear();
+      _floors.clear();
+      _rooms.clear();
+      notifyListeners();
+    }
   }
 
   bool get isLoading => _isLoading;
@@ -100,7 +107,7 @@ class PropertyProvider extends ChangeNotifier {
   }
 
   void _seedDefaults() {
-    if (_properties.isNotEmpty) return;
+    if (_properties.isNotEmpty || _clientId != null) return;
     _properties.addAll(const [
       ManagedProperty(
         id: 'bldg_A',
@@ -129,18 +136,18 @@ class PropertyProvider extends ChangeNotifier {
     try {
       final apiHomes = await _apiRepo.getHomes(clientId);
       
-      // We clear mock data only if we actually received real homes from the API
-      if (apiHomes.isNotEmpty) {
-        _properties.clear();
-        _floors.clear();
-        _rooms.clear();
+      // Clear data state to be replaced by API results (or empty list)
+      _properties.clear();
+      _floors.clear();
+      _rooms.clear();
 
+      if (apiHomes.isNotEmpty) {
         for (final h in apiHomes) {
           _properties.add(ManagedProperty(
             id: h.id,
             name: h.name,
             address: h.address,
-            latitude: h.latitude != null ? h.latitude.toString() : null, // Store as string if needed
+            latitude: h.latitude != null ? h.latitude.toString() : null,
             longitude: h.longitude != null ? h.longitude.toString() : null,
           ));
 
@@ -166,8 +173,8 @@ class PropertyProvider extends ChangeNotifier {
             }
           }
         }
-        await _save();
       }
+      await _save();
     } catch (e) {
       debugPrint('[Sync Error] Property Sync: $e');
     } finally {
