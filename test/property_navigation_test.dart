@@ -12,16 +12,21 @@ void main() {
     while (provider.isLoading) {
       await Future<void>.delayed(Duration.zero);
     }
-    
+
     // Create a specific test device belonging to a flat
     final testDevice = (await provider.addDevice(
       type: DeviceType.light,
       name: 'Bedroom Light',
       macAddress: '11:22:33:44:55:66',
     )).copyWith(flatId: 'flat_101');
-    
+
     // Replace the device in provider for the test
-    provider.updateDevice(testDevice, type: testDevice.type, name: testDevice.name, macAddress: testDevice.macAddress);
+    provider.updateDevice(
+      testDevice,
+      type: testDevice.type,
+      name: testDevice.name,
+      macAddress: testDevice.macAddress,
+    );
 
     final resident = const AppUser(
       id: 'res_1',
@@ -36,7 +41,13 @@ void main() {
 
     final visible = provider.visibleDevices(resident);
     expect(visible.any((d) => d.name == 'Bedroom Light'), isTrue);
-    expect(provider.canControlDevice(visible.firstWhere((d) => d.name == 'Bedroom Light'), resident), isTrue);
+    expect(
+      provider.canControlDevice(
+        visible.firstWhere((d) => d.name == 'Bedroom Light'),
+        resident,
+      ),
+      isTrue,
+    );
   });
 
   test('optional names and MAC address receive safe defaults', () async {

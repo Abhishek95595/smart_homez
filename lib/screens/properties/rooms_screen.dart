@@ -29,9 +29,9 @@ class _RoomsScreenState extends State<RoomsScreen> {
     if (widget.homeId != null && widget.floorId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context.read<PropertyProvider>().fetchRoomsForFloor(
-              widget.homeId!,
-              widget.floorId!,
-            );
+          widget.homeId!,
+          widget.floorId!,
+        );
       });
     }
   }
@@ -60,7 +60,9 @@ class _RoomsScreenState extends State<RoomsScreen> {
           provider.roomNameExists(room.floorId, name, excludingId: room.id),
     );
     if (result == null || !context.mounted) return;
-    final resolvedName = result.name.trim().isEmpty ? room.name : result.name.trim();
+    final resolvedName = result.name.trim().isEmpty
+        ? room.name
+        : result.name.trim();
     await provider.updateRoom(room, name: resolvedName, type: result.type);
     if (!context.mounted) return;
     await context.read<DeviceProvider>().renameRoom(room.id, resolvedName);
@@ -128,27 +130,27 @@ class _RoomsScreenState extends State<RoomsScreen> {
         child: provider.isLoading
             ? const AppLoadingState(message: 'Loading rooms…')
             : currentFloorId.isEmpty
-                ? const AppStateCard.empty(
-                    title: 'No floors found',
-                    message: 'Add a floor first to manage its rooms.',
-                  )
-                : _RoomResults(
-                    rooms: rooms,
-                    onOpen: (r) => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => DevicesScreen(
-                          title: r.name,
-                          propertyId: currentFloor?.propertyId,
-                          floorId: r.floorId,
-                          roomId: r.id,
-                          roomName: r.name,
-                        ),
-                      ),
+            ? const AppStateCard.empty(
+                title: 'No floors found',
+                message: 'Add a floor first to manage its rooms.',
+              )
+            : _RoomResults(
+                rooms: rooms,
+                onOpen: (r) => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DevicesScreen(
+                      title: r.name,
+                      propertyId: currentFloor?.propertyId,
+                      floorId: r.floorId,
+                      roomId: r.id,
+                      roomName: r.name,
                     ),
-                    onEdit: (r) => _edit(context, r),
-                    onDelete: (r) => _delete(context, r),
                   ),
+                ),
+                onEdit: (r) => _edit(context, r),
+                onDelete: (r) => _delete(context, r),
+              ),
       ),
     );
   }

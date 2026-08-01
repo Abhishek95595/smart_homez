@@ -9,12 +9,9 @@ class FloorModel {
   @JsonKey(name: 'floor_number')
   final int floorNumber;
 
-  FloorModel({
-    required this.id,
-    required this.name,
-    required this.floorNumber,
-  });
+  FloorModel({required this.id, required this.name, required this.floorNumber});
 
-  factory FloorModel.fromJson(Map<String, dynamic> json) => _$FloorModelFromJson(json);
+  factory FloorModel.fromJson(Map<String, dynamic> json) =>
+      _$FloorModelFromJson(json);
   Map<String, dynamic> toJson() => _$FloorModelToJson(this);
 }

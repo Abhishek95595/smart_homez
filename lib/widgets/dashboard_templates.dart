@@ -21,10 +21,16 @@ class DashboardStatGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: children.map((c) => Expanded(child: Padding(
-        padding: EdgeInsets.only(right: c == children.last ? 0 : 12),
-        child: c,
-      ))).toList(),
+      children: children
+          .map(
+            (c) => Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(right: c == children.last ? 0 : 12),
+                child: c,
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 }

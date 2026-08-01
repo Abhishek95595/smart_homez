@@ -11,10 +11,7 @@ class AuthService {
   Future<AuthResponse> fetchToken(String clientId, String clientSecret) async {
     final response = await _api.post(
       ApiEndpoints.authToken,
-      data: {
-        'clientId': clientId,
-        'clientSecret': clientSecret,
-      },
+      data: {'clientId': clientId, 'clientSecret': clientSecret},
     );
 
     final auth = AuthResponse.fromJson(response.data);
@@ -29,10 +26,7 @@ class AuthService {
   Future<AuthResponse> tenantLogin(String email, String password) async {
     final response = await _api.post(
       ApiEndpoints.authLogin,
-      data: {
-        'email': email,
-        'password': password,
-      },
+      data: {'email': email, 'password': password},
     );
 
     final auth = AuthResponse.fromJson(response.data);

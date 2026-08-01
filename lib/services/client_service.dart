@@ -16,11 +16,7 @@ class ClientService {
   }) async {
     final response = await _api.post(
       ApiEndpoints.resolveClient,
-      data: {
-        'email': email,
-        'phone': phone ?? '',
-        'name': name ?? 'App User',
-      },
+      data: {'email': email, 'phone': phone ?? '', 'name': name ?? 'App User'},
     );
 
     // Defensive parsing for likely wrappers {"success": true, "data": {...}}
@@ -41,9 +37,10 @@ class ClientService {
       debugPrint('[Client] Resolved UUID: ${client.id}');
       await _storage.write(key: 'resolved_client_uuid', value: client.id);
     }
-    
+
     return client;
   }
 
-  Future<String?> getResolvedUuid() => _storage.read(key: 'resolved_client_uuid');
+  Future<String?> getResolvedUuid() =>
+      _storage.read(key: 'resolved_client_uuid');
 }

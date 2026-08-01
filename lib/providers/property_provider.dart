@@ -16,7 +16,7 @@ class PropertyProvider extends ChangeNotifier {
   bool _isLoading = true;
   bool _isDisposed = false;
   String? _loadError;
-  String? _clientId; 
+  String? _clientId;
 
   PropertyProvider({PropertyRepository? repository, Uuid uuid = const Uuid()})
     : _repository = repository ?? HivePropertyRepository(),
@@ -133,42 +133,52 @@ class PropertyProvider extends ChangeNotifier {
 
     try {
       final apiHomes = await _hierarchyService.getHomes(clientId);
-      
+
       _properties.clear();
       _floors.clear();
       _rooms.clear();
 
       if (apiHomes.isNotEmpty) {
         for (final h in apiHomes) {
-          _properties.add(ManagedProperty(
-            id: h.id,
-            name: h.name,
-            address: h.address ?? '',
-            category: h.category ?? 'Residential',
-            propertyType: h.propertyType ?? 'House',
-            latitude: h.latitude != null ? h.latitude.toString() : null,
-            longitude: h.longitude != null ? h.longitude.toString() : null,
-          ));
+          _properties.add(
+            ManagedProperty(
+              id: h.id,
+              name: h.name,
+              address: h.address ?? '',
+              category: h.category ?? 'Residential',
+              propertyType: h.propertyType ?? 'House',
+              latitude: h.latitude != null ? h.latitude.toString() : null,
+              longitude: h.longitude != null ? h.longitude.toString() : null,
+            ),
+          );
 
           debugPrint('[Sync] Fetching floors for home: ${h.name} (${h.id})');
           final apiFloors = await _hierarchyService.getFloors(clientId, h.id);
           for (final f in apiFloors) {
-            _floors.add(ManagedFloor(
-              id: f.id,
-              propertyId: h.id,
-              name: f.name,
-              level: f.floorNumber,
-            ));
+            _floors.add(
+              ManagedFloor(
+                id: f.id,
+                propertyId: h.id,
+                name: f.name,
+                level: f.floorNumber,
+              ),
+            );
 
             debugPrint('[Sync] Fetching rooms for floor: ${f.name} (${f.id})');
-            final apiRooms = await _hierarchyService.getRooms(clientId, h.id, f.id);
+            final apiRooms = await _hierarchyService.getRooms(
+              clientId,
+              h.id,
+              f.id,
+            );
             for (final r in apiRooms) {
-              _rooms.add(ManagedRoom(
-                id: r.id,
-                floorId: f.id,
-                name: r.name,
-                type: 'Other',
-              ));
+              _rooms.add(
+                ManagedRoom(
+                  id: r.id,
+                  floorId: f.id,
+                  name: r.name,
+                  type: 'Other',
+                ),
+              );
             }
           }
         }
@@ -192,12 +202,14 @@ class PropertyProvider extends ChangeNotifier {
       final apiFloors = await _hierarchyService.getFloors(clientId, homeId);
       _floors.removeWhere((f) => f.propertyId == homeId);
       for (final f in apiFloors) {
-        _floors.add(ManagedFloor(
-          id: f.id,
-          propertyId: homeId,
-          name: f.name,
-          level: f.floorNumber,
-        ));
+        _floors.add(
+          ManagedFloor(
+            id: f.id,
+            propertyId: homeId,
+            name: f.name,
+            level: f.floorNumber,
+          ),
+        );
       }
       await _save();
     } catch (e) {
@@ -215,15 +227,16 @@ class PropertyProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final apiRooms = await _hierarchyService.getRooms(clientId, homeId, floorId);
+      final apiRooms = await _hierarchyService.getRooms(
+        clientId,
+        homeId,
+        floorId,
+      );
       _rooms.removeWhere((r) => r.floorId == floorId);
       for (final r in apiRooms) {
-        _rooms.add(ManagedRoom(
-          id: r.id,
-          floorId: floorId,
-          name: r.name,
-          type: 'Other',
-        ));
+        _rooms.add(
+          ManagedRoom(id: r.id, floorId: floorId, name: r.name, type: 'Other'),
+        );
       }
       await _save();
     } catch (e) {
@@ -285,7 +298,7 @@ class PropertyProvider extends ChangeNotifier {
             _properties.map((property) => property.name),
           )
         : enteredName;
-    
+
     String finalId = _uuid.v4();
 
     // Property management API calls will be implemented in Phase 8

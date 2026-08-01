@@ -37,7 +37,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (identifier.isEmpty || secret.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please enter both your Client ID/Email and Secret/Password.'),
+          content: Text(
+            'Please enter both your Client ID/Email and Secret/Password.',
+          ),
           backgroundColor: AppColors.critical,
         ),
       );
@@ -45,22 +47,22 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() => _loading = true);
-    
+
     final error = await context.read<AuthProvider>().loginWithApi(
-      identifier, 
-      secret, 
+      identifier,
+      secret,
       _selectedRole,
       propertyProvider: context.read<PropertyProvider>(),
       deviceProvider: context.read<DeviceProvider>(),
     );
-    
+
     if (!mounted) return;
     setState(() => _loading = false);
-    
+
     if (error == null) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MainShell()),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const MainShell()));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

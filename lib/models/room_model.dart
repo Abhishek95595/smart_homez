@@ -7,11 +7,9 @@ class RoomModel {
   final String id;
   final String name;
 
-  RoomModel({
-    required this.id,
-    required this.name,
-  });
+  RoomModel({required this.id, required this.name});
 
-  factory RoomModel.fromJson(Map<String, dynamic> json) => _$RoomModelFromJson(json);
+  factory RoomModel.fromJson(Map<String, dynamic> json) =>
+      _$RoomModelFromJson(json);
   Map<String, dynamic> toJson() => _$RoomModelToJson(this);
 }

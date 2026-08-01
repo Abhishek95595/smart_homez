@@ -24,15 +24,17 @@ class AutomationProvider extends ChangeNotifier {
       final apiRules = await _apiRepo.getAutomations();
       _rules.clear();
       for (final r in apiRules) {
-        _rules.add(AutomationRule(
-          id: r.id,
-          name: r.name,
-          trigger: 'Time/Sensor', // Placeholder for complex mapping
-          action: 'Run command',   // Placeholder
-          repeat: 'Custom',        // Placeholder
-          scene: 'Attached Scene', // Placeholder
-          enabled: r.isActive,
-        ));
+        _rules.add(
+          AutomationRule(
+            id: r.id,
+            name: r.name,
+            trigger: 'Time/Sensor', // Placeholder for complex mapping
+            action: 'Run command', // Placeholder
+            repeat: 'Custom', // Placeholder
+            scene: 'Attached Scene', // Placeholder
+            enabled: r.isActive,
+          ),
+        );
       }
     } catch (e) {
       debugPrint('Error fetching automations: $e');

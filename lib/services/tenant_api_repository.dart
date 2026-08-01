@@ -39,8 +39,13 @@ class TenantApiRepository {
     return [];
   }
 
-  Future<List<ApiFloorResponse>> getFloors(String clientId, String homeId) async {
-    final response = await _api.get('/api/v1/clients/$clientId/homes/$homeId/floors');
+  Future<List<ApiFloorResponse>> getFloors(
+    String clientId,
+    String homeId,
+  ) async {
+    final response = await _api.get(
+      '/api/v1/clients/$clientId/homes/$homeId/floors',
+    );
     if (response.statusCode == 200) {
       final data = response.data;
       if (data['success'] == true && data['data'] != null) {
@@ -54,8 +59,14 @@ class TenantApiRepository {
     return [];
   }
 
-  Future<List<ApiRoomResponse>> getRooms(String clientId, String homeId, String floorId) async {
-    final response = await _api.get('/api/v1/clients/$clientId/homes/$homeId/floors/$floorId/rooms');
+  Future<List<ApiRoomResponse>> getRooms(
+    String clientId,
+    String homeId,
+    String floorId,
+  ) async {
+    final response = await _api.get(
+      '/api/v1/clients/$clientId/homes/$homeId/floors/$floorId/rooms',
+    );
     if (response.statusCode == 200) {
       final data = response.data;
       if (data['success'] == true && data['data'] != null) {
@@ -87,22 +98,23 @@ class TenantApiRepository {
   /// Official method to send a device command per Swagger:
   /// POST /api/v1/clients/{clientId}/devices/{deviceId}/command
   Future<bool> executeDeviceCommand(
-    String clientId, 
-    String deviceId, 
-    String command, 
-    [dynamic value]
-  ) async {
+    String clientId,
+    String deviceId,
+    String command, [
+    dynamic value,
+  ]) async {
     final response = await _api.post(
       '/api/v1/clients/$clientId/devices/$deviceId/command',
-      {
-        'command': command,
-        'value': value,
-      },
+      {'command': command, 'value': value},
     );
     return response.statusCode == 200;
   }
 
-  Future<bool> toggleDevice(String deviceId, {int? state, int? brightness}) async {
+  Future<bool> toggleDevice(
+    String deviceId, {
+    int? state,
+    int? brightness,
+  }) async {
     final response = await _api.post(
       '/api/v1/devices/toggle',
       ToggleRequest(deviceId: deviceId, state: state, brightness: brightness),
@@ -126,10 +138,9 @@ class TenantApiRepository {
   }
 
   Future<bool> toggleAutomation(String id, bool isActive) async {
-    final response = await _api.post(
-      '/api/v1/automations/$id/toggle',
-      {'isActive': isActive},
-    );
+    final response = await _api.post('/api/v1/automations/$id/toggle', {
+      'isActive': isActive,
+    });
     return response.statusCode == 200;
   }
 

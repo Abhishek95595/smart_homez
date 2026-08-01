@@ -121,7 +121,8 @@ class EnergyScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   _StatCard(
                     label: 'Estimated Monthly Cost',
-                    value: '₹${energy.estimatedMonthlyCost().toStringAsFixed(0)}',
+                    value:
+                        '₹${energy.estimatedMonthlyCost().toStringAsFixed(0)}',
                     icon: Icons.currency_rupee_rounded,
                     color: AppColors.success,
                     fullWidth: true,
@@ -253,9 +254,16 @@ class _WeeklyChart extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _chartHeaderStat('WEEKLY TOTAL', '${totalKwh.toStringAsFixed(1)} kWh'),
+              _chartHeaderStat(
+                'WEEKLY TOTAL',
+                '${totalKwh.toStringAsFixed(1)} kWh',
+              ),
               _chartHeaderStat('AVERAGE', '${avgKwh.toStringAsFixed(1)} kWh'),
-              _chartHeaderStat('PEAK', '${maxKwh.toStringAsFixed(1)} kWh', isPeak: true),
+              _chartHeaderStat(
+                'PEAK',
+                '${maxKwh.toStringAsFixed(1)} kWh',
+                isPeak: true,
+              ),
             ],
           ),
           const SizedBox(height: 32),
@@ -267,7 +275,10 @@ class _WeeklyChart extends StatelessWidget {
                 barTouchData: BarTouchData(
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: (_) => AppColors.sideBackground,
-                    tooltipPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    tooltipPadding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     tooltipMargin: 8,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       return BarTooltipItem(
@@ -313,15 +324,22 @@ class _WeeklyChart extends StatelessWidget {
                 ),
                 borderData: FlBorderData(show: false),
                 titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
                         final idx = value.toInt();
-                        if (idx < 0 || idx >= points.length) return const SizedBox.shrink();
+                        if (idx < 0 || idx >= points.length)
+                          return const SizedBox.shrink();
                         return Padding(
                           padding: const EdgeInsets.only(top: 12),
                           child: Text(
@@ -329,7 +347,9 @@ class _WeeklyChart extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary.withValues(alpha: 0.6),
+                              color: AppColors.textPrimary.withValues(
+                                alpha: 0.6,
+                              ),
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -348,13 +368,18 @@ class _WeeklyChart extends StatelessWidget {
                         toY: points[i].kwh,
                         gradient: LinearGradient(
                           colors: isPeak
-                              ? [const Color(0xFF00BFA5), const Color(0xFF64FFDA)]
+                              ? [
+                                  const Color(0xFF00BFA5),
+                                  const Color(0xFF64FFDA),
+                                ]
                               : [AppColors.primary, const Color(0xFF80CBC4)],
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
                         ),
                         width: 22,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(8),
+                        ),
                         backDrawRodData: BackgroundBarChartRodData(
                           show: true,
                           toY: maxKwh * 1.4,
@@ -374,7 +399,9 @@ class _WeeklyChart extends StatelessWidget {
 
   Widget _chartHeaderStat(String label, String value, {bool isPeak = false}) {
     return Column(
-      crossAxisAlignment: isPeak ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: isPeak
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
       children: [
         Text(
           label,
@@ -433,16 +460,23 @@ class _HourlyChart extends StatelessWidget {
           ),
           borderData: FlBorderData(show: false),
           titlesData: FlTitlesData(
-            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 interval: 3,
                 getTitlesWidget: (value, meta) {
                   final idx = value.toInt();
-                  if (idx < 0 || idx >= points.length) return const SizedBox.shrink();
+                  if (idx < 0 || idx >= points.length)
+                    return const SizedBox.shrink();
                   return Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
@@ -495,12 +529,18 @@ class _ApplianceRanking extends StatelessWidget {
 
   IconData _getIcon(String name) {
     switch (name.toLowerCase()) {
-      case 'ac': return Icons.ac_unit_rounded;
-      case 'fridge': return Icons.kitchen_rounded;
-      case 'lights': return Icons.light_rounded;
-      case 'fan': return Icons.air_rounded;
-      case 'water pump': return Icons.water_drop_rounded;
-      default: return Icons.devices_other_rounded;
+      case 'ac':
+        return Icons.ac_unit_rounded;
+      case 'fridge':
+        return Icons.kitchen_rounded;
+      case 'lights':
+        return Icons.light_rounded;
+      case 'fan':
+        return Icons.air_rounded;
+      case 'water pump':
+        return Icons.water_drop_rounded;
+      default:
+        return Icons.devices_other_rounded;
     }
   }
 
@@ -529,7 +569,11 @@ class _ApplianceRanking extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(_getIcon(e.key), size: 18, color: AppColors.textSecondary),
+                  Icon(
+                    _getIcon(e.key),
+                    size: 18,
+                    color: AppColors.textSecondary,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     e.key,

@@ -22,6 +22,7 @@ class HomeModel {
     this.longitude,
   });
 
-  factory HomeModel.fromJson(Map<String, dynamic> json) => _$HomeModelFromJson(json);
+  factory HomeModel.fromJson(Map<String, dynamic> json) =>
+      _$HomeModelFromJson(json);
   Map<String, dynamic> toJson() => _$HomeModelToJson(this);
 }

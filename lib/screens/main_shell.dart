@@ -33,16 +33,27 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    // Start real-time sync with JWT token
-    final auth = context.read<AuthProvider>();
-    if (auth.token != null) {
-      context.read<DeviceProvider>().startRealtime(auth.token!);
-    }
-    context.read<AlertProvider>().listenRealtime();
+    // Fix 3 & 4: Ensure state updates and SSE start only after hierarchy loading succeeds
+    // In this repaired version, the LoginScreen (or AuthProvider.loginWithApi)
+    // now completes syncFromApi BEFORE navigating to MainShell.
+    // We only trigger real-time features here.
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = context.read<AuthProvider>();
+      final deviceProvider = context.read<DeviceProvider>();
+
+      // SSE Gating: Only start if we have a valid token AND successful resolution
+      if (auth.token != null && auth.resolvedClientUuid != null) {
+        debugPrint('[MainShell] Activating real-time services...');
+        deviceProvider.startRealtime(auth.token!);
+        context.read<AlertProvider>().listenRealtime();
+      }
+    });
   }
 
   @override
   void dispose() {
+    // Graceful cleanup
     context.read<DeviceProvider>().stopRealtime();
     super.dispose();
   }
@@ -79,20 +90,24 @@ class _MainShellState extends State<MainShell> {
 
     var nextIdx = 3;
     if (role.canViewEnergy) {
-      tabs.add(_Tab(
-        icon: Icons.bolt_rounded,
-        label: 'Energy',
-        page: const EnergyScreen(),
-        navigatorKey: _navigatorKeys[nextIdx++],
-      ));
+      tabs.add(
+        _Tab(
+          icon: Icons.bolt_rounded,
+          label: 'Energy',
+          page: const EnergyScreen(),
+          navigatorKey: _navigatorKeys[nextIdx++],
+        ),
+      );
     }
 
-    tabs.add(_Tab(
-      icon: Icons.history_rounded,
-      label: 'Activity',
-      page: const ActivityScreen(),
-      navigatorKey: _navigatorKeys[nextIdx],
-    ));
+    tabs.add(
+      _Tab(
+        icon: Icons.history_rounded,
+        label: 'Activity',
+        page: const ActivityScreen(),
+        navigatorKey: _navigatorKeys[nextIdx],
+      ),
+    );
 
     return tabs;
   }
@@ -102,8 +117,9 @@ class _MainShellState extends State<MainShell> {
     final criticalCount = context.watch<AlertProvider>().criticalActiveCount;
     final auth = context.watch<AuthProvider>();
     final role = auth.role;
-    
-    context.read<PropertyProvider>().setClientId(auth.resolvedClientId);
+
+    // Fix 3: MOVED setClientId out of build() and into login logic/initState callback
+    // context.read<PropertyProvider>().setClientId(auth.resolvedClientId);
 
     final tabs = _tabsFor(role);
     final safeIndex = _index < tabs.length ? _index : 0;
@@ -112,7 +128,8 @@ class _MainShellState extends State<MainShell> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        final NavigatorState? navigator = _navigatorKeys[safeIndex].currentState;
+        final NavigatorState? navigator =
+            _navigatorKeys[safeIndex].currentState;
         if (navigator != null && navigator.canPop()) {
           navigator.pop();
         } else {
@@ -137,7 +154,9 @@ class _MainShellState extends State<MainShell> {
                       Expanded(
                         child: IndexedStack(
                           index: safeIndex,
-                          children: tabs.map((t) => _TabNavigator(tab: t)).toList(),
+                          children: tabs
+                              .map((t) => _TabNavigator(tab: t))
+                              .toList(),
                         ),
                       ),
                     ],
@@ -183,9 +202,7 @@ class _TabNavigator extends StatelessWidget {
     return Navigator(
       key: tab.navigatorKey,
       onGenerateRoute: (settings) {
-        return MaterialPageRoute(
-          builder: (context) => tab.page,
-        );
+        return MaterialPageRoute(builder: (context) => tab.page);
       },
     );
   }

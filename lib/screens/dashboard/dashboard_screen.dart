@@ -44,9 +44,13 @@ class DashboardScreen extends StatelessWidget {
     final desktop = MediaQuery.sizeOf(context).width >= 1100;
 
     return Scaffold(
-      backgroundColor: isCommercial ? const Color(0xFF0F111A) : AppColors.background,
+      backgroundColor: isCommercial
+          ? const Color(0xFF0F111A)
+          : AppColors.background,
       appBar: AppBar(
-        backgroundColor: isCommercial ? const Color(0xFF0F111A) : AppColors.background,
+        backgroundColor: isCommercial
+            ? const Color(0xFF0F111A)
+            : AppColors.background,
         automaticallyImplyLeading: false,
         toolbarHeight: 74,
         leading: desktop
@@ -63,8 +67,8 @@ class DashboardScreen extends StatelessWidget {
         titleSpacing: desktop ? 18 : 2,
         title: _AppBarGreeting(
           greeting: _greeting(isCommercial),
-          firstName: isCommercial 
-              ? (firstProperty?.name ?? 'Facility') 
+          firstName: isCommercial
+              ? (firstProperty?.name ?? 'Facility')
               : (user?.name.split(' ').first ?? 'User'),
           isDark: isCommercial,
         ),
@@ -82,7 +86,9 @@ class DashboardScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: CircleAvatar(
                   radius: 19,
-                  backgroundColor: isCommercial ? Colors.white10 : AppColors.primarySoft,
+                  backgroundColor: isCommercial
+                      ? Colors.white10
+                      : AppColors.primarySoft,
                   child: Text(
                     user?.avatarInitials ?? '??',
                     style: TextStyle(
@@ -99,8 +105,8 @@ class DashboardScreen extends StatelessWidget {
       ),
       body: SafeArea(
         top: false,
-        child: isCommercial 
-            ? _CommercialDashboard(user: user) 
+        child: isCommercial
+            ? _CommercialDashboard(user: user)
             : _ResidentialDashboard(user: user),
       ),
     );
@@ -164,10 +170,12 @@ class _ResidentialDashboard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           if (propertyProvider.isLoading && propertyProvider.properties.isEmpty)
-            const Center(child: Padding(
-              padding: EdgeInsets.all(24.0),
-              child: CircularProgressIndicator(),
-            ))
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24.0),
+                child: CircularProgressIndicator(),
+              ),
+            )
           else if (propertyProvider.properties.isEmpty)
             const AppStateCard.empty(
               title: 'No properties mapped',
@@ -177,20 +185,27 @@ class _ResidentialDashboard extends StatelessWidget {
             ...propertyProvider.properties.take(2).map((p) {
               final floors = propertyProvider.floorsFor(p.id);
               final floorIds = floors.map((f) => f.id).toSet();
-              final rooms = propertyProvider.rooms.where(
-                (r) => floorIds.contains(r.floorId),
-              ).toList();
-              final devices = deviceProvider.visibleDevicesAt(user, buildingId: p.id);
+              final rooms = propertyProvider.rooms
+                  .where((r) => floorIds.contains(r.floorId))
+                  .toList();
+              final devices = deviceProvider.visibleDevicesAt(
+                user,
+                buildingId: p.id,
+              );
 
               return PropertySummaryCard(
                 property: p,
                 floorCount: floors.length,
                 roomCount: rooms.length,
                 deviceCount: devices.length,
-                onlineDeviceCount: devices.where((d) => d.status == DeviceStatus.online).length,
+                onlineDeviceCount: devices
+                    .where((d) => d.status == DeviceStatus.online)
+                    .length,
                 onOpen: () => Navigator.push(
-                  context, 
-                  MaterialPageRoute(builder: (_) => FloorsScreen(propertyId: p.id))
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => FloorsScreen(propertyId: p.id),
+                  ),
                 ),
                 onHistory: () {},
                 onEdit: () {},
@@ -248,32 +263,28 @@ class _CommercialDashboard extends StatelessWidget {
               ),
               CommercialStatCard(
                 label: 'System Health',
-                value: '${deviceProvider.totalCount == 0 ? 0 : (deviceProvider.onlineCount / deviceProvider.totalCount * 100).toInt()}%',
+                value:
+                    '${deviceProvider.totalCount == 0 ? 0 : (deviceProvider.onlineCount / deviceProvider.totalCount * 100).toInt()}%',
                 icon: Icons.analytics_outlined,
                 color: AppColors.success,
               ),
             ],
           ),
           const SizedBox(height: 32),
-          const SectionHeader(
-            title: 'Infrastructure',
-            isDark: true,
-          ),
+          const SectionHeader(title: 'Infrastructure', isDark: true),
           const SizedBox(height: 16),
           _CommercialQuickActions(role: role),
           const SizedBox(height: 32),
-          const SectionHeader(
-            title: 'Critical Alerts',
+          const SectionHeader(title: 'Critical Alerts', isDark: true),
+          const SizedBox(height: 12),
+          _SystemHealthPanel(
+            deviceProvider: deviceProvider,
+            user: user,
             isDark: true,
           ),
-          const SizedBox(height: 12),
-          _SystemHealthPanel(deviceProvider: deviceProvider, user: user, isDark: true),
           const SizedBox(height: 32),
           if (role.canViewEnergy) ...[
-            const SectionHeader(
-              title: 'Energy Management',
-              isDark: true,
-            ),
+            const SectionHeader(title: 'Energy Management', isDark: true),
             const SizedBox(height: 12),
             _EnergyConsumptionCard(energy: energy, isDark: true),
           ],
@@ -289,7 +300,7 @@ class _AppBarGreeting extends StatelessWidget {
   final bool isDark;
 
   const _AppBarGreeting({
-    required this.greeting, 
+    required this.greeting,
     required this.firstName,
     this.isDark = false,
   });
@@ -356,7 +367,10 @@ class _CompactStat extends StatelessWidget {
           ),
           Text(
             label,
-            style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+            style: const TextStyle(
+              fontSize: 10,
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -453,7 +467,10 @@ class _ControlTile extends StatelessWidget {
               const Spacer(),
               Text(
                 label,
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
@@ -469,7 +486,7 @@ class _SystemHealthPanel extends StatelessWidget {
   final bool isDark;
 
   const _SystemHealthPanel({
-    required this.deviceProvider, 
+    required this.deviceProvider,
     this.user,
     this.isDark = false,
   });
@@ -515,7 +532,7 @@ class _SystemHealthPanel extends StatelessWidget {
                   Text(
                     'Operational',
                     style: TextStyle(
-                      fontWeight: FontWeight.w800, 
+                      fontWeight: FontWeight.w800,
                       fontSize: 13,
                       color: isDark ? Colors.white : AppColors.textPrimary,
                     ),
@@ -590,9 +607,13 @@ class _EnergyConsumptionCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: isDark 
+            colors: isDark
                 ? [const Color(0xFF1B1E2A), const Color(0xFF262A38)]
-                : [const Color(0xFF151722), AppColors.primaryDark, AppColors.primary],
+                : [
+                    const Color(0xFF151722),
+                    AppColors.primaryDark,
+                    AppColors.primary,
+                  ],
             stops: isDark ? null : [0, 0.56, 1],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -616,7 +637,7 @@ class _EnergyConsumptionCard extends StatelessWidget {
                   Text(
                     'Current Load',
                     style: TextStyle(
-                      color: isDark ? Colors.white38 : Colors.white70, 
+                      color: isDark ? Colors.white38 : Colors.white70,
                       fontSize: 12,
                     ),
                   ),
@@ -633,7 +654,7 @@ class _EnergyConsumptionCard extends StatelessWidget {
                   Text(
                     "Today: ${energy.todayKwh.toStringAsFixed(1)} kWh",
                     style: TextStyle(
-                      color: isDark ? Colors.white38 : Colors.white70, 
+                      color: isDark ? Colors.white38 : Colors.white70,
                       fontSize: 12,
                     ),
                   ),
@@ -676,23 +697,35 @@ class _CommercialQuickActions extends StatelessWidget {
         _CommercialTile(
           label: 'Floors',
           icon: Icons.layers_outlined,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FloorsScreen())),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const FloorsScreen()),
+          ),
         ),
         _CommercialTile(
           label: 'Devices',
           icon: Icons.devices_other_rounded,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DevicesScreen())),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const DevicesScreen()),
+          ),
         ),
         _CommercialTile(
           label: 'Automations',
           icon: Icons.auto_awesome_outlined,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AutomationsScreen())),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AutomationsScreen()),
+          ),
         ),
         if (role.canAccessAdminConsole)
           _CommercialTile(
             label: 'Access Control',
             icon: Icons.admin_panel_settings_outlined,
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminConsoleScreen())),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AdminConsoleScreen()),
+            ),
           ),
       ],
     );
@@ -704,7 +737,11 @@ class _CommercialTile extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const _CommercialTile({required this.label, required this.icon, required this.onTap});
+  const _CommercialTile({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -722,7 +759,11 @@ class _CommercialTile extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 label,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
               ),
             ],
           ),

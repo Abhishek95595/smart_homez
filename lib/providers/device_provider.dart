@@ -93,22 +93,24 @@ class DeviceProvider extends ChangeNotifier {
       final apiDevices = await _deviceService.getDevices(clientId);
       _devices.clear();
       for (final d in apiDevices) {
-        _devices.add(Device(
-          deviceId: d.id,
-          name: d.name,
-          type: _mapType(d.type),
-          status: _mapStatus(d.status),
-          buildingId: d.homeId ?? '',
-          floorId: d.floorId,
-          roomId: d.roomId,
-          zone: d.zone ?? 'Unassigned',
-          lastHeartbeat: DateTime.now(),
-          firmwareVersion: '1.0.0',
-          macAddress: 'UNKNOWN',
-          tenantId: clientId,
-          isOn: d.value == 1 || d.value == true || d.value == "on",
-          dimLevel: (d.value is num) ? d.value.toDouble() : 0.0,
-        ));
+        _devices.add(
+          Device(
+            deviceId: d.id,
+            name: d.name,
+            type: _mapType(d.type),
+            status: _mapStatus(d.status),
+            buildingId: d.homeId ?? '',
+            floorId: d.floorId,
+            roomId: d.roomId,
+            zone: d.zone ?? 'Unassigned',
+            lastHeartbeat: DateTime.now(),
+            firmwareVersion: '1.0.0',
+            macAddress: 'UNKNOWN',
+            tenantId: clientId,
+            isOn: d.value == 1 || d.value == true || d.value == "on",
+            dimLevel: (d.value is num) ? d.value.toDouble() : 0.0,
+          ),
+        );
       }
       await _save();
     } catch (e) {
@@ -121,20 +123,28 @@ class DeviceProvider extends ChangeNotifier {
 
   DeviceType _mapType(String? apiType) {
     switch (apiType?.toLowerCase()) {
-      case 'light': return DeviceType.light;
-      case 'fan': return DeviceType.fan;
-      case 'ac': return DeviceType.ac;
-      case 'pump': return DeviceType.pump;
-      case 'smoke_sensor': return DeviceType.smokeSensor;
-      case 'gas_sensor': return DeviceType.gasSensor;
-      case 'energy_meter': return DeviceType.energyMeter;
-      default: return DeviceType.light;
+      case 'light':
+        return DeviceType.light;
+      case 'fan':
+        return DeviceType.fan;
+      case 'ac':
+        return DeviceType.ac;
+      case 'pump':
+        return DeviceType.pump;
+      case 'smoke_sensor':
+        return DeviceType.smokeSensor;
+      case 'gas_sensor':
+        return DeviceType.gasSensor;
+      case 'energy_meter':
+        return DeviceType.energyMeter;
+      default:
+        return DeviceType.light;
     }
   }
 
   DeviceStatus _mapStatus(String? apiStatus) {
-    return apiStatus?.toLowerCase() == 'online' 
-        ? DeviceStatus.online 
+    return apiStatus?.toLowerCase() == 'online'
+        ? DeviceStatus.online
         : DeviceStatus.offline;
   }
 
@@ -154,7 +164,7 @@ class DeviceProvider extends ChangeNotifier {
       if (index != -1) {
         final bool? isOn = event['is_on'];
         final double? brightness = event['brightness']?.toDouble();
-        
+
         if (isOn != null || brightness != null) {
           _devices[index] = _devices[index].copyWith(
             isOn: isOn ?? _devices[index].isOn,
@@ -273,18 +283,21 @@ class DeviceProvider extends ChangeNotifier {
   int totalCountFor(AppUser? user) => visibleDevices(user).length;
 
   /// Toggles device using executeDeviceCommand (Phase 7)
-  Future<void> toggleDevice(Device device, {String requestedBy = 'app_user'}) async {
+  Future<void> toggleDevice(
+    Device device, {
+    String requestedBy = 'app_user',
+  }) async {
     final idx = _devices.indexWhere((d) => d.deviceId == device.deviceId);
     if (idx == -1) return;
-    
+
     final newState = !_devices[idx].isOn;
     final String command = newState ? 'on' : 'off';
-    
+
     final success = await _deviceService.sendCommand(
       _clientId ?? '',
-      device.deviceId, 
+      device.deviceId,
       command,
-      null
+      null,
     );
 
     if (success) {
@@ -300,9 +313,9 @@ class DeviceProvider extends ChangeNotifier {
 
     final success = await _deviceService.sendCommand(
       _clientId ?? '',
-      device.deviceId, 
+      device.deviceId,
       'brightness',
-      value.toInt()
+      value.toInt(),
     );
 
     if (success) {
@@ -358,7 +371,9 @@ class DeviceProvider extends ChangeNotifier {
       floorId: resolvedFloorId,
       roomId: resolvedRoomId,
       towerId: resolvedFloorId,
-      zone: roomName?.trim().isNotEmpty == true ? roomName!.trim() : 'Unassigned',
+      zone: roomName?.trim().isNotEmpty == true
+          ? roomName!.trim()
+          : 'Unassigned',
       lastHeartbeat: DateTime.now(),
     );
     _devices.add(item);
@@ -418,9 +433,13 @@ class DeviceProvider extends ChangeNotifier {
     try {
       final stored = await _repository.load();
       if (stored != null) {
-        _devices..clear()..addAll(stored);
+        _devices
+          ..clear()
+          ..addAll(stored);
       } else {
-        _devices..clear()..addAll(MockData.demoDevices());
+        _devices
+          ..clear()
+          ..addAll(MockData.demoDevices());
       }
     } catch (error) {
       _loadError = 'Could not load saved devices: $error';

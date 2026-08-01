@@ -18,14 +18,29 @@ class ApiException implements Exception {
       case DioExceptionType.badResponse:
         final code = error.response?.statusCode;
         switch (code) {
-          case 400: message = "Invalid request. Please check your input."; break;
-          case 401: message = "Session expired. Please log in again."; break;
-          case 403: message = "Access denied. Insufficient permissions."; break;
-          case 404: message = "Resource not found on server."; break;
-          case 415: message = "Server rejected data format. (Missing JSON header)"; break;
-          case 429: message = "Too many requests. Please slow down."; break;
-          case 500: message = "Server error. Please try again later."; break;
-          default: message = "Unexpected error occurred ($code).";
+          case 400:
+            message = "Invalid request. Please check your input.";
+            break;
+          case 401:
+            message = "Session expired. Please log in again.";
+            break;
+          case 403:
+            message = "Access denied. Insufficient permissions.";
+            break;
+          case 404:
+            message = "Resource not found on server.";
+            break;
+          case 415:
+            message = "Server rejected data format. (Missing JSON header)";
+            break;
+          case 429:
+            message = "Too many requests. Please slow down.";
+            break;
+          case 500:
+            message = "Server error. Please try again later.";
+            break;
+          default:
+            message = "Unexpected error occurred ($code).";
         }
         break;
       case DioExceptionType.cancel:

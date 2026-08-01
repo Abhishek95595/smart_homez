@@ -173,9 +173,8 @@ class _AutomationCard extends StatelessWidget {
                       ),
                       Switch(
                         value: rule.enabled,
-                        onChanged: (value) => context
-                            .read<AutomationProvider>()
-                            .toggleRule(rule),
+                        onChanged: (value) =>
+                            context.read<AutomationProvider>().toggleRule(rule),
                       ),
                     ],
                   ),

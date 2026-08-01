@@ -10,7 +10,7 @@ class AuthProvider extends ChangeNotifier {
   AppUser? _currentUser;
   String? _resolvedClientUuid;
   String? _apiToken;
-  
+
   final AuthService _authService = AuthService();
   final ClientService _clientService = ClientService();
 
@@ -18,28 +18,30 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoggedIn => _currentUser != null;
   UserRole get role => _currentUser?.role ?? UserRole.resident;
   String? get resolvedClientUuid => _resolvedClientUuid;
-  
+
   // Compatibility getters for existing code
   String? get token => _apiToken;
   String? get resolvedClientId => _resolvedClientUuid;
 
   /// Combined Auth + Resolve Flow (Phases 1 & 2)
   Future<String?> loginWithApi(
-    String identifier, 
-    String secret, 
-    UserRole targetRole,
-    {required PropertyProvider propertyProvider, required DeviceProvider deviceProvider}
-  ) async {
+    String identifier,
+    String secret,
+    UserRole targetRole, {
+    required PropertyProvider propertyProvider,
+    required DeviceProvider deviceProvider,
+  }) async {
     try {
       bool isEmail = identifier.contains('@');
-      
+
       // Phase 1: Authentication
-      final authResponse = isEmail 
+      final authResponse = isEmail
           ? await _authService.tenantLogin(identifier, secret)
           : await _authService.fetchToken(identifier, secret);
 
       if (!authResponse.success || authResponse.token == null) {
-        return authResponse.error ?? 'Authentication failed. Please check your credentials.';
+        return authResponse.error ??
+            'Authentication failed. Please check your credentials.';
       }
 
       _apiToken = authResponse.token;
@@ -54,10 +56,12 @@ class AuthProvider extends ChangeNotifier {
         return 'Could not verify identity. Please contact support.';
       }
 
+      // Fix 2: Explicitly store and use the resolved UUID, not the login ID
       _resolvedClientUuid = resolvedClient.id;
-      
+
       // Defensive Initials Generation
-      final String displayName = resolvedClient.name ?? authResponse.clientName ?? 'User';
+      final String displayName =
+          resolvedClient.name ?? authResponse.clientName ?? 'User';
       String initials = 'US';
       if (displayName.trim().isNotEmpty) {
         final parts = displayName.trim().split(' ');
@@ -81,6 +85,8 @@ class AuthProvider extends ChangeNotifier {
       );
 
       // Trigger Hierarchy Sync using the real UUID
+      // Fix 3: These calls update state, but they are NOT in a build method here.
+      // We will ensure the caller (LoginScreen) handles the navigation.
       propertyProvider.setClientId(resolvedClient.id);
       await propertyProvider.syncFromApi(resolvedClient.id);
       await deviceProvider.syncFromApi(resolvedClient.id);
@@ -89,11 +95,12 @@ class AuthProvider extends ChangeNotifier {
       return null; // Success
     } catch (e) {
       debugPrint('[Auth Error] $e');
-      // Extract a readable message from the exception
       final String msg = e.toString();
       if (msg.contains('401')) return 'Invalid credentials. Please try again.';
       if (msg.contains('404')) return 'Account setup incomplete on backend.';
-      return msg.startsWith('ApiException:') ? msg.replaceFirst('ApiException: ', '') : msg;
+      return msg.startsWith('ApiException:')
+          ? msg.replaceFirst('ApiException: ', '')
+          : msg;
     }
   }
 

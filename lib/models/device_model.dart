@@ -28,6 +28,7 @@ class DeviceModel {
     this.zone,
   });
 
-  factory DeviceModel.fromJson(Map<String, dynamic> json) => _$DeviceModelFromJson(json);
+  factory DeviceModel.fromJson(Map<String, dynamic> json) =>
+      _$DeviceModelFromJson(json);
   Map<String, dynamic> toJson() => _$DeviceModelToJson(this);
 }

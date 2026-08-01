@@ -9,14 +9,10 @@ class ApiHome {
   final String? address;
   final List<ApiFloor>? floors;
 
-  ApiHome({
-    required this.id,
-    required this.name,
-    this.address,
-    this.floors,
-  });
+  ApiHome({required this.id, required this.name, this.address, this.floors});
 
-  factory ApiHome.fromJson(Map<String, dynamic> json) => _$ApiHomeFromJson(json);
+  factory ApiHome.fromJson(Map<String, dynamic> json) =>
+      _$ApiHomeFromJson(json);
   Map<String, dynamic> toJson() => _$ApiHomeToJson(this);
 }
 
@@ -35,7 +31,8 @@ class ApiFloor {
     this.rooms,
   });
 
-  factory ApiFloor.fromJson(Map<String, dynamic> json) => _$ApiFloorFromJson(json);
+  factory ApiFloor.fromJson(Map<String, dynamic> json) =>
+      _$ApiFloorFromJson(json);
   Map<String, dynamic> toJson() => _$ApiFloorToJson(this);
 }
 
@@ -45,13 +42,10 @@ class ApiRoom {
   final String name;
   final List<ApiDevice>? devices;
 
-  ApiRoom({
-    required this.id,
-    required this.name,
-    this.devices,
-  });
+  ApiRoom({required this.id, required this.name, this.devices});
 
-  factory ApiRoom.fromJson(Map<String, dynamic> json) => _$ApiRoomFromJson(json);
+  factory ApiRoom.fromJson(Map<String, dynamic> json) =>
+      _$ApiRoomFromJson(json);
   Map<String, dynamic> toJson() => _$ApiRoomToJson(this);
 }
 
@@ -62,13 +56,9 @@ class ApiDevice {
   final String? command;
   final dynamic value;
 
-  ApiDevice({
-    required this.id,
-    required this.name,
-    this.command,
-    this.value,
-  });
+  ApiDevice({required this.id, required this.name, this.command, this.value});
 
-  factory ApiDevice.fromJson(Map<String, dynamic> json) => _$ApiDeviceFromJson(json);
+  factory ApiDevice.fromJson(Map<String, dynamic> json) =>
+      _$ApiDeviceFromJson(json);
   Map<String, dynamic> toJson() => _$ApiDeviceToJson(this);
 }

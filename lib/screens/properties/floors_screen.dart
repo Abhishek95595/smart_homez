@@ -115,24 +115,22 @@ class _FloorsScreenState extends State<FloorsScreen> {
         child: provider.isLoading
             ? const AppLoadingState(message: 'Loading floors…')
             : currentPropertyId.isEmpty
-                ? const AppStateCard.empty(
-                    title: 'No properties found',
-                    message: 'Add a property first to manage its floors.',
-                  )
-                : _FloorResults(
-                    floors: floors,
-                    onOpen: (f) => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => RoomsScreen(
-                          homeId: currentPropertyId,
-                          floorId: f.id,
-                        ),
-                      ),
-                    ),
-                    onEdit: (f) => _edit(context, f),
-                    onDelete: (f) => _delete(context, f),
+            ? const AppStateCard.empty(
+                title: 'No properties found',
+                message: 'Add a property first to manage its floors.',
+              )
+            : _FloorResults(
+                floors: floors,
+                onOpen: (f) => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        RoomsScreen(homeId: currentPropertyId, floorId: f.id),
                   ),
+                ),
+                onEdit: (f) => _edit(context, f),
+                onDelete: (f) => _delete(context, f),
+              ),
       ),
     );
   }

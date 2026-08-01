@@ -20,7 +20,11 @@ class HierarchyService {
   }
 
   /// POST /api/v1/clients/{clientId}/homes (Phase 8)
-  Future<HomeModel?> createHome(String clientId, String name, String address) async {
+  Future<HomeModel?> createHome(
+    String clientId,
+    String name,
+    String address,
+  ) async {
     final response = await _api.post(
       ApiEndpoints.clientHomes(clientId),
       data: {'name': name, 'address': address},
@@ -37,7 +41,9 @@ class HierarchyService {
 
   /// DELETE /api/v1/clients/{clientId}/homes/{homeId} (Phase 8)
   Future<bool> deleteHome(String clientId, String homeId) async {
-    final response = await _api.delete('/api/v1/clients/$clientId/homes/$homeId');
+    final response = await _api.delete(
+      '/api/v1/clients/$clientId/homes/$homeId',
+    );
     return response.statusCode == 200;
   }
 
@@ -54,7 +60,12 @@ class HierarchyService {
   }
 
   /// POST /api/v1/clients/{clientId}/homes/{homeId}/floors (Phase 8)
-  Future<FloorModel?> createFloor(String clientId, String homeId, String name, int number) async {
+  Future<FloorModel?> createFloor(
+    String clientId,
+    String homeId,
+    String name,
+    int number,
+  ) async {
     final response = await _api.post(
       ApiEndpoints.homeFloors(clientId, homeId),
       data: {'name': name, 'floor_number': number},
@@ -70,8 +81,14 @@ class HierarchyService {
   }
 
   /// GET /api/v1/clients/{clientId}/homes/{homeId}/floors/{floorId}/rooms (Phase 5)
-  Future<List<RoomModel>> getRooms(String clientId, String homeId, String floorId) async {
-    final response = await _api.get(ApiEndpoints.floorRooms(clientId, homeId, floorId));
+  Future<List<RoomModel>> getRooms(
+    String clientId,
+    String homeId,
+    String floorId,
+  ) async {
+    final response = await _api.get(
+      ApiEndpoints.floorRooms(clientId, homeId, floorId),
+    );
     final dynamic data = response.data;
     if (data is Map<String, dynamic> && data.containsKey('data')) {
       return (data['data'] as List).map((i) => RoomModel.fromJson(i)).toList();
@@ -82,7 +99,12 @@ class HierarchyService {
   }
 
   /// POST /api/v1/clients/{clientId}/homes/{homeId}/floors/{floorId}/rooms (Phase 8)
-  Future<RoomModel?> createRoom(String clientId, String homeId, String floorId, String name) async {
+  Future<RoomModel?> createRoom(
+    String clientId,
+    String homeId,
+    String floorId,
+    String name,
+  ) async {
     final response = await _api.post(
       ApiEndpoints.floorRooms(clientId, homeId, floorId),
       data: {'name': name},

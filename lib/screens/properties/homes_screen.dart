@@ -66,22 +66,22 @@ class _HomesScreenState extends State<HomesScreen> {
       body: propertyProvider.isLoading
           ? const AppLoadingState(message: 'Loading properties…')
           : propertyProvider.loadError != null &&
-                  propertyProvider.properties.isEmpty
-              ? AppStateCard.error(
-                  title: 'Could not load properties',
-                  message: propertyProvider.loadError!,
-                  actionLabel: 'Retry',
-                  onAction: () => propertyProvider.reload(),
-                )
-              : _PropertyResults(
-                  properties: propertyProvider.properties,
-                  onOpen: (p) => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => FloorsScreen(propertyId: p.id),
-                    ),
-                  ),
+                propertyProvider.properties.isEmpty
+          ? AppStateCard.error(
+              title: 'Could not load properties',
+              message: propertyProvider.loadError!,
+              actionLabel: 'Retry',
+              onAction: () => propertyProvider.reload(),
+            )
+          : _PropertyResults(
+              properties: propertyProvider.properties,
+              onOpen: (p) => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => FloorsScreen(propertyId: p.id),
                 ),
+              ),
+            ),
     );
   }
 }
@@ -125,8 +125,9 @@ class _PropertyResults extends StatelessWidget {
           floorCount: floors.length,
           roomCount: rooms.length,
           deviceCount: devices.length,
-          onlineDeviceCount:
-              devices.where((d) => d.status == DeviceStatus.online).length,
+          onlineDeviceCount: devices
+              .where((d) => d.status == DeviceStatus.online)
+              .length,
           onOpen: () => onOpen(p),
           onHistory: () => Navigator.push(
             context,
@@ -138,10 +139,8 @@ class _PropertyResults extends StatelessWidget {
             final result = await showPropertyForm(
               context,
               property: p,
-              nameExists: (name) => propertyProvider.propertyNameExists(
-                name,
-                excludingId: p.id,
-              ),
+              nameExists: (name) =>
+                  propertyProvider.propertyNameExists(name, excludingId: p.id),
             );
             if (result != null) {
               await propertyProvider.updateProperty(
@@ -166,9 +165,9 @@ class _PropertyResults extends StatelessWidget {
             if (approved) {
               await propertyProvider.deleteProperty(p.id);
               if (context.mounted) {
-                await context
-                    .read<DeviceProvider>()
-                    .deleteDevicesForProperty(p.id);
+                await context.read<DeviceProvider>().deleteDevicesForProperty(
+                  p.id,
+                );
               }
             }
           },

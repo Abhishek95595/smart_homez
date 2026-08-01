@@ -4,10 +4,7 @@ class AuthLoginRequest {
 
   AuthLoginRequest({required this.email, required this.password});
 
-  Map<String, dynamic> toJson() => {
-    'email': email,
-    'password': password,
-  };
+  Map<String, dynamic> toJson() => {'email': email, 'password': password};
 }
 
 class AuthLoginResponse {
@@ -16,9 +13,7 @@ class AuthLoginResponse {
   AuthLoginResponse({required this.token});
 
   factory AuthLoginResponse.fromJson(Map<String, dynamic> json) {
-    return AuthLoginResponse(
-      token: json['token'] as String,
-    );
+    return AuthLoginResponse(token: json['token'] as String);
   }
 }
 
@@ -79,10 +74,7 @@ class CreateFloorRequest {
 
   CreateFloorRequest({required this.name, required this.floorNumber});
 
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'floor_number': floorNumber,
-  };
+  Map<String, dynamic> toJson() => {'name': name, 'floor_number': floorNumber};
 }
 
 class CreateRoomRequest {
@@ -90,9 +82,7 @@ class CreateRoomRequest {
 
   CreateRoomRequest({required this.name});
 
-  Map<String, dynamic> toJson() => {
-    'name': name,
-  };
+  Map<String, dynamic> toJson() => {'name': name};
 }
 
 class ApiHomeResponse {
@@ -103,8 +93,8 @@ class ApiHomeResponse {
   final double? longitude;
 
   ApiHomeResponse({
-    required this.id, 
-    required this.name, 
+    required this.id,
+    required this.name,
     required this.address,
     this.latitude,
     this.longitude,
@@ -115,8 +105,12 @@ class ApiHomeResponse {
       id: json['id'] as String,
       name: json['name'] as String,
       address: json['address'] as String? ?? '',
-      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
-      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
+      latitude: json['latitude'] != null
+          ? (json['latitude'] as num).toDouble()
+          : null,
+      longitude: json['longitude'] != null
+          ? (json['longitude'] as num).toDouble()
+          : null,
     );
   }
 }
@@ -126,7 +120,11 @@ class ApiFloorResponse {
   final String name;
   final int floorNumber;
 
-  ApiFloorResponse({required this.id, required this.name, required this.floorNumber});
+  ApiFloorResponse({
+    required this.id,
+    required this.name,
+    required this.floorNumber,
+  });
 
   factory ApiFloorResponse.fromJson(Map<String, dynamic> json) {
     return ApiFloorResponse(
@@ -206,10 +204,7 @@ class DeviceCommandRequestV1 {
 
   DeviceCommandRequestV1({required this.command, this.value});
 
-  Map<String, dynamic> toJson() => {
-    'command': command,
-    'value': value,
-  };
+  Map<String, dynamic> toJson() => {'command': command, 'value': value};
 }
 
 class ApiAutomationResponse {
