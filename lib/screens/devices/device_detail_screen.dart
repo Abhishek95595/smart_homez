@@ -163,7 +163,23 @@ class DeviceDetailScreen extends StatelessWidget {
                       title: Text(device.isOn ? 'Powered on' : 'Powered off'),
                       value: device.isOn,
                       onChanged: controllable
-                          ? (_) => provider.toggleDevice(device)
+                          ? (value) async {
+                              final bool success = await provider.toggleDevice(
+                                device,
+                              );
+
+                              if (!context.mounted) return;
+
+                              if (!success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Device command failed. Please try again.',
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
                           : null,
                     ),
                   ],
@@ -178,14 +194,16 @@ class DeviceDetailScreen extends StatelessWidget {
               _Row(
                 'Property',
                 property?.name ??
+                    device.homeName ??
                     (device.buildingId.trim().isEmpty
                         ? 'Not assigned'
                         : device.buildingId),
               ),
-              _Row('Floor', floor?.name ?? 'Not assigned'),
+              _Row('Floor', floor?.name ?? device.floorName ?? 'Not assigned'),
               _Row(
                 'Room',
                 room?.name ??
+                    device.roomName ??
                     (device.zone == 'Unassigned'
                         ? 'Not assigned'
                         : device.zone),

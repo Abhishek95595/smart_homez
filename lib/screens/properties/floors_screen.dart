@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/property_hierarchy.dart';
-import '../../models/device.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
 import '../../providers/property_provider.dart';
@@ -69,11 +68,11 @@ class _FloorsScreenState extends State<FloorsScreen> {
       title: 'Delete ${floor.name}?',
       message: 'This will remove all rooms and devices on this floor.',
     );
-    if (approved) {
-      await context.read<PropertyProvider>().deleteFloor(floor.id);
-      if (context.mounted) {
-        await context.read<DeviceProvider>().deleteDevicesForFloor(floor.id);
-      }
+    if (approved && context.mounted) {
+      final propertyProvider = context.read<PropertyProvider>();
+      final deviceProvider = context.read<DeviceProvider>();
+      await propertyProvider.deleteFloor(floor.id);
+      await deviceProvider.deleteDevicesForFloor(floor.id);
     }
   }
 
@@ -124,8 +123,11 @@ class _FloorsScreenState extends State<FloorsScreen> {
                 onOpen: (f) => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        RoomsScreen(homeId: currentPropertyId, floorId: f.id),
+                    builder: (_) => RoomsScreen(
+                      homeId: currentPropertyId,
+                      floorId: f.id,
+                      homeName: currentProperty?.name,
+                    ),
                   ),
                 ),
                 onEdit: (f) => _edit(context, f),
@@ -197,9 +199,13 @@ class _FloorCard extends StatelessWidget {
     final user = context.watch<AuthProvider>().currentUser;
 
     final roomCount = propertyProvider.roomsFor(floor.id).length;
+    final property = propertyProvider.propertyById(floor.propertyId);
     final deviceCount = deviceProvider
-        .visibleDevices(user)
-        .where((d) => d.floorId == floor.id)
+        .visibleDevicesForFloor(
+          user,
+          propertyName: property?.name ?? '',
+          floorName: floor.name,
+        )
         .length;
 
     return Material(

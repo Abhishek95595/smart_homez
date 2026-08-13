@@ -36,6 +36,7 @@ class PropertyProvider extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   String? get loadError => _loadError;
+  String? get clientId => _clientId;
   List<ManagedProperty> get properties => List.unmodifiable(_properties);
   List<ManagedFloor> get floors => List.unmodifiable(_floors);
   List<ManagedRoom> get rooms => List.unmodifiable(_rooms);
@@ -125,7 +126,7 @@ class PropertyProvider extends ChangeNotifier {
     ]);
   }
 
-  /// Combined Hierarchy Sync (Phases 3, 4, 5)
+  /// Combined Hierarchy Sync
   Future<void> syncFromApi(String clientId) async {
     _clientId = clientId;
     _isLoading = true;
@@ -147,12 +148,11 @@ class PropertyProvider extends ChangeNotifier {
               address: h.address ?? '',
               category: h.category ?? 'Residential',
               propertyType: h.propertyType ?? 'House',
-              latitude: h.latitude != null ? h.latitude.toString() : null,
-              longitude: h.longitude != null ? h.longitude.toString() : null,
+              latitude: h.latitude?.toString(),
+              longitude: h.longitude?.toString(),
             ),
           );
 
-          debugPrint('[Sync] Fetching floors for home: ${h.name} (${h.id})');
           final apiFloors = await _hierarchyService.getFloors(clientId, h.id);
           for (final f in apiFloors) {
             _floors.add(
@@ -164,7 +164,6 @@ class PropertyProvider extends ChangeNotifier {
               ),
             );
 
-            debugPrint('[Sync] Fetching rooms for floor: ${f.name} (${f.id})');
             final apiRooms = await _hierarchyService.getRooms(
               clientId,
               h.id,
@@ -185,6 +184,7 @@ class PropertyProvider extends ChangeNotifier {
       }
       await _save();
     } catch (e) {
+      _loadError = e.toString().replaceFirst('Exception: ', '');
       debugPrint('[Sync Error] Property Sync: $e');
     } finally {
       _isLoading = false;
@@ -299,11 +299,14 @@ class PropertyProvider extends ChangeNotifier {
           )
         : enteredName;
 
-    String finalId = _uuid.v4();
+    if (_clientId != null) {
+      await _hierarchyService.createHome(_clientId!, resolvedName, address);
+      await syncFromApi(_clientId!);
+      return properties.last; // Approximate
+    }
 
-    // Property management API calls will be implemented in Phase 8
     final item = ManagedProperty(
-      id: finalId,
+      id: _uuid.v4(),
       name: resolvedName,
       address: address.trim(),
       category: category,
@@ -332,6 +335,18 @@ class PropertyProvider extends ChangeNotifier {
     final index = _properties.indexWhere((item) => item.id == property.id);
     if (index == -1) return;
     final resolvedName = name.trim().isEmpty ? property.name : name.trim();
+
+    if (_clientId != null && !property.id.startsWith('bldg_')) {
+      await _hierarchyService.updateHome(
+        clientId: _clientId!,
+        homeId: property.id,
+        name: resolvedName,
+        address: address,
+      );
+      await syncFromApi(_clientId!);
+      return;
+    }
+
     _properties[index] = property.copyWith(
       name: resolvedName,
       address: address.trim(),
@@ -347,6 +362,12 @@ class PropertyProvider extends ChangeNotifier {
   }
 
   Future<void> deleteProperty(String propertyId) async {
+    if (_clientId != null && !propertyId.startsWith('bldg_')) {
+      await _hierarchyService.deleteHome(_clientId!, propertyId);
+      await syncFromApi(_clientId!);
+      return;
+    }
+
     final floorIds = floorsFor(propertyId).map((item) => item.id).toSet();
     _rooms.removeWhere((item) => floorIds.contains(item.floorId));
     _floors.removeWhere((item) => item.propertyId == propertyId);
@@ -360,10 +381,20 @@ class PropertyProvider extends ChangeNotifier {
     required int level,
   }) async {
     final resolvedName = name.trim().isEmpty ? 'Floor $level' : name.trim();
-    String finalId = _uuid.v4();
+
+    if (_clientId != null && !propertyId.startsWith('bldg_')) {
+      await _hierarchyService.createFloor(
+        _clientId!,
+        propertyId,
+        resolvedName,
+        level,
+      );
+      await fetchFloorsForHome(propertyId);
+      return floors.last;
+    }
 
     final item = ManagedFloor(
-      id: finalId,
+      id: _uuid.v4(),
       propertyId: propertyId,
       name: resolvedName,
       level: level,
@@ -380,14 +411,36 @@ class PropertyProvider extends ChangeNotifier {
   }) async {
     final index = _floors.indexWhere((item) => item.id == floor.id);
     if (index == -1) return;
-    _floors[index] = floor.copyWith(
-      name: name.trim().isEmpty ? floor.name : name.trim(),
-      level: level,
-    );
+    final resolvedName = name.trim().isEmpty ? floor.name : name.trim();
+
+    if (_clientId != null && !floor.id.contains('-')) {
+      await _hierarchyService.renameFloor(
+        clientId: _clientId!,
+        homeId: floor.propertyId,
+        floorId: floor.id,
+        name: resolvedName,
+        floorNumber: level,
+      );
+      await fetchFloorsForHome(floor.propertyId);
+      return;
+    }
+
+    _floors[index] = floor.copyWith(name: resolvedName, level: level);
     await _saveAndNotify();
   }
 
   Future<void> deleteFloor(String floorId) async {
+    final floor = floorById(floorId);
+    if (floor != null && _clientId != null && !floor.id.contains('-')) {
+      await _hierarchyService.deleteFloor(
+        clientId: _clientId!,
+        homeId: floor.propertyId,
+        floorId: floorId,
+      );
+      await fetchFloorsForHome(floor.propertyId);
+      return;
+    }
+
     _rooms.removeWhere((item) => floorId == item.floorId);
     _floors.removeWhere((item) => item.id == floorId);
     await _saveAndNotify();
@@ -410,10 +463,19 @@ class PropertyProvider extends ChangeNotifier {
           )
         : enteredName;
 
-    String finalId = _uuid.v4();
+    if (_clientId != null && homeId.isNotEmpty && !homeId.startsWith('bldg_')) {
+      await _hierarchyService.createRoom(
+        _clientId!,
+        homeId,
+        floorId,
+        resolvedName,
+      );
+      await fetchRoomsForFloor(homeId, floorId);
+      return rooms.last;
+    }
 
     final item = ManagedRoom(
-      id: finalId,
+      id: _uuid.v4(),
       floorId: floorId,
       name: resolvedName,
       type: type,
@@ -427,17 +489,44 @@ class PropertyProvider extends ChangeNotifier {
     ManagedRoom room, {
     required String name,
     required String type,
+    String? homeId,
   }) async {
     final index = _rooms.indexWhere((item) => item.id == room.id);
     if (index == -1) return;
-    _rooms[index] = room.copyWith(
-      name: name.trim().isEmpty ? room.name : name.trim(),
-      type: type,
-    );
+    final resolvedName = name.trim().isEmpty ? room.name : name.trim();
+
+    if (_clientId != null && homeId != null && !homeId.startsWith('bldg_')) {
+      await _hierarchyService.renameRoom(
+        clientId: _clientId!,
+        homeId: homeId,
+        floorId: room.floorId,
+        roomId: room.id,
+        name: resolvedName,
+      );
+      await fetchRoomsForFloor(homeId, room.floorId);
+      return;
+    }
+
+    _rooms[index] = room.copyWith(name: resolvedName, type: type);
     await _saveAndNotify();
   }
 
-  Future<void> deleteRoom(String roomId) async {
+  Future<void> deleteRoom(String roomId, {String? homeId}) async {
+    final room = roomById(roomId);
+    if (room != null &&
+        _clientId != null &&
+        homeId != null &&
+        !homeId.startsWith('bldg_')) {
+      await _hierarchyService.deleteRoom(
+        clientId: _clientId!,
+        homeId: homeId,
+        floorId: room.floorId,
+        roomId: roomId,
+      );
+      await fetchRoomsForFloor(homeId, room.floorId);
+      return;
+    }
+
     _rooms.removeWhere((item) => item.id == roomId);
     await _saveAndNotify();
   }

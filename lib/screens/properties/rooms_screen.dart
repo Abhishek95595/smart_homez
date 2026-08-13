@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/device.dart';
 import '../../models/property_hierarchy.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
@@ -15,8 +16,9 @@ import 'management_dialogs.dart';
 class RoomsScreen extends StatefulWidget {
   final String? homeId;
   final String? floorId;
+  final String? homeName;
 
-  const RoomsScreen({super.key, this.homeId, this.floorId});
+  const RoomsScreen({super.key, this.homeId, this.floorId, this.homeName});
 
   @override
   State<RoomsScreen> createState() => _RoomsScreenState();
@@ -74,11 +76,11 @@ class _RoomsScreenState extends State<RoomsScreen> {
       title: 'Delete ${room.name}?',
       message: 'This will unassign all devices in this room.',
     );
-    if (approved) {
-      await context.read<PropertyProvider>().deleteRoom(room.id);
-      if (context.mounted) {
-        await context.read<DeviceProvider>().deleteDevicesForRoom(room.id);
-      }
+    if (approved && context.mounted) {
+      final propertyProvider = context.read<PropertyProvider>();
+      final deviceProvider = context.read<DeviceProvider>();
+      await propertyProvider.deleteRoom(room.id);
+      await deviceProvider.deleteDevicesForRoom(room.id);
     }
   }
 
@@ -136,6 +138,8 @@ class _RoomsScreenState extends State<RoomsScreen> {
               )
             : _RoomResults(
                 rooms: rooms,
+                homeName: widget.homeName,
+                floorName: currentFloor?.name,
                 onOpen: (r) => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -145,6 +149,8 @@ class _RoomsScreenState extends State<RoomsScreen> {
                       floorId: r.floorId,
                       roomId: r.id,
                       roomName: r.name,
+                      propertyName: widget.homeName,
+                      floorName: currentFloor?.name,
                     ),
                   ),
                 ),
@@ -158,12 +164,16 @@ class _RoomsScreenState extends State<RoomsScreen> {
 
 class _RoomResults extends StatelessWidget {
   final List<ManagedRoom> rooms;
+  final String? homeName;
+  final String? floorName;
   final ValueChanged<ManagedRoom> onOpen;
   final ValueChanged<ManagedRoom> onEdit;
   final ValueChanged<ManagedRoom> onDelete;
 
   const _RoomResults({
     required this.rooms,
+    this.homeName,
+    this.floorName,
     required this.onOpen,
     required this.onEdit,
     required this.onDelete,
@@ -187,6 +197,8 @@ class _RoomResults extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 12),
           child: _RoomCard(
             room: r,
+            homeName: homeName,
+            floorName: floorName,
             onTap: () => onOpen(r),
             onEdit: () => onEdit(r),
             onDelete: () => onDelete(r),
@@ -199,12 +211,16 @@ class _RoomResults extends StatelessWidget {
 
 class _RoomCard extends StatelessWidget {
   final ManagedRoom room;
+  final String? homeName;
+  final String? floorName;
   final VoidCallback onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
   const _RoomCard({
     required this.room,
+    this.homeName,
+    this.floorName,
     required this.onTap,
     this.onEdit,
     this.onDelete,
@@ -213,7 +229,27 @@ class _RoomCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final deviceProvider = context.watch<DeviceProvider>();
-    final devices = deviceProvider.devicesForRoom(room.id);
+    final user = context.watch<AuthProvider>().currentUser;
+
+    // Attempt to get accurate counts using names if available
+    final List<Device> devices;
+    if (room.name.isNotEmpty && floorName != null && homeName != null) {
+      devices = deviceProvider.visibleDevicesForRoom(
+        user,
+        propertyName: homeName!,
+        floorName: floorName!,
+        roomName: room.name,
+      );
+    } else {
+      devices = deviceProvider
+          .visibleDevices(user)
+          .where((d) => d.roomId == room.id)
+          .toList();
+    }
+
+    final onlineCount = devices
+        .where((d) => d.status == DeviceStatus.online)
+        .length;
 
     return Material(
       color: AppColors.surface,
@@ -254,7 +290,7 @@ class _RoomCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${devices.length} devices assigned',
+                      '${devices.length} devices • $onlineCount online',
                       style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,

@@ -6,9 +6,7 @@ import '../../models/device.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
 import '../../providers/property_provider.dart';
-import '../../theme/app_theme.dart';
 import '../../widgets/app_state_widgets.dart';
-import '../../widgets/property_management_widgets.dart';
 import '../../widgets/property_summary_card.dart';
 import '../devices/device_history_screen.dart';
 import 'floors_screen.dart';
@@ -118,7 +116,7 @@ class _PropertyResults extends StatelessWidget {
         final rooms = propertyProvider.rooms.where(
           (r) => floorIds.contains(r.floorId),
         );
-        final devices = deviceProvider.visibleDevicesAt(user, buildingId: p.id);
+        final devices = deviceProvider.visibleDevicesForProperty(user, p.name);
 
         return PropertySummaryCard(
           property: p,

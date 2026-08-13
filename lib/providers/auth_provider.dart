@@ -1,106 +1,400 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '../models/app_user.dart';
 import '../models/user_role.dart';
 import '../services/auth_service.dart';
-import '../services/client_service.dart';
+
 import 'device_provider.dart';
+import '../services/client_service.dart';
 import 'property_provider.dart';
 
+
 class AuthProvider extends ChangeNotifier {
+  AuthProvider({AuthService? authService, ClientService? clientService})
+    : _authService = authService ?? AuthService(),
+      _clientService = clientService ?? ClientService();
+
+  final AuthService _authService;
+  final ClientService _clientService;
+
   AppUser? _currentUser;
   String? _resolvedClientUuid;
   String? _apiToken;
 
-  final AuthService _authService = AuthService();
-  final ClientService _clientService = ClientService();
+  bool _isLoading = false;
+  String? _errorMessage;
 
   AppUser? get currentUser => _currentUser;
+
   bool get isLoggedIn => _currentUser != null;
+
+  bool get isLoading => _isLoading;
+
+  String? get errorMessage => _errorMessage;
+
   UserRole get role => _currentUser?.role ?? UserRole.resident;
+
   String? get resolvedClientUuid => _resolvedClientUuid;
 
-  // Compatibility getters for existing code
+  // Compatibility getters for existing code.
   String? get token => _apiToken;
+
   String? get resolvedClientId => _resolvedClientUuid;
 
-  /// Combined Auth + Resolve Flow (Phases 1 & 2)
+  /// Logs in using either:
+  ///
+  /// 1. Email/password
+  /// 2. API Client ID/API Client Secret
+  ///
+  /// For API Client ID login, provide [customerEmail] so the API can
+  /// resolve the real customer UUID used by homes and devices endpoints.
+  ///
+  /// Returns null on success, otherwise an error message.
   Future<String?> loginWithApi(
     String identifier,
     String secret,
     UserRole targetRole, {
     required PropertyProvider propertyProvider,
     required DeviceProvider deviceProvider,
+    String? customerEmail,
+    String? customerName,
   }) async {
+    if (_isLoading) {
+      return 'Login is already in progress.';
+    }
+
+    _setLoading(true);
+    _errorMessage = null;
+
     try {
-      bool isEmail = identifier.contains('@');
+      final String cleanIdentifier = identifier.trim();
 
-      // Phase 1: Authentication
-      final authResponse = isEmail
-          ? await _authService.tenantLogin(identifier, secret)
-          : await _authService.fetchToken(identifier, secret);
+      final bool isEmailLogin = cleanIdentifier.contains('@');
 
-      if (!authResponse.success || authResponse.token == null) {
-        return authResponse.error ??
-            'Authentication failed. Please check your credentials.';
+      if (cleanIdentifier.isEmpty || secret.trim().isEmpty) {
+        return _fail('Please enter valid credentials.');
       }
 
-      _apiToken = authResponse.token;
+      // ========================================================
+      // PHASE 1: AUTHENTICATION
+      // ========================================================
 
-      // Phase 2: Client Resolution
+      final authResponse = isEmailLogin
+          ? await _authService.tenantLogin(
+              email: cleanIdentifier,
+              password: secret,
+            )
+          : await _authService.fetchToken(
+              clientId: cleanIdentifier,
+              clientSecret: secret,
+            );
+
+      if (!authResponse.success) {
+        return _fail(
+          authResponse.error ??
+              'Authentication failed. Please check your credentials.',
+        );
+      }
+
+      final String? jwtToken = authResponse.token;
+
+      if (jwtToken == null || jwtToken.isEmpty) {
+        return _fail('The server did not return an authentication token.');
+      }
+
+      _apiToken = jwtToken;
+
+      // ========================================================
+      // PHASE 2: RESOLVE CUSTOMER CLIENT
+      // ========================================================
+
+      final String? emailToResolve = isEmailLogin
+          ? cleanIdentifier
+          : customerEmail?.trim();
+
+      if (emailToResolve == null || emailToResolve.isEmpty) {
+        return _fail('Customer email is required to load homes and devices.');
+      }
+
       final resolvedClient = await _clientService.resolveClient(
-        email: isEmail ? identifier : 'app_user@aurabrain.com',
-        name: authResponse.clientName ?? 'Smart Homz User',
+        email: emailToResolve,
+        name: customerName ?? authResponse.clientName,
       );
 
       if (resolvedClient == null) {
-        return 'Could not verify identity. Please contact support.';
+        return _fail(
+          'Customer account could not be resolved. '
+          'Please verify the customer email.',
+        );
       }
 
-      // Fix 2: Explicitly store and use the resolved UUID, not the login ID
-      _resolvedClientUuid = resolvedClient.id;
-
-      // Defensive Initials Generation
-      final String displayName =
-          resolvedClient.name ?? authResponse.clientName ?? 'User';
-      String initials = 'US';
-      if (displayName.trim().isNotEmpty) {
-        final parts = displayName.trim().split(' ');
-        if (parts.length >= 2) {
-          initials = (parts[0][0] + parts[1][0]).toUpperCase();
-        } else if (parts[0].length >= 2) {
-          initials = parts[0].substring(0, 2).toUpperCase();
-        } else {
-          initials = parts[0][0].toUpperCase();
-        }
+      String finalClientId = resolvedClient.id;
+      if (finalClientId.isEmpty) {
+        finalClientId = authResponse.clientId ?? cleanIdentifier;
       }
+
+      if (finalClientId.isEmpty) {
+        return _fail('The resolved customer UUID is missing.');
+      }
+
+      _resolvedClientUuid = finalClientId;
+
+      await _authService.saveResolvedClientUuid(finalClientId);
+
+      // ========================================================
+      // PHASE 3: CREATE LOCAL USER
+      // ========================================================
+
+      final String displayName = _getDisplayName(
+        resolvedName: resolvedClient.name,
+        authName: authResponse.clientName,
+        fallbackEmail: emailToResolve,
+      );
+
+      final String initials = _generateInitials(displayName);
 
       _currentUser = AppUser(
-        id: resolvedClient.id,
+        id: finalClientId,
         name: displayName,
-        email: resolvedClient.email ?? (isEmail ? identifier : ''),
+        email: resolvedClient.email ?? emailToResolve,
         phone: resolvedClient.phone ?? '',
         role: targetRole,
         tenantId: 'aurabrain',
         avatarInitials: initials,
       );
 
-      // Trigger Hierarchy Sync using the real UUID
-      // Fix 3: These calls update state, but they are NOT in a build method here.
-      // We will ensure the caller (LoginScreen) handles the navigation.
-      propertyProvider.setClientId(resolvedClient.id);
-      await propertyProvider.syncFromApi(resolvedClient.id);
-      await deviceProvider.syncFromApi(resolvedClient.id);
+      // ========================================================
+      // PHASE 4: LOAD REAL API DATA
+      // ========================================================
+
+      propertyProvider.setClientId(finalClientId);
+
+      await Future.wait([
+        propertyProvider.syncFromApi(finalClientId),
+        deviceProvider.syncFromApi(finalClientId),
+      ]);
+
+      await deviceProvider.startRealtimeSync(finalClientId);
+
+      _errorMessage = null;
+      notifyListeners();
+
+      return null;
+    } catch (error, stackTrace) {
+      debugPrint('[AuthProvider] Login error: $error');
+
+      debugPrintStack(stackTrace: stackTrace);
+
+      return _fail(_friendlyErrorMessage(error));
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Use this method when the real customer UUID is already known.
+  ///
+  /// This avoids calling the client resolve endpoint.
+  Future<String?> loginWithKnownClientUuid(
+    String apiClientId,
+    String clientSecret,
+    String customerClientUuid,
+    UserRole targetRole, {
+    required PropertyProvider propertyProvider,
+    required DeviceProvider deviceProvider,
+    required String customerName,
+    required String customerEmail,
+  }) async {
+    if (_isLoading) {
+      return 'Login is already in progress.';
+    }
+
+    _setLoading(true);
+    _errorMessage = null;
+
+    try {
+      if (apiClientId.trim().isEmpty ||
+          clientSecret.trim().isEmpty ||
+          customerClientUuid.trim().isEmpty) {
+        return _fail('API credentials or customer UUID are missing.');
+      }
+
+      final authResponse = await _authService.fetchToken(
+        clientId: apiClientId.trim(),
+        clientSecret: clientSecret.trim(),
+      );
+
+      if (!authResponse.success ||
+          authResponse.token == null ||
+          authResponse.token!.isEmpty) {
+        return _fail(authResponse.error ?? 'API authentication failed.');
+      }
+
+      _apiToken = authResponse.token;
+      _resolvedClientUuid = customerClientUuid.trim();
+
+      await _authService.saveResolvedClientUuid(_resolvedClientUuid!);
+
+      _currentUser = AppUser(
+        id: _resolvedClientUuid!,
+        name: customerName.trim().isEmpty
+            ? 'Smart Home User'
+            : customerName.trim(),
+        email: customerEmail.trim(),
+        phone: '',
+        role: targetRole,
+        tenantId: 'aurabrain',
+        avatarInitials: _generateInitials(customerName),
+      );
+
+      propertyProvider.setClientId(_resolvedClientUuid!);
+
+      await Future.wait([
+        propertyProvider.syncFromApi(_resolvedClientUuid!),
+        deviceProvider.syncFromApi(_resolvedClientUuid!),
+      ]);
+
+      await deviceProvider.startRealtimeSync(_resolvedClientUuid!);
 
       notifyListeners();
-      return null; // Success
+      return null;
+    } catch (error, stackTrace) {
+      debugPrint('[AuthProvider] Known UUID login error: $error');
+
+      debugPrintStack(stackTrace: stackTrace);
+
+      return _fail(_friendlyErrorMessage(error));
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> restoreSession({
+    required PropertyProvider propertyProvider,
+    required DeviceProvider deviceProvider,
+  }) async {
+    _setLoading(true);
+
+    try {
+      final String? savedToken = await _authService.getSavedToken();
+
+      final String? savedClientUuid = await _authService
+          .getResolvedClientUuid();
+
+      if (savedToken == null ||
+          savedToken.isEmpty ||
+          savedClientUuid == null ||
+          savedClientUuid.isEmpty) {
+        return;
+      }
+
+      _apiToken = savedToken;
+      _resolvedClientUuid = savedClientUuid;
+
+      propertyProvider.setClientId(savedClientUuid);
+
+      await Future.wait([
+        propertyProvider.syncFromApi(savedClientUuid),
+        deviceProvider.syncFromApi(savedClientUuid),
+      ]);
+
+      await deviceProvider.startRealtimeSync(savedClientUuid);
+    } catch (error) {
+      debugPrint('[AuthProvider] Session restore failed: $error');
+
+      await logout();
+    } finally {
+      _setLoading(false);
+    }
+  }
+// Firebase OTP handling
+  bool _otpSent = false;
+  bool get isOtpSent => _otpSent;
+  String? _verificationId;
+
+  /// Request OTP for the given phone number using Firebase.
+  Future<void> requestOtp(String phone) async {
+    if (_isLoading) return;
+    _setLoading(true);
+    _errorMessage = null;
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: phone.trim(),
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          // Auto‑retrieval (Android only). Direct sign‑in.
+          final userCred = await FirebaseAuth.instance.signInWithCredential(credential);
+          final token = await userCred.user?.getIdToken();
+          if (token != null) {
+            _apiToken = token;
+            _currentUser = AppUser(
+              id: userCred.user?.uid ?? '',
+              name: userCred.user?.displayName ?? 'OTP User',
+              email: userCred.user?.email ?? '',
+              phone: phone.trim(),
+              role: UserRole.resident,
+              tenantId: 'aurabrain',
+              avatarInitials: 'OU',
+            );
+            _resolvedClientUuid = 'firebase_user_${userCred.user?.uid}';
+            await _authService.saveResolvedClientUuid(_resolvedClientUuid!);
+            notifyListeners();
+          }
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          _fail('Failed to send OTP: ${e.message}');
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          _verificationId = verificationId;
+          _otpSent = true;
+          notifyListeners();
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          _verificationId = verificationId;
+        },
+      );
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Verify OTP entered by the user using Firebase.
+  Future<void> verifyOtp(String phone, String otp) async {
+    if (_isLoading) return;
+    _setLoading(true);
+    _errorMessage = null;
+    try {
+      if (_verificationId == null) {
+        _fail('Verification ID missing. Request OTP first.');
+        return;
+      }
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId!,
+        smsCode: otp.trim(),
+      );
+      final userCred = await FirebaseAuth.instance.signInWithCredential(credential);
+      final token = await userCred.user?.getIdToken();
+      if (token == null) {
+        _fail('Failed to obtain token after verification');
+        return;
+      }
+      _apiToken = token;
+      _currentUser = AppUser(
+        id: userCred.user?.uid ?? '',
+        name: userCred.user?.displayName ?? 'OTP User',
+        email: userCred.user?.email ?? '',
+        phone: phone.trim(),
+        role: UserRole.resident,
+        tenantId: 'aurabrain',
+        avatarInitials: 'OU',
+      );
+      _resolvedClientUuid = 'firebase_user_${userCred.user?.uid}';
+      await _authService.saveResolvedClientUuid(_resolvedClientUuid!);
+      notifyListeners();
     } catch (e) {
-      debugPrint('[Auth Error] $e');
-      final String msg = e.toString();
-      if (msg.contains('401')) return 'Invalid credentials. Please try again.';
-      if (msg.contains('404')) return 'Account setup incomplete on backend.';
-      return msg.startsWith('ApiException:')
-          ? msg.replaceFirst('ApiException: ', '')
-          : msg;
+      _fail('Failed to verify OTP: $e');
+    } finally {
+      _setLoading(false);
     }
   }
 
@@ -108,7 +402,101 @@ class AuthProvider extends ChangeNotifier {
     _currentUser = null;
     _resolvedClientUuid = null;
     _apiToken = null;
+    _errorMessage = null;
+
     await _authService.logout();
+
+    notifyListeners();
+  }
+
+  String _getDisplayName({
+    required String? resolvedName,
+    required String? authName,
+    required String fallbackEmail,
+  }) {
+    if (resolvedName != null && resolvedName.trim().isNotEmpty) {
+      return resolvedName.trim();
+    }
+
+    if (authName != null && authName.trim().isNotEmpty) {
+      return authName.trim();
+    }
+
+    final String emailName = fallbackEmail.split('@').first;
+
+    return emailName.isEmpty ? 'Smart Home User' : emailName;
+  }
+
+  String _generateInitials(String displayName) {
+    final String cleanName = displayName.trim();
+
+    if (cleanName.isEmpty) {
+      return 'US';
+    }
+
+    final List<String> parts = cleanName
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+
+    if (parts.isEmpty) {
+      return 'US';
+    }
+
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+
+    final String firstPart = parts.first;
+
+    if (firstPart.length >= 2) {
+      return firstPart.substring(0, 2).toUpperCase();
+    }
+
+    return firstPart[0].toUpperCase();
+  }
+
+  String _friendlyErrorMessage(Object error) {
+    final String message = error.toString();
+
+    if (message.contains('401')) {
+      return 'Invalid credentials. Please try again.';
+    }
+
+    if (message.contains('403')) {
+      return 'You do not have permission to access this account.';
+    }
+
+    if (message.contains('404')) {
+      return 'The customer account was not found.';
+    }
+
+    if (message.contains('connection timeout') ||
+        message.contains('connectionTimeout')) {
+      return 'The server connection timed out.';
+    }
+
+    if (message.contains('SocketException')) {
+      return 'No internet connection.';
+    }
+
+    return message
+        .replaceFirst('Exception: ', '')
+        .replaceFirst('ApiException: ', '');
+  }
+
+  String _fail(String message) {
+    _errorMessage = message;
+    notifyListeners();
+    return message;
+  }
+
+  void _setLoading(bool value) {
+    if (_isLoading == value) {
+      return;
+    }
+
+    _isLoading = value;
     notifyListeners();
   }
 }

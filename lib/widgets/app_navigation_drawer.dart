@@ -4,23 +4,26 @@ import 'package:provider/provider.dart';
 import '../models/user_role.dart';
 import '../providers/alert_provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/automation_provider.dart';
 import '../providers/device_provider.dart';
 import '../providers/property_provider.dart';
+import '../screens/activity/activity_screen.dart';
 import '../screens/admin/admin_console_screen.dart';
 import '../screens/alerts/alerts_screen.dart';
 import '../screens/automations/automations_screen.dart';
+import '../screens/client_dashboard/client_dashboard_screen.dart';
 import '../screens/devices/devices_screen.dart';
 import '../screens/energy/energy_screen.dart';
 import '../screens/fire_smoke/fire_smoke_screen.dart';
 import '../screens/integrations/integrations_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/privacy/privacy_policy_screen.dart';
 import '../screens/properties/floors_screen.dart';
 import '../screens/properties/homes_screen.dart';
 import '../screens/properties/rooms_screen.dart';
 import '../screens/services_module/services_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/water/water_screen.dart';
+import '../screens/integrations/vendor_nodes_screen.dart';
 import '../theme/app_theme.dart';
 
 class AppNavigationDrawer extends StatelessWidget {
@@ -40,145 +43,135 @@ class AppNavigationDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final role = context.watch<AuthProvider>().role;
     final user = context.watch<AuthProvider>().currentUser;
+    final role = context.watch<AuthProvider>().role;
     final properties = context.watch<PropertyProvider>();
     final devices = context.watch<DeviceProvider>();
     final alerts = context.watch<AlertProvider>();
-    final automations = context.watch<AutomationProvider>();
 
-    final content = ColoredBox(
-      color: AppColors.sideBackground,
+    final menuItems = <_DrawerMenuItem>[
+      _DrawerMenuItem(
+        icon: Icons.home_outlined,
+        label: 'Dashboard',
+        selected: true,
+        onTap: () {
+          if (!permanent) Navigator.pop(context);
+          onDashboard?.call();
+        },
+      ),
+      _DrawerMenuItem(
+        icon: Icons.dashboard_customize_outlined,
+        label: 'Client Dashboard',
+        onTap: () => _open(context, const ClientDashboardScreen()),
+      ),
+      _DrawerMenuItem(
+        icon: Icons.home_work_outlined,
+        label: 'Homes',
+        onTap: () => _open(context, const HomesScreen()),
+      ),
+      _DrawerMenuItem(
+        icon: Icons.layers_outlined,
+        label: 'Floors',
+        onTap: () => _open(context, const FloorsScreen()),
+      ),
+      _DrawerMenuItem(
+        icon: Icons.domain_outlined,
+        label: 'Rooms',
+        onTap: () => _open(context, const RoomsScreen()),
+      ),
+      _DrawerMenuItem(
+        icon: Icons.grid_view_rounded,
+        label: 'Devices',
+        onTap: () => _open(context, const DevicesScreen()),
+      ),
+      _DrawerMenuItem(
+        icon: Icons.bolt_outlined,
+        label: 'Automations',
+        onTap: () => _open(context, const AutomationsScreen()),
+      ),
+      if (role.canViewEnergy)
+        _DrawerMenuItem(
+          icon: Icons.bar_chart_outlined,
+          label: 'Energy',
+          onTap: () => _open(context, const EnergyScreen()),
+        ),
+      if (role.canViewWater)
+        _DrawerMenuItem(
+          icon: Icons.water_drop_outlined,
+          label: 'Water',
+          onTap: () => _open(context, const WaterScreen()),
+        ),
+      _DrawerMenuItem(
+        icon: Icons.access_time_rounded,
+        label: 'Activity',
+        onTap: () => _open(context, const ActivityScreen()),
+      ),
+      _DrawerMenuItem(
+        icon: Icons.notifications_none_rounded,
+        label: 'Alerts',
+        trailingBadge: alerts.activeAlerts.isNotEmpty
+            ? _CountBadge(count: alerts.activeAlerts.length)
+            : null,
+        onTap: () => _open(context, const AlertsScreen()),
+      ),
+      _DrawerMenuItem(
+        icon: Icons.local_fire_department_outlined,
+        label: 'Fire & Smoke',
+        onTap: () => _open(context, const FireSmokeScreen()),
+      ),
+      _DrawerMenuItem(
+        icon: Icons.share_outlined,
+        label: 'Vendor Nodes',
+        onTap: () => _open(context, const VendorNodesScreen()),
+      ),
+      _DrawerMenuItem(
+        icon: Icons.link_rounded,
+        label: 'Integrations',
+        onTap: () => _open(context, const IntegrationsScreen()),
+      ),
+      _DrawerMenuItem(
+        icon: Icons.support_agent_rounded,
+        label: 'Services',
+        onTap: () => _open(context, const ServicesScreen()),
+      ),
+      if (role.canAccessAdminConsole)
+        _DrawerMenuItem(
+          icon: Icons.admin_panel_settings_outlined,
+          label: 'Admin Console',
+          onTap: () => _open(context, const AdminConsoleScreen()),
+        ),
+      _DrawerMenuItem(
+        icon: Icons.settings_outlined,
+        label: 'Settings',
+        onTap: () => _open(context, const SettingsScreen()),
+      ),
+      _DrawerMenuItem(
+        icon: Icons.verified_user_outlined,
+        label: 'Privacy Policy',
+        onTap: () => _open(context, const PrivacyPolicyScreen()),
+      ),
+    ];
+
+    final content = Container(
+      color: const Color(0xFFFDFEFE),
       child: SafeArea(
         child: Column(
           children: [
             const _DrawerBrand(),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 18),
-                children: [
-                  const _DrawerHeading('MAIN'),
-                  _DrawerItem(
-                    icon: Icons.dashboard_rounded,
-                    label: 'Dashboard',
-                    selected: true,
-                    onTap: () {
-                      if (!permanent) Navigator.pop(context);
-                      onDashboard?.call();
-                    },
-                  ),
-                  _DrawerItem(
-                    icon: Icons.notifications_active_outlined,
-                    label: 'Alerts',
-                    count: alerts.activeAlerts.length,
-                    onTap: () => _open(context, const AlertsScreen()),
-                  ),
-                  if (role.canViewEnergy)
-                    _DrawerItem(
-                      icon: Icons.bolt_outlined,
-                      label: 'Energy insights',
-                      onTap: () => _open(context, const EnergyScreen()),
-                    ),
-                  if (role.canViewWater)
-                    _DrawerItem(
-                      icon: Icons.water_drop_outlined,
-                      label: 'Water management',
-                      onTap: () => _open(context, const WaterScreen()),
-                    ),
-                  const _DrawerHeading('MY PROPERTIES'),
-                  _DrawerItem(
-                    icon: Icons.home_work_outlined,
-                    label: 'Properties',
-                    count: properties.properties.length,
-                    onTap: () => _open(context, const HomesScreen()),
-                  ),
-                  _DrawerItem(
-                    icon: Icons.layers_outlined,
-                    label: 'Floors',
-                    count: properties.floors.length,
-                    onTap: () => _open(context, const FloorsScreen()),
-                  ),
-                  _DrawerItem(
-                    icon: Icons.meeting_room_outlined,
-                    label: 'Rooms / units',
-                    count: properties.rooms.length,
-                    onTap: () => _open(context, const RoomsScreen()),
-                  ),
-                  _DrawerItem(
-                    icon: Icons.devices_other_rounded,
-                    label: 'Devices',
-                    count: devices.devices.length,
-                    onTap: () => _open(context, const DevicesScreen()),
-                  ),
-                  _DrawerItem(
-                    icon: Icons.local_fire_department_outlined,
-                    label: 'Fire, smoke & gas',
-                    onTap: () => _open(context, const FireSmokeScreen()),
-                  ),
-                  const _DrawerHeading('INTEGRATIONS'),
-                  _DrawerItem(
-                    icon: Icons.auto_awesome_outlined,
-                    label: 'Automations',
-                    count: automations.enabledCount,
-                    onTap: () => _open(context, const AutomationsScreen()),
-                  ),
-                  _DrawerItem(
-                    icon: Icons.mic_none_rounded,
-                    label: 'Voice assistants',
-                    onTap: () =>
-                        _open(context, const IntegrationsScreen(initialTab: 0)),
-                  ),
-                  _DrawerItem(
-                    icon: Icons.webhook_rounded,
-                    label: 'Webhooks',
-                    onTap: () =>
-                        _open(context, const IntegrationsScreen(initialTab: 1)),
-                  ),
-                  _DrawerItem(
-                    icon: Icons.hub_outlined,
-                    label: 'Vendor nodes',
-                    onTap: () => _open(context, const ServicesScreen()),
-                  ),
-                  if (role.canAccessAdminConsole)
-                    _DrawerItem(
-                      icon: Icons.admin_panel_settings_outlined,
-                      label: 'Access control',
-                      onTap: () => _open(context, const AdminConsoleScreen()),
-                    ),
-                  const _DrawerHeading('ACCOUNT'),
-                  _DrawerItem(
-                    icon: Icons.person_outline_rounded,
-                    label: 'Profile',
-                    onTap: () => _open(context, const ProfileScreen()),
-                  ),
-                  _DrawerItem(
-                    icon: Icons.settings_outlined,
-                    label: 'Settings',
-                    onTap: () => _open(context, const SettingsScreen()),
-                  ),
-                  _DrawerItem(
-                    icon: Icons.privacy_tip_outlined,
-                    label: 'Privacy policy',
-                    onTap: () => _open(
-                      context,
-                      const _InfoScreen(
-                        title: 'Privacy Policy',
-                        icon: Icons.privacy_tip_outlined,
-                        message:
-                            'Property, device and account data is used only '
-                            'to provide Smart Homez monitoring and automation. '
-                            'Sensitive actions should be protected by backend '
-                            'authentication before production deployment.',
-                      ),
-                    ),
-                  ),
-                ],
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 18),
+                itemCount: menuItems.length,
+                itemBuilder: (context, index) =>
+                    _DrawerItemTile(item: menuItems[index]),
               ),
             ),
-            _DrawerUser(
+            _DrawerUserCard(
               initials: user?.avatarInitials ?? '--',
               name: user?.name ?? 'Smart Homez User',
-              role: user?.role.label ?? 'User',
+              roleLabel: user?.role.label ?? 'User',
+              propertyCount: properties.properties.length,
+              deviceCount: devices.devices.length,
               onTap: () => _open(context, const ProfileScreen()),
             ),
           ],
@@ -187,18 +180,34 @@ class AppNavigationDrawer extends StatelessWidget {
     );
 
     if (permanent) {
-      return SizedBox(width: 276, child: Material(child: content));
+      return SizedBox(width: 286, child: Material(child: content));
     }
 
     return Drawer(
-      backgroundColor: AppColors.sideBackground,
-      width: MediaQuery.sizeOf(context).width * 0.88,
+      backgroundColor: const Color(0xFFFDFEFE),
+      width: MediaQuery.sizeOf(context).width * 0.82,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.horizontal(right: Radius.circular(22)),
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(26)),
       ),
       child: content,
     );
   }
+}
+
+class _DrawerMenuItem {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final Widget? trailingBadge;
+
+  const _DrawerMenuItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.selected = false,
+    this.trailingBadge,
+  });
 }
 
 class _DrawerBrand extends StatelessWidget {
@@ -206,54 +215,72 @@ class _DrawerBrand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 18, 18, 17),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.sideDivider)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              gradient: AppColors.brandGradient,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x4DFF7A18),
-                  blurRadius: 16,
-                  offset: Offset(0, 6),
+          SizedBox(
+            width: 72,
+            height: 72,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(
+                  Icons.home_rounded,
+                  size: 64,
+                  color: AppColors.primaryDark,
+                ),
+                const Positioned(
+                  top: 18,
+                  child: Icon(
+                    Icons.wifi_rounded,
+                    size: 20,
+                    color: AppColors.primary,
+                  ),
+                ),
+                Positioned(
+                  bottom: 14,
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryDark,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: const Icon(
+                      Icons.window_rounded,
+                      size: 8,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.bolt_rounded,
-              color: Colors.white,
-              size: 23,
-            ),
           ),
-          const SizedBox(width: 11),
+          const SizedBox(width: 8),
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Smart Homez',
+                  'Smart',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
+                    color: AppColors.textPrimary,
+                    fontSize: 20,
                     fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                    height: 1,
                   ),
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'BY AURABRAIN TECHNOLOGIES',
+                  'Homez',
                   style: TextStyle(
-                    color: AppColors.sideTextDim,
-                    fontSize: 8.5,
-                    letterSpacing: 0.6,
-                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryDark,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                    height: 1,
                   ),
                 ),
               ],
@@ -265,92 +292,58 @@ class _DrawerBrand extends StatelessWidget {
   }
 }
 
-class _DrawerHeading extends StatelessWidget {
-  final String text;
+class _DrawerItemTile extends StatelessWidget {
+  final _DrawerMenuItem item;
 
-  const _DrawerHeading(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 17, 8, 7),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: AppColors.sideTextDim,
-          fontSize: 10.5,
-          letterSpacing: 1.25,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-class _DrawerItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final int? count;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _DrawerItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.count,
-    this.selected = false,
-  });
+  const _DrawerItemTile({required this.item});
 
   @override
   Widget build(BuildContext context) {
+    final isSelected = item.selected;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1.5),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Material(
-        color: selected ? AppColors.sideElevated : Colors.transparent,
-        borderRadius: BorderRadius.circular(11),
+        color: isSelected ? const Color(0xFFF0FAF8) : Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
         child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(11),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+          onTap: item.onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isSelected
+                    ? const Color(0xFFBFE9E1)
+                    : Colors.transparent,
+              ),
+            ),
             child: Row(
               children: [
-                Container(
-                  width: 31,
-                  height: 31,
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? AppColors.primarySoft
-                        : AppColors.sideElevated,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 17,
-                    color: selected ? AppColors.primary : AppColors.sideTextDim,
-                  ),
+                Icon(
+                  item.icon,
+                  size: 23,
+                  color: isSelected
+                      ? AppColors.primaryDark
+                      : const Color(0xFF6B7280),
                 ),
-                const SizedBox(width: 11),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    label,
+                    item.label,
                     style: TextStyle(
-                      color: selected ? Colors.white : AppColors.sideText,
-                      fontSize: 13.5,
-                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                      color: isSelected
+                          ? AppColors.primaryDark
+                          : AppColors.textPrimary,
+                      fontSize: 14.5,
+                      fontWeight: isSelected
+                          ? FontWeight.w800
+                          : FontWeight.w600,
                     ),
                   ),
                 ),
-                if (count != null)
-                  Text(
-                    '$count',
-                    style: const TextStyle(
-                      color: AppColors.sideTextDim,
-                      fontSize: 10.5,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
+                if (item.trailingBadge != null) item.trailingBadge!,
               ],
             ),
           ),
@@ -360,141 +353,138 @@ class _DrawerItem extends StatelessWidget {
   }
 }
 
-class _DrawerUser extends StatelessWidget {
-  final String initials;
-  final String name;
-  final String role;
-  final VoidCallback onTap;
+class _CountBadge extends StatelessWidget {
+  final int count;
 
-  const _DrawerUser({
-    required this.initials,
-    required this.name,
-    required this.role,
-    required this.onTap,
-  });
+  const _CountBadge({required this.count});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 13, 14, 14),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.sideDivider)),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.primarySoft,
+        borderRadius: BorderRadius.circular(999),
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(11),
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  gradient: AppColors.brandGradient,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  initials,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      role,
-                      style: const TextStyle(
-                        color: AppColors.sideTextDim,
-                        fontSize: 10.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.sideTextDim,
-                size: 18,
-              ),
-            ],
-          ),
+      child: Text(
+        '$count',
+        style: const TextStyle(
+          color: AppColors.primaryDark,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
   }
 }
 
-class _InfoScreen extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final String message;
+class _DrawerUserCard extends StatelessWidget {
+  final String initials;
+  final String name;
+  final String roleLabel;
+  final int propertyCount;
+  final int deviceCount;
+  final VoidCallback onTap;
 
-  const _InfoScreen({
-    required this.title,
-    required this.icon,
-    required this.message,
+  const _DrawerUserCard({
+    required this.initials,
+    required this.name,
+    required this.roleLabel,
+    required this.propertyCount,
+    required this.deviceCount,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 58,
-                    height: 58,
-                    decoration: BoxDecoration(
-                      color: AppColors.primarySoft,
-                      borderRadius: BorderRadius.circular(17),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Material(
+        color: Colors.white,
+        elevation: 0,
+        borderRadius: BorderRadius.circular(22),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(22),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: const Color(0xFFEFF3F4)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x11000000),
+                  blurRadius: 18,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF8FE5D8), Color(0xFF23C9B5)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    child: Icon(icon, color: AppColors.primary, size: 30),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(height: 18),
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
+                  alignment: Alignment.center,
+                  child: Text(
+                    initials,
                     style: const TextStyle(
-                      fontSize: 21,
+                      color: Colors.white,
+                      fontSize: 16,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(height: 9),
-                  Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      height: 1.5,
-                    ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        roleLabel,
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$propertyCount properties • $deviceCount devices',
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textSecondary,
+                  size: 22,
+                ),
+              ],
             ),
           ),
         ),

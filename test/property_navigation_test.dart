@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smart_homez/data/mock_data.dart';
 import 'package:smart_homez/models/app_user.dart';
 import 'package:smart_homez/models/device.dart';
 import 'package:smart_homez/models/user_role.dart';
@@ -7,21 +6,31 @@ import 'package:smart_homez/providers/device_provider.dart';
 import 'package:smart_homez/services/device_repository.dart';
 
 void main() {
-  test('resident can see and control devices in their own flat', () async {
-    final provider = DeviceProvider(repository: MemoryDeviceRepository());
+  Future<DeviceProvider> createProvider() async {
+    final provider = DeviceProvider(
+      repository: MemoryDeviceRepository(const <Device>[]),
+    );
+
     while (provider.isLoading) {
       await Future<void>.delayed(Duration.zero);
     }
 
-    // Create a specific test device belonging to a flat
-    final testDevice = (await provider.addDevice(
+    return provider;
+  }
+
+  test('resident can see and control devices in their own flat', () async {
+    final provider = await createProvider();
+    addTearDown(provider.dispose);
+
+    final createdDevice = await provider.addDevice(
       type: DeviceType.light,
       name: 'Bedroom Light',
       macAddress: '11:22:33:44:55:66',
-    )).copyWith(flatId: 'flat_101');
+    );
 
-    // Replace the device in provider for the test
-    provider.updateDevice(
+    final testDevice = createdDevice.copyWith(flatId: 'flat_101');
+
+    await provider.updateDevice(
       testDevice,
       type: testDevice.type,
       name: testDevice.name,
@@ -40,21 +49,17 @@ void main() {
     );
 
     final visible = provider.visibleDevices(resident);
-    expect(visible.any((d) => d.name == 'Bedroom Light'), isTrue);
-    expect(
-      provider.canControlDevice(
-        visible.firstWhere((d) => d.name == 'Bedroom Light'),
-        resident,
-      ),
-      isTrue,
+    final bedroomLight = visible.firstWhere(
+      (device) => device.name == 'Bedroom Light',
     );
+
+    expect(bedroomLight.flatId, 'flat_101');
+    expect(provider.canControlDevice(bedroomLight, resident), isTrue);
   });
 
   test('optional names and MAC address receive safe defaults', () async {
-    final provider = DeviceProvider(repository: MemoryDeviceRepository());
-    while (provider.isLoading) {
-      await Future<void>.delayed(Duration.zero);
-    }
+    final provider = await createProvider();
+    addTearDown(provider.dispose);
 
     final newDevice = await provider.addDevice(
       type: DeviceType.light,
@@ -66,8 +71,8 @@ void main() {
       roomName: 'Living Room',
     );
 
-    expect(newDevice.name, equals('Light'));
-    expect(newDevice.macAddress, equals('AA:BB:CC:DD:EE:FF'));
-    expect(newDevice.zone, equals('Living Room'));
+    expect(newDevice.name, 'Light');
+    expect(newDevice.macAddress, 'AA:BB:CC:DD:EE:FF');
+    expect(newDevice.zone, 'Living Room');
   });
 }

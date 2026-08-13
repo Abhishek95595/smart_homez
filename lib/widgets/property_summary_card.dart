@@ -29,20 +29,19 @@ class PropertySummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = AppColors.primary;
     final allOnline = deviceCount == 0 || onlineDeviceCount == deviceCount;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: accent.withValues(alpha: 0.25), width: 1.5),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFFCCECE8), width: 1.2),
+        boxShadow: const [
           BoxShadow(
-            color: accent.withValues(alpha: 0.04),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            color: Color(0x0C00A38E),
+            blurRadius: 20,
+            offset: Offset(0, 8),
           ),
         ],
       ),
@@ -52,26 +51,51 @@ class PropertySummaryCard extends StatelessWidget {
         child: InkWell(
           onTap: onOpen,
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(18),
             child: Column(
               children: [
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Main property icon gradient card
                     Container(
-                      width: 64,
-                      height: 64,
+                      width: 58,
+                      height: 58,
                       decoration: BoxDecoration(
-                        gradient: AppColors.brandGradient,
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF00C9A7), Color(0xFF00A38E)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                         borderRadius: BorderRadius.circular(18),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x2900A38E),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      child: const Icon(
-                        Icons.home_rounded,
-                        color: Colors.white,
-                        size: 32,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Positioned(
+                            bottom: 2,
+                            child: Icon(
+                              Icons.forest_rounded,
+                              size: 28,
+                              color: Colors.white.withValues(alpha: 0.25),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.home_rounded,
+                            color: Colors.white,
+                            size: 30,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,29 +105,30 @@ class PropertySummaryCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.w900,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF0F172A),
                               letterSpacing: -0.2,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 3),
                           Text(
                             '${property.category} · ${property.propertyType}',
                             style: const TextStyle(
-                              color: AppColors.primary,
+                              color: Color(0xFF00A38E),
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Row(
                             children: [
                               const Icon(
-                                Icons.location_on,
-                                size: 16,
-                                color: AppColors.primary,
+                                Icons.location_on_rounded,
+                                size: 14,
+                                color: Color(0xFF00A38E),
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 3),
                               Expanded(
                                 child: Text(
                                   property.address.trim().isEmpty
@@ -112,8 +137,8 @@ class PropertySummaryCard extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 13,
+                                    color: Color(0xFF64748B),
+                                    fontSize: 12,
                                   ),
                                 ),
                               ),
@@ -135,7 +160,7 @@ class PropertySummaryCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(
@@ -150,7 +175,7 @@ class PropertySummaryCard extends StatelessWidget {
                       child: _PropertyStat(
                         value: '$roomCount',
                         label: property.isCommercial ? 'Workspaces' : 'Rooms',
-                        icon: Icons.meeting_room_outlined,
+                        icon: Icons.sensor_door_outlined,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -163,16 +188,17 @@ class PropertySummaryCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 38,
+                      height: 44,
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceElevated,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.divider),
+                        color: const Color(0xFFF0FDFB),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFCCECE8)),
                       ),
                       child: const Icon(
                         Icons.chevron_right_rounded,
-                        color: AppColors.textSecondary,
+                        color: Color(0xFF00A38E),
+                        size: 22,
                       ),
                     ),
                   ],
@@ -201,7 +227,7 @@ class _PropertyMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
       tooltip: 'Property actions',
-      icon: const Icon(Icons.more_vert_rounded),
+      icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF64748B)),
       onSelected: (value) {
         switch (value) {
           case 'edit':
@@ -255,11 +281,12 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = online ? AppColors.success : AppColors.warning;
+    final color = online ? const Color(0xFF059669) : const Color(0xFFD97706);
+    final bgColor = online ? const Color(0xFFE6F4EA) : const Color(0xFFFEF3C7);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: bgColor,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -267,7 +294,7 @@ class _StatusPill extends StatelessWidget {
         style: TextStyle(
           color: color,
           fontSize: 11,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -288,33 +315,38 @@ class _PropertyStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
       decoration: BoxDecoration(
-        color: AppColors.primarySoft,
-        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFFF0FDFB),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE0F2F1)),
       ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 18, color: AppColors.primary),
-              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.all(2),
+                child: Icon(icon, size: 16, color: const Color(0xFF00A38E)),
+              ),
+              const SizedBox(width: 4),
               Text(
                 value,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.w900,
+                  color: Color(0xFF0F172A),
                   height: 1,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             label,
             style: const TextStyle(
-              color: AppColors.textSecondary,
+              color: Color(0xFF64748B),
               fontSize: 10,
               fontWeight: FontWeight.w700,
             ),

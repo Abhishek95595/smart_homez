@@ -1,158 +1,72 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../core/network/api_client.dart';
+
+/// Compatibility API service used by repositories.
+///
+/// This class wraps [ApiClient] and preserves the existing repository API,
+/// including the `body:` parameter used throughout TenantApiRepository.
 class ApiService {
-  final String baseUrl = 'https://tenant-api.saajsajja.in';
-  late final Dio _dio;
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  ApiService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
-  String? _clientId;
-  String? _clientSecret;
-  String? _cachedToken;
+  final ApiClient _apiClient;
 
-  static final ApiService _instance = ApiService._internal();
-  factory ApiService() => _instance;
+  Future<Response<dynamic>> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) {
+    return _apiClient.get(path, queryParameters: queryParameters);
+  }
 
-  ApiService._internal() {
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
-        // Fix 1: Explicitly set Content-Type to fix 415 error
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        validateStatus: (status) => status != null && status < 500,
-      ),
-    );
-
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final token = await _storage.read(key: 'jwt_token');
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
-            _cachedToken = token;
-          }
-
-          // Double-check Content-Type for write operations
-          if (options.method == 'POST' ||
-              options.method == 'PUT' ||
-              options.method == 'PATCH') {
-            options.headers['Content-Type'] = 'application/json';
-          }
-
-          debugPrint('[API Request] ${options.method} ${options.path}');
-          return handler.next(options);
-        },
-        onResponse: (response, handler) {
-          debugPrint('[API Response] ${response.statusCode}');
-          return handler.next(response);
-        },
-        onError: (DioException e, handler) async {
-          debugPrint('[API Error] ${e.type} | ${e.message}');
-
-          if (e.response?.statusCode == 401 &&
-              _clientId != null &&
-              _clientSecret != null) {
-            debugPrint(
-              '[API Auth] 401 Unauthorized. Attempting automatic token refresh...',
-            );
-
-            final success = await fetchToken(_clientId!, _clientSecret!);
-            if (success) {
-              debugPrint(
-                '[API Auth] Token refreshed, retrying original request...',
-              );
-
-              final newToken = await _storage.read(key: 'jwt_token');
-              final options = e.requestOptions;
-              options.headers['Authorization'] = 'Bearer $newToken';
-
-              final response = await _dio.fetch(options);
-              return handler.resolve(response);
-            }
-          }
-          return handler.next(e);
-        },
-      ),
+  Future<Response<dynamic>> post(
+    String path, {
+    dynamic body,
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+  }) {
+    return _apiClient.post(
+      path,
+      data: data ?? body,
+      queryParameters: queryParameters,
     );
   }
 
-  void setCredentials(String id, String secret) {
-    _clientId = id;
-    _clientSecret = secret;
-  }
-
-  String? get token => _cachedToken;
-
-  Future<Response> post(String path, dynamic body) =>
-      _dio.post(path, data: body);
-  Future<Response> get(String path) => _dio.get(path);
-
-  Future<Response> mobileLogin(String email, String password) async {
-    final response = await _dio.post(
-      '/api/v1/mobile/login',
-      data: {'email': email, 'password': password},
+  Future<Response<dynamic>> put(
+    String path, {
+    dynamic body,
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+  }) {
+    return _apiClient.put(
+      path,
+      data: data ?? body,
+      queryParameters: queryParameters,
     );
-
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      final token = response.data['token'];
-      if (token != null) {
-        await _storage.write(key: 'jwt_token', value: token);
-        _cachedToken = token;
-      }
-    }
-    return response;
   }
 
-  Future<bool> fetchToken(String clientId, String clientSecret) async {
-    _clientId = clientId;
-    _clientSecret = clientSecret;
-
-    try {
-      final response = await _dio.post(
-        '/api/Auth/token',
-        data: {'clientId': clientId, 'clientSecret': clientSecret},
-      );
-
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        final token = response.data['token'];
-        if (token != null) {
-          await _storage.write(key: 'jwt_token', value: token);
-          _cachedToken = token;
-          return true;
-        }
-      }
-    } catch (e) {
-      debugPrint('[API Token Exchange Error] $e');
-    }
-    return false;
-  }
-
-  Future<Response> login(String email, String password) async {
-    final response = await _dio.post(
-      '/api/Auth/login',
-      data: {'email': email, 'password': password},
+  Future<Response<dynamic>> patch(
+    String path, {
+    dynamic body,
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+  }) {
+    return _apiClient.patch(
+      path,
+      data: data ?? body,
+      queryParameters: queryParameters,
     );
-
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      final token = response.data['token'];
-      if (token != null) {
-        await _storage.write(key: 'jwt_token', value: token);
-        _cachedToken = token;
-      }
-    }
-    return response;
   }
 
-  Future<void> clearAuth() async {
-    await _storage.delete(key: 'jwt_token');
-    _cachedToken = null;
-    _clientId = null;
-    _clientSecret = null;
+  Future<Response<dynamic>> delete(
+    String path, {
+    dynamic body,
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+  }) {
+    return _apiClient.delete(
+      path,
+      data: data ?? body,
+      queryParameters: queryParameters,
+    );
   }
 }

@@ -65,6 +65,9 @@ class Device {
   final String? towerId;
   final String? flatId;
   final String zone; // room/common-area name
+  final String? homeName;
+  final String? floorName;
+  final String? roomName;
   DeviceStatus status;
   bool isOn;
   double? dimLevel; // 0-100 for dimmable lights/fans
@@ -84,6 +87,9 @@ class Device {
     this.towerId,
     this.flatId,
     required this.zone,
+    this.homeName,
+    this.floorName,
+    this.roomName,
     this.status = DeviceStatus.online,
     this.isOn = false,
     this.dimLevel,
@@ -102,6 +108,9 @@ class Device {
     String? towerId,
     String? flatId,
     String? zone,
+    String? homeName,
+    String? floorName,
+    String? roomName,
     DeviceStatus? status,
     bool? isOn,
     double? dimLevel,
@@ -120,6 +129,9 @@ class Device {
       towerId: towerId ?? this.towerId,
       flatId: flatId ?? this.flatId,
       zone: zone ?? this.zone,
+      homeName: homeName ?? this.homeName,
+      floorName: floorName ?? this.floorName,
+      roomName: roomName ?? this.roomName,
       status: status ?? this.status,
       isOn: isOn ?? this.isOn,
       dimLevel: dimLevel ?? this.dimLevel,
@@ -141,6 +153,9 @@ class Device {
     'towerId': towerId,
     'flatId': flatId,
     'zone': zone,
+    'homeName': homeName,
+    'floorName': floorName,
+    'roomName': roomName,
     'status': status.name,
     'isOn': isOn,
     'dimLevel': dimLevel,
@@ -162,6 +177,9 @@ class Device {
       towerId: json['towerId'] as String?,
       flatId: json['flatId'] as String?,
       zone: json['zone'] as String,
+      homeName: json['homeName'] as String?,
+      floorName: json['floorName'] as String?,
+      roomName: json['roomName'] as String?,
       status: DeviceStatus.values.byName(
         json['status'] as String? ?? DeviceStatus.online.name,
       ),

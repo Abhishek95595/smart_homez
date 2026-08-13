@@ -5,12 +5,10 @@ import '../models/user_role.dart';
 import '../providers/alert_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/device_provider.dart';
-import '../providers/property_provider.dart';
-import 'activity/activity_screen.dart';
-import 'alerts/alerts_screen.dart';
+import 'automations/automations_screen.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'devices/devices_screen.dart';
-import 'energy/energy_screen.dart';
+import 'profile/profile_screen.dart';
 import '../widgets/app_navigation_drawer.dart';
 
 class MainShell extends StatefulWidget {
@@ -67,7 +65,7 @@ class _MainShellState extends State<MainShell> {
   }
 
   List<_Tab> _tabsFor(UserRole role) {
-    final List<_Tab> tabs = [
+    return [
       _Tab(
         icon: Icons.home_rounded,
         label: 'Home',
@@ -75,41 +73,24 @@ class _MainShellState extends State<MainShell> {
         navigatorKey: _navigatorKeys[0],
       ),
       _Tab(
-        icon: Icons.devices_other_rounded,
+        icon: Icons.grid_view_rounded,
         label: 'Devices',
         page: const DevicesScreen(),
         navigatorKey: _navigatorKeys[1],
       ),
       _Tab(
-        icon: Icons.notifications_active_rounded,
-        label: 'Alerts',
-        page: const AlertsScreen(),
+        icon: Icons.bolt_rounded,
+        label: 'Automations',
+        page: const AutomationsScreen(),
         navigatorKey: _navigatorKeys[2],
       ),
-    ];
-
-    var nextIdx = 3;
-    if (role.canViewEnergy) {
-      tabs.add(
-        _Tab(
-          icon: Icons.bolt_rounded,
-          label: 'Energy',
-          page: const EnergyScreen(),
-          navigatorKey: _navigatorKeys[nextIdx++],
-        ),
-      );
-    }
-
-    tabs.add(
       _Tab(
-        icon: Icons.history_rounded,
-        label: 'Activity',
-        page: const ActivityScreen(),
-        navigatorKey: _navigatorKeys[nextIdx],
+        icon: Icons.person_outline_rounded,
+        label: 'Profile',
+        page: const ProfileScreen(),
+        navigatorKey: _navigatorKeys[3],
       ),
-    );
-
-    return tabs;
+    ];
   }
 
   @override
@@ -167,24 +148,113 @@ class _MainShellState extends State<MainShell> {
                   ),
             bottomNavigationBar: desktop
                 ? null
-                : BottomNavigationBar(
-                    currentIndex: safeIndex,
-                    onTap: _onTabTapped,
-                    items: tabs
-                        .map(
-                          (t) => BottomNavigationBarItem(
-                            icon: t.label == 'Alerts'
-                                ? Badge(
-                                    isLabelVisible: criticalCount > 0,
-                                    label: Text('$criticalCount'),
-                                    backgroundColor: Colors.red,
-                                    child: Icon(t.icon),
-                                  )
-                                : Icon(t.icon),
-                            label: t.label,
-                          ),
-                        )
-                        .toList(),
+                : Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      border: Border(
+                        top: BorderSide(color: Color(0xFFE8ECEF), width: 1),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0x0A000000),
+                          blurRadius: 16,
+                          offset: Offset(0, -4),
+                        ),
+                      ],
+                    ),
+                    child: SafeArea(
+                      top: false,
+                      child: Container(
+                        height: 74,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Row(
+                          children: List.generate(tabs.length, (idx) {
+                            final tab = tabs[idx];
+                            final isSelected = safeIndex == idx;
+                            return Expanded(
+                              child: InkWell(
+                                onTap: () => _onTabTapped(idx),
+                                splashColor: const Color(0x1000A38E),
+                                highlightColor: Colors.transparent,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Icon(
+                                          tab.icon,
+                                          color: isSelected
+                                              ? const Color(0xFF00A38E)
+                                              : const Color(0xFF64748B),
+                                          size: 26,
+                                        ),
+                                        if (tab.label == 'Alerts' &&
+                                            criticalCount > 0)
+                                          Positioned(
+                                            top: -3,
+                                            right: -6,
+                                            child: Container(
+                                              padding: const EdgeInsets.all(
+                                                3.5,
+                                              ),
+                                              decoration: const BoxDecoration(
+                                                color: Color(0xFFE53E3E),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              constraints: const BoxConstraints(
+                                                minWidth: 16,
+                                                minHeight: 16,
+                                              ),
+                                              child: Text(
+                                                '$criticalCount',
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.w900,
+                                                  height: 1,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      tab.label,
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? const Color(0xFF00A38E)
+                                            : const Color(0xFF64748B),
+                                        fontSize: 12,
+                                        fontWeight: isSelected
+                                            ? FontWeight.w700
+                                            : FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      height: 0,
+                                      width: 0,
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? const Color(0xFF00A38E)
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(2),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+                    ),
                   ),
           );
         },

@@ -1,54 +1,93 @@
-import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
 import '../models/resolved_client.dart';
 
 class ClientService {
-  final ApiClient _api = ApiClient();
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  ClientService({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
 
-  /// Resolves the app user UUID (Phase 2).
+  final ApiClient _api;
+
+  /// Resolves an existing customer, or creates one when supported by the API.
+  /// At least one of [email] or [phone] should be provided.
   Future<ResolvedClient?> resolveClient({
-    required String email,
+    String? email,
     String? phone,
     String? name,
   }) async {
-    final response = await _api.post(
-      ApiEndpoints.resolveClient,
-      data: {
-        'email': email,
-        'phone': phone ?? '',
-        'name': name ?? 'App User',
-      },
-    );
+    final String? cleanEmail = email?.trim();
+    final String? cleanPhone = phone?.trim();
+    final String? cleanName = name?.trim();
 
-    // 1. Log the raw response for debugging (Masking full JWT/Secrets)
-    debugPrint('[Client Response] RAW: ${jsonEncode(response.data)}');
+    if ((cleanEmail == null || cleanEmail.isEmpty) &&
+        (cleanPhone == null || cleanPhone.isEmpty)) {
+      throw ArgumentError('Email or phone is required to resolve a client.');
+    }
 
-    // Defensive parsing for likely wrappers {"success": true, "data": {...}}
-    final dynamic responseData = response.data;
-    ResolvedClient? client;
+    try {
+      final Response<dynamic> response = await _api.post(
+        ApiEndpoints.resolveClient,
+        data: <String, dynamic>{
+          if (cleanEmail != null && cleanEmail.isNotEmpty) 'email': cleanEmail,
+          if (cleanPhone != null && cleanPhone.isNotEmpty) 'phone': cleanPhone,
+          if (cleanName != null && cleanName.isNotEmpty) 'name': cleanName,
+        },
+      );
 
-    if (responseData is Map<String, dynamic>) {
-      // 5. Update parser for wrappers
-      if (responseData.containsKey('data') && responseData['data'] != null) {
-        client = ResolvedClient.fromJson(responseData['data']);
-      } else if (responseData.containsKey('client') && responseData['client'] != null) {
-        client = ResolvedClient.fromJson(responseData['client']);
-      } else if (responseData.containsKey('id') || responseData.containsKey('clientId')) {
-        client = ResolvedClient.fromJson(responseData);
+      final dynamic responseBody = response.data;
+      if (responseBody is! Map) {
+        return null;
       }
-    }
 
-    if (client != null && client.id.isNotEmpty) {
-      debugPrint('[Client] Resolved UUID: ${client.id}');
-      await _storage.write(key: 'resolved_client_uuid', value: client.id);
+      final Map<String, dynamic> body = Map<String, dynamic>.from(responseBody);
+
+      if (body['success'] != true || body['data'] == null) {
+        debugPrint(
+          '[ClientService] Resolve failed: ${body['error'] ?? 'Unknown error'}',
+        );
+        return null;
+      }
+
+      final dynamic resolvedData = body['data'];
+      if (resolvedData is! Map) {
+        return null;
+      }
+
+      return ResolvedClient.fromJson(Map<String, dynamic>.from(resolvedData));
+    } catch (error) {
+      debugPrint('[ClientService] Resolve client error: $error');
+      rethrow;
     }
-    
-    return client;
   }
 
-  Future<String?> getResolvedUuid() => _storage.read(key: 'resolved_client_uuid');
+  /// Returns all clients available to the authenticated API account.
+  Future<List<ResolvedClient>> getClients() async {
+    try {
+      final Response<dynamic> response = await _api.get(ApiEndpoints.clients);
+
+      final dynamic responseBody = response.data;
+      if (responseBody is! Map) {
+        return const <ResolvedClient>[];
+      }
+
+      final Map<String, dynamic> body = Map<String, dynamic>.from(responseBody);
+      final dynamic data = body['data'];
+
+      if (body['success'] != true || data is! List) {
+        return const <ResolvedClient>[];
+      }
+
+      return data
+          .whereType<Map>()
+          .map(
+            (item) => ResolvedClient.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList();
+    } catch (error) {
+      debugPrint('[ClientService] Get clients error: $error');
+      rethrow;
+    }
+  }
 }

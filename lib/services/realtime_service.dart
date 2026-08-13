@@ -28,7 +28,7 @@ class RealtimeService {
   void start(List<Device> devices) {
     _devices = devices;
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 4), (_) => _tickSimulate());
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tickSimulate());
   }
 
   void stop() {

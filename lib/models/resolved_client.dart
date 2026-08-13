@@ -2,19 +2,14 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'resolved_client.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createFactory: false)
 class ResolvedClient {
   final String id;
   final String? name;
   final String? email;
   final String? phone;
 
-  ResolvedClient({
-    required this.id,
-    this.name,
-    this.email,
-    this.phone,
-  });
+  ResolvedClient({required this.id, this.name, this.email, this.phone});
 
   /// Defensive parsing to prevent "Null is not a subtype of type String" in type cast
   factory ResolvedClient.fromJson(Map<String, dynamic> json) {

@@ -1,432 +1,388 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/app_user.dart';
-import '../../models/device.dart';
-import '../../models/user_role.dart';
+import '../../models/property_hierarchy.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/device_provider.dart';
 import '../../providers/energy_provider.dart';
 import '../../providers/property_provider.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/app_state_widgets.dart';
-import '../../widgets/property_summary_card.dart';
-import '../../widgets/section_header.dart';
-import '../../widgets/dashboard_templates.dart';
-import '../admin/admin_console_screen.dart';
 import '../alerts/alerts_screen.dart';
 import '../automations/automations_screen.dart';
-import '../devices/devices_screen.dart';
 import '../energy/energy_screen.dart';
-import '../profile/profile_screen.dart';
 import '../properties/floors_screen.dart';
 import '../properties/homes_screen.dart';
-import '../properties/management_dialogs.dart';
-import '../water/water_screen.dart';
+import '../scenes/routine_scene_screen.dart';
+import '../../theme/app_theme.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
-  String _greeting(bool isCommercial) {
-    if (isCommercial) return 'Facility Overview';
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  int _activeSceneIndex = 0;
+
+  String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hour < 12) return 'Good Morning,';
+    if (hour < 17) return 'Good Afternoon,';
+    return 'Good Evening,';
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthProvider>().currentUser;
+    final auth = context.watch<AuthProvider>();
+    final user = auth.currentUser;
     final propertyProvider = context.watch<PropertyProvider>();
-    final firstProperty = propertyProvider.properties.firstOrNull;
-    final isCommercial = firstProperty?.isCommercial ?? false;
-    final desktop = MediaQuery.sizeOf(context).width >= 1100;
+    final energyProvider = context.watch<EnergyProvider>();
+    final userName = user?.name.split(' ').first ?? 'Ayesha';
 
     return Scaffold(
-      backgroundColor: isCommercial
-          ? const Color(0xFF0F111A)
-          : AppColors.background,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: isCommercial
-            ? const Color(0xFF0F111A)
-            : AppColors.background,
-        automaticallyImplyLeading: false,
-        toolbarHeight: 74,
-        leading: desktop
-            ? null
-            : Builder(
-                builder: (ctx) => IconButton(
-                  icon: Icon(
-                    Icons.menu_rounded,
-                    color: isCommercial ? Colors.white : AppColors.textPrimary,
-                  ),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                ),
-              ),
-        titleSpacing: desktop ? 18 : 2,
-        title: _AppBarGreeting(
-          greeting: _greeting(isCommercial),
-          firstName: isCommercial
-              ? (firstProperty?.name ?? 'Facility')
-              : (user?.name.split(' ').first ?? 'User'),
-          isDark: isCommercial,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        toolbarHeight: 68,
+        centerTitle: true,
+        leading: Builder(
+          builder: (_) => IconButton(
+            icon: const Icon(
+              Icons.menu_rounded,
+              color: Color(0xFF0F172A),
+              size: 28,
+            ),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        title: const Text(
+          'Smart Homez',
+          style: TextStyle(
+            color: Color(0xFF00A38E),
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.3,
+          ),
         ),
         actions: [
-          Semantics(
-            button: true,
-            label: 'Open profile',
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: CircleAvatar(
-                  radius: 19,
-                  backgroundColor: isCommercial
-                      ? Colors.white10
-                      : AppColors.primarySoft,
-                  child: Text(
-                    user?.avatarInitials ?? '??',
-                    style: TextStyle(
-                      color: isCommercial ? Colors.white : AppColors.primary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: Color(0xFF0F172A),
+                    size: 28,
+                  ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AlertsScreen()),
+                  ),
+                ),
+                Positioned(
+                  top: 13,
+                  right: 13,
+                  child: Container(
+                    width: 7.5,
+                    height: 7.5,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF00C9A7),
+                      shape: BoxShape.circle,
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ],
       ),
       body: SafeArea(
         top: false,
-        child: isCommercial
-            ? _CommercialDashboard(user: user)
-            : _ResidentialDashboard(user: user),
-      ),
-    );
-  }
-}
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 22),
+          children: [
+            // 1. Robot Room Hero Banner
+            _HeroGreetingBanner(greeting: _getGreeting(), userName: userName),
+            const SizedBox(height: 24),
 
-class _ResidentialDashboard extends StatelessWidget {
-  final AppUser? user;
-  const _ResidentialDashboard({required this.user});
-
-  @override
-  Widget build(BuildContext context) {
-    final deviceProvider = context.watch<DeviceProvider>();
-    final energy = context.watch<EnergyProvider>();
-    final propertyProvider = context.watch<PropertyProvider>();
-    final role = user?.role ?? UserRole.resident;
-
-    return DashboardLayoutWrapper(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'MY HOME AT A GLANCE',
-            style: TextStyle(
-              color: AppColors.textFaint,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.2,
+            // 2. Quick Scenes Section
+            _SectionHeader(
+              title: 'Quick Scenes',
+              actionLabel: 'View All',
+              onAction: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AutomationsScreen()),
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          DashboardStatGrid(
-            children: [
-              _CompactStat(
-                label: 'Devices',
-                value: '${deviceProvider.totalCount}',
-                icon: Icons.devices_other_rounded,
-              ),
-              _CompactStat(
-                label: 'Online',
-                value: '${deviceProvider.onlineCount}',
-                icon: Icons.cloud_done_outlined,
-                color: AppColors.success,
-              ),
-              _CompactStat(
-                label: 'Alerts',
-                value: '${deviceProvider.offlineCount}',
-                icon: Icons.notifications_active_outlined,
-                color: AppColors.warning,
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          SectionHeader(
-            title: 'Your Properties',
-            actionLabel: 'View All',
-            onAction: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const HomesScreen()),
-            ),
-          ),
-          const SizedBox(height: 14),
-          if (propertyProvider.isLoading && propertyProvider.properties.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24.0),
-                child: CircularProgressIndicator(),
-              ),
-            )
-          else if (propertyProvider.properties.isEmpty)
-            const AppStateCard.empty(
-              title: 'No properties mapped',
-              message: 'Add your first property to start monitoring.',
-            )
-          else
-            ...propertyProvider.properties.take(2).map((p) {
-              final floors = propertyProvider.floorsFor(p.id);
-              final floorIds = floors.map((f) => f.id).toSet();
-              final rooms = propertyProvider.rooms
-                  .where((r) => floorIds.contains(r.floorId))
-                  .toList();
-              final devices = deviceProvider.visibleDevicesAt(
-                user,
-                buildingId: p.id,
-              );
+            const SizedBox(height: 16),
+            _QuickScenesRow(
+              selectedIndex: _activeSceneIndex,
+              onSelect: (index, sceneName) {
+                setState(() => _activeSceneIndex = index);
 
-              return PropertySummaryCard(
-                property: p,
-                floorCount: floors.length,
-                roomCount: rooms.length,
-                deviceCount: devices.length,
-                onlineDeviceCount: devices
-                    .where((d) => d.status == DeviceStatus.online)
-                    .length,
-                onOpen: () => Navigator.push(
+                RoutineThemeData themeData;
+
+                if (index == 0) {
+                  themeData = RoutineThemeData(
+                    routineId: 'good_morning',
+                    title: 'Good Morning',
+                    icon: Icons.wb_sunny_rounded,
+                    bgColor: AppColors.background,
+                    gradientStart: const Color(0xFF26C6DA),
+                    gradientEnd: AppColors.primary,
+                    primarySoft: AppColors.primarySoft,
+                    imagePath: 'assets/images/scene_morning.png',
+                  );
+                } else if (index == 1) {
+                  themeData = const RoutineThemeData(
+                    routineId: 'good_night',
+                    title: 'Good Night',
+                    icon: Icons.nights_stay_rounded,
+                    bgColor: Color(0xFFF3F2FA),
+                    gradientStart: Color(0xFF9074F9),
+                    gradientEnd: Color(0xFF5D3FDB),
+                    primarySoft: Color(0xFFEFE8FF),
+                    imagePath: 'assets/images/scene_night.png',
+                  );
+                } else if (index == 2) {
+                  themeData = const RoutineThemeData(
+                    routineId: 'movie_time',
+                    title: 'Movie Time',
+                    icon: Icons.movie_filter_rounded,
+                    bgColor: Color(0xFFFFF7F2),
+                    gradientStart: Color(0xFFFFB020),
+                    gradientEnd: Color(0xFFE5484D),
+                    primarySoft: Color(0xFFFFF0EC),
+                    imagePath: 'assets/images/scene_movie.png',
+                  );
+                } else {
+                  themeData = const RoutineThemeData(
+                    routineId: 'away_mode',
+                    title: 'Away Mode',
+                    icon: Icons.directions_run_rounded,
+                    bgColor: Color(0xFFF2F4F7), // Slate bg
+                    gradientStart: Color(0xFF6B7280),
+                    gradientEnd: Color(0xFF14161F), // Dark slate
+                    primarySoft: Color(0xFFE5E7EB),
+                    imagePath: 'assets/images/scene_away.png',
+                  );
+                }
+
+                Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => FloorsScreen(propertyId: p.id),
+                    builder: (_) => RoutineSceneScreen(themeData: themeData),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 26),
+
+            // 3. Your Properties Section with Overall Energy Matrix Card
+            _SectionHeader(
+              title: 'Your Properties',
+              actionLabel: 'View All',
+              onAction: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HomesScreen()),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _PropertiesAndEnergySection(
+              properties: propertyProvider.properties,
+              energyProvider: energyProvider,
+            ),
+            const SizedBox(height: 20),
+
+            // 4. Smart Assistant Floating Voice Banner
+            _SmartAssistantVoiceBanner(
+              userName: userName,
+              onTap: () => _showVoiceAssistantModal(context, userName),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showVoiceAssistantModal(BuildContext context, String userName) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _VoiceAssistantModal(userName: userName),
+    );
+  }
+}
+
+class _HeroGreetingBanner extends StatelessWidget {
+  final String greeting;
+  final String userName;
+
+  const _HeroGreetingBanner({required this.greeting, required this.userName});
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final compact = screenWidth < 370;
+
+    return Container(
+      width: double.infinity,
+      height: compact ? 205 : 218,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: const Color(0xFFE9F0F1)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x100F766E),
+            blurRadius: 22,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/home_hero_reference.png',
+                fit: BoxFit.cover,
+                alignment: Alignment.centerRight,
+                errorBuilder: (context, error, stackTrace) => Image.asset(
+                  'assets/images/home_hero_banner.png',
+                  fit: BoxFit.cover,
+                  alignment: Alignment.centerRight,
+                ),
+              ),
+            ),
+            // The reference artwork is intentionally clean on the left so the
+            // live greeting and authenticated user's name remain dynamic.
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.white.withValues(alpha: 0.93),
+                      Colors.white.withValues(alpha: 0.76),
+                      Colors.white.withValues(alpha: 0.18),
+                      Colors.transparent,
+                    ],
+                    stops: const [0.0, 0.34, 0.55, 0.72],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
                   ),
                 ),
-                onHistory: () {},
-                onEdit: () {},
-                onDelete: () {},
-              );
-            }),
-          const SizedBox(height: 32),
-          const SectionHeader(title: 'Quick Controls'),
-          const SizedBox(height: 12),
-          _SmartControlGrid(showEnergy: role.canViewEnergy),
-          const SizedBox(height: 24),
-          if (role.canViewEnergy) ...[
-            const SectionHeader(title: 'Energy Consumption'),
-            const SizedBox(height: 12),
-            _EnergyConsumptionCard(energy: energy),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _CommercialDashboard extends StatelessWidget {
-  final AppUser? user;
-  const _CommercialDashboard({required this.user});
-
-  @override
-  Widget build(BuildContext context) {
-    final deviceProvider = context.watch<DeviceProvider>();
-    final propertyProvider = context.watch<PropertyProvider>();
-    final energy = context.watch<EnergyProvider>();
-    final role = user?.role ?? UserRole.facilityManager;
-
-    return DashboardLayoutWrapper(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'FACILITY PERFORMANCE',
-            style: TextStyle(
-              color: Colors.white38,
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.5,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          DashboardStatGrid(
-            children: [
-              CommercialStatCard(
-                label: 'Total Floors',
-                value: '${propertyProvider.floors.length}',
-                icon: Icons.layers_outlined,
-                color: const Color(0xFF6366F1),
+            Positioned(
+              left: compact ? 20 : 24,
+              top: 22,
+              bottom: 22,
+              child: SizedBox(
+                width: screenWidth * (compact ? 0.51 : 0.48),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      greeting,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: compact ? 23 : 27,
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFF0F172A),
+                        letterSpacing: -0.65,
+                        height: 1.08,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '$userName!',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: compact ? 23 : 27,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF0F172A),
+                              letterSpacing: -0.65,
+                              height: 1.08,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '👋',
+                          style: TextStyle(fontSize: compact ? 18 : 21),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 11),
+                    Text(
+                      "Let's make your home\nsmarter today.",
+                      maxLines: 2,
+                      style: TextStyle(
+                        fontSize: compact ? 13 : 15,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF64748B),
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              CommercialStatCard(
-                label: 'System Health',
-                value:
-                    '${deviceProvider.totalCount == 0 ? 0 : (deviceProvider.onlineCount / deviceProvider.totalCount * 100).toInt()}%',
-                icon: Icons.analytics_outlined,
-                color: AppColors.success,
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          const SectionHeader(title: 'Infrastructure', isDark: true),
-          const SizedBox(height: 16),
-          _CommercialQuickActions(role: role),
-          const SizedBox(height: 32),
-          const SectionHeader(title: 'Critical Alerts', isDark: true),
-          const SizedBox(height: 12),
-          _SystemHealthPanel(
-            deviceProvider: deviceProvider,
-            user: user,
-            isDark: true,
-          ),
-          const SizedBox(height: 32),
-          if (role.canViewEnergy) ...[
-            const SectionHeader(title: 'Energy Management', isDark: true),
-            const SizedBox(height: 12),
-            _EnergyConsumptionCard(energy: energy, isDark: true),
+            ),
           ],
-        ],
+        ),
       ),
     );
   }
 }
 
-class _AppBarGreeting extends StatelessWidget {
-  final String greeting;
-  final String firstName;
-  final bool isDark;
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final String actionLabel;
+  final VoidCallback onAction;
 
-  const _AppBarGreeting({
-    required this.greeting,
-    required this.firstName,
-    this.isDark = false,
+  const _SectionHeader({
+    required this.title,
+    required this.actionLabel,
+    required this.onAction,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          greeting.toUpperCase(),
-          style: TextStyle(
-            color: isDark ? Colors.white38 : AppColors.textFaint,
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.1,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          firstName,
-          style: TextStyle(
-            color: isDark ? Colors.white : AppColors.textPrimary,
-            fontSize: 18,
+          title,
+          style: const TextStyle(
+            fontSize: 20,
             fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+            letterSpacing: -0.3,
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _CompactStat extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color? color;
-
-  const _CompactStat({
-    required this.label,
-    required this.value,
-    required this.icon,
-    this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final themeColor = color ?? AppColors.primary;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: themeColor),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-          ),
-          Text(
-            label,
+        GestureDetector(
+          onTap: onAction,
+          child: Text(
+            actionLabel,
             style: const TextStyle(
-              fontSize: 10,
-              color: AppColors.textSecondary,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF00A38E),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SmartControlGrid extends StatelessWidget {
-  final bool showEnergy;
-  const _SmartControlGrid({required this.showEnergy});
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.5,
-      children: [
-        _ControlTile(
-          icon: Icons.auto_awesome_rounded,
-          label: 'Automations',
-          color: const Color(0xFF6366F1),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AutomationsScreen()),
-          ),
-        ),
-        _ControlTile(
-          icon: Icons.notifications_active_rounded,
-          label: 'Alerts',
-          color: AppColors.danger,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AlertsScreen()),
-          ),
-        ),
-        if (showEnergy)
-          _ControlTile(
-            icon: Icons.bolt_rounded,
-            label: 'Energy',
-            color: AppColors.warning,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const EnergyScreen()),
-            ),
-          ),
-        _ControlTile(
-          icon: Icons.water_drop_rounded,
-          label: 'Water',
-          color: Colors.blue,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const WaterScreen()),
           ),
         ),
       ],
@@ -434,338 +390,836 @@ class _SmartControlGrid extends StatelessWidget {
   }
 }
 
-class _ControlTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
+class _QuickScenesRow extends StatelessWidget {
+  final int selectedIndex;
+  final void Function(int index, String sceneName) onSelect;
+
+  const _QuickScenesRow({required this.selectedIndex, required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    final scenes = [
+      {
+        'title': 'Good\nMorning',
+        'rawName': 'Good Morning',
+        'image': 'assets/images/scene_morning_ref.png',
+      },
+      {
+        'title': 'Good\nNight',
+        'rawName': 'Good Night',
+        'image': 'assets/images/scene_night_ref.png',
+      },
+      {
+        'title': 'Movie\nTime',
+        'rawName': 'Movie Time',
+        'image': 'assets/images/scene_movie_ref.png',
+      },
+      {
+        'title': 'Away\nMode',
+        'rawName': 'Away Mode',
+        'image': 'assets/images/scene_away_ref.png',
+      },
+    ];
+
+    return SizedBox(
+      height: 124,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: List.generate(scenes.length, (idx) {
+          final scene = scenes[idx];
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(
+                right: idx == scenes.length - 1 ? 0 : 10,
+              ),
+              child: _SceneCard(
+                title: scene['title']!,
+                imagePath: scene['image']!,
+                isSelected: selectedIndex == idx,
+                onTap: () => onSelect(idx, scene['rawName']!),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class _SceneCard extends StatelessWidget {
+  final String title;
+  final String imagePath;
+  final bool isSelected;
   final VoidCallback onTap;
 
-  const _ControlTile({
-    required this.icon,
-    required this.label,
-    required this.color,
+  const _SceneCard({
+    required this.title,
+    required this.imagePath,
+    required this.isSelected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final background = isSelected ? const Color(0xFFDDF7F3) : Colors.white;
+    final border = isSelected
+        ? const Color(0xFF86DDD1)
+        : const Color(0xFFEAF0F2);
+    final labelColor = isSelected
+        ? const Color(0xFF00796B)
+        : const Color(0xFF111827);
+
     return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: AppColors.divider),
-      ),
+      color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: color, size: 24),
-              const Spacer(),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SystemHealthPanel extends StatelessWidget {
-  final DeviceProvider deviceProvider;
-  final AppUser? user;
-  final bool isDark;
-
-  const _SystemHealthPanel({
-    required this.deviceProvider,
-    this.user,
-    this.isDark = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1B1E2A) : AppColors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: isDark ? Colors.white10 : AppColors.divider),
-      ),
-      child: Row(
-        children: [
-          _HealthIndicator(
-            label: 'Online',
-            value: '${deviceProvider.onlineCount}',
-            color: AppColors.success,
-          ),
-          const SizedBox(width: 24),
-          _HealthIndicator(
-            label: 'Offline',
-            value: '${deviceProvider.offlineCount}',
-            color: isDark ? Colors.white24 : AppColors.textFaint,
-          ),
-          const Spacer(),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                'SYSTEM STATUS',
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w900,
-                  color: isDark ? Colors.white38 : AppColors.textFaint,
-                  letterSpacing: 1.1,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Text(
-                    'Operational',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                      color: isDark ? Colors.white : AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppColors.success,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ],
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.fromLTRB(6, 10, 6, 9),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: border, width: isSelected ? 1.2 : 1),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0B0F172A),
+                blurRadius: 14,
+                offset: Offset(0, 5),
               ),
             ],
           ),
-        ],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 52,
+                height: 52,
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                  errorBuilder: (_, _, _) => Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 38,
+                    color: isSelected
+                        ? const Color(0xFF00A38E)
+                        : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 7),
+              Flexible(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.2,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                    color: labelColor,
+                    height: 1.08,
+                    letterSpacing: -0.15,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-class _HealthIndicator extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
+class _PropertiesAndEnergySection extends StatelessWidget {
+  final List<ManagedProperty> properties;
+  final EnergyProvider energyProvider;
 
-  const _HealthIndicator({
-    required this.label,
-    required this.value,
-    required this.color,
+  const _PropertiesAndEnergySection({
+    required this.properties,
+    required this.energyProvider,
   });
 
   @override
   Widget build(BuildContext context) {
+    // 2 Top Property Cards
+    final prop1Name = properties.isNotEmpty
+        ? properties[0].name
+        : 'Villa Grandeur';
+    final prop1Status = 'Active • 12 Devices';
+
+    final prop2Name = properties.length > 1
+        ? properties[1].name
+        : 'Skyline Penthouse';
+    final prop2Status = 'Online • 3 Floors';
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w900,
-            color: color,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
-        ),
-      ],
-    );
-  }
-}
-
-class _EnergyConsumptionCard extends StatelessWidget {
-  final EnergyProvider energy;
-  final bool isDark;
-
-  const _EnergyConsumptionCard({required this.energy, this.isDark = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const EnergyScreen()),
-      ),
-      borderRadius: BorderRadius.circular(22),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [const Color(0xFF1B1E2A), const Color(0xFF262A38)]
-                : [
-                    const Color(0xFF151722),
-                    AppColors.primaryDark,
-                    AppColors.primary,
-                  ],
-            stops: isDark ? null : [0, 0.56, 1],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: isDark ? Colors.black26 : const Color(0x33FF7A18),
-              blurRadius: 26,
-              offset: const Offset(0, 13),
-            ),
-          ],
-          border: isDark ? Border.all(color: Colors.white10) : null,
-        ),
-        child: Row(
+        // Top row: 2 Property Cards side-by-side (clean with no turn on/off button)
+        Row(
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Current Load',
-                    style: TextStyle(
-                      color: isDark ? Colors.white38 : Colors.white70,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${energy.instantPowerWatts.toStringAsFixed(0)} W',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    "Today: ${energy.todayKwh.toStringAsFixed(1)} kWh",
-                    style: TextStyle(
-                      color: isDark ? Colors.white38 : Colors.white70,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+              child: _PropertyCard(
+                name: prop1Name,
+                status: prop1Status,
+                icon: Icons.villa_rounded,
+                onTap: () {
+                  if (properties.isNotEmpty) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            FloorsScreen(propertyId: properties[0].id),
+                      ),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HomesScreen()),
+                    );
+                  }
+                },
               ),
             ),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white10,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.bolt_rounded,
-                color: Colors.white,
-                size: 28,
+            const SizedBox(width: 16),
+            Expanded(
+              child: _PropertyCard(
+                name: prop2Name,
+                status: prop2Status,
+                icon: Icons.apartment_rounded,
+                onTap: () {
+                  if (properties.length > 1) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            FloorsScreen(propertyId: properties[1].id),
+                      ),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HomesScreen()),
+                    );
+                  }
+                },
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
+        const SizedBox(height: 12),
 
-class _CommercialQuickActions extends StatelessWidget {
-  final UserRole role;
-  const _CommercialQuickActions({required this.role});
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 2.2,
-      children: [
-        _CommercialTile(
-          label: 'Floors',
-          icon: Icons.layers_outlined,
+        // Overall Energy Matrix Card (Full Width)
+        _OverallEnergyMatrixCard(
+          energyProvider: energyProvider,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const FloorsScreen()),
+            MaterialPageRoute(builder: (_) => const EnergyScreen()),
           ),
         ),
-        _CommercialTile(
-          label: 'Devices',
-          icon: Icons.devices_other_rounded,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const DevicesScreen()),
-          ),
-        ),
-        _CommercialTile(
-          label: 'Automations',
-          icon: Icons.auto_awesome_outlined,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AutomationsScreen()),
-          ),
-        ),
-        if (role.canAccessAdminConsole)
-          _CommercialTile(
-            label: 'Access Control',
-            icon: Icons.admin_panel_settings_outlined,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AdminConsoleScreen()),
-            ),
-          ),
       ],
     );
   }
 }
 
-class _CommercialTile extends StatelessWidget {
-  final String label;
+class _PropertyCard extends StatelessWidget {
+  final String name;
+  final String status;
   final IconData icon;
   final VoidCallback onTap;
 
-  const _CommercialTile({
-    required this.label,
+  const _PropertyCard({
+    required this.name,
+    required this.status,
     required this.icon,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFF1B1E2A),
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+    return Container(
+      height: 126,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(26),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Top row: Soft Mint Icon Container + Subtle Arrow indicator
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFE6F7F5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        icon,
+                        color: const Color(0xFF00A38E),
+                        size: 24,
+                      ),
+                    ),
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF8FAFC),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: Color(0xFF94A3B8),
+                        size: 11,
+                      ),
+                    ),
+                  ],
+                ),
+                // Bottom content: Property Name and Status
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      status,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF00A38E),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OverallEnergyMatrixCard extends StatelessWidget {
+  final EnergyProvider energyProvider;
+  final VoidCallback onTap;
+
+  const _OverallEnergyMatrixCard({
+    required this.energyProvider,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final liveWatts = energyProvider.instantPowerWatts > 0
+        ? '${energyProvider.instantPowerWatts.toStringAsFixed(0)} W'
+        : '2,480 W';
+
+    final dailyKwh = energyProvider.totalKwh > 0
+        ? '${energyProvider.totalKwh.toStringAsFixed(1)} kWh'
+        : '18.4 kWh';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: const Color(0xFFE6F4F1), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0800A38E),
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(26),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header: Lightning Bolt Avatar, Title, and Redirect Pill
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Color(0xFF00C9A7), Color(0xFF00A38E)],
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.bolt_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Overall Energy Matrix',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF0F172A),
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Live Grid & Backup Load',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE6F7F5),
+                        borderRadius: BorderRadius.circular(26),
+                        border: Border.all(
+                          color: const Color(0xFFB9EFE7),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Text(
+                            'View Matrix',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF00A38E),
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: Color(0xFF00A38E),
+                            size: 10,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Metrics Row: 3 Telemetry Columns
+                Row(
+                  children: [
+                    // Column 1: Live Load
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFF1F5F9)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'REAL-TIME LOAD',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF94A3B8),
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              liveWatts,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF00A38E),
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+
+                    // Column 2: Today's Consumption
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFF1F5F9)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'DAILY LOAD',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF94A3B8),
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              dailyKwh,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF0F172A),
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+
+                    // Column 3: Status Badge
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F8F5),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFC4EFE7)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'SYSTEM STATUS',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF00796B),
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              '⚡ 98% Optimal',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF00A38E),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Mini Gradient Progress Bar & Tap prompt
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    height: 5,
+                    width: double.infinity,
+                    color: const Color(0xFFE2E8F0),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: 0.65,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF00C9A7), Color(0xFF00A38E)],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SmartAssistantVoiceBanner extends StatelessWidget {
+  final String userName;
+  final VoidCallback onTap;
+
+  const _SmartAssistantVoiceBanner({
+    required this.userName,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF00C9A7), Color(0xFF00A38E)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x3000A38E),
+            blurRadius: 14,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(26),
+          onTap: onTap,
           child: Row(
             children: [
-              Icon(icon, color: AppColors.primary, size: 20),
-              const SizedBox(width: 12),
-              Text(
-                label,
-                style: const TextStyle(
+              // Robot avatar circular container
+              Container(
+                width: 58,
+                height: 58,
+                decoration: const BoxDecoration(
                   color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
+                  shape: BoxShape.circle,
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/smart_robot.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Image.asset(
+                      'assets/images/new_robot.png',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hi $userName!',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'How can I help you today?',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Frosted Soundwave Audio Button
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.22),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.graphic_eq_rounded,
+                  color: Colors.white,
+                  size: 24,
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VoiceAssistantModal extends StatelessWidget {
+  final String userName;
+
+  const _VoiceAssistantModal({required this.userName});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFFCBD5E1),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF00C9A7), Color(0xFF00A38E)],
+              ),
+              shape: BoxShape.circle,
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x3500A38E),
+                  blurRadius: 16,
+                  offset: Offset(0, 6),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.graphic_eq_rounded,
+              color: Colors.white,
+              size: 34,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Listening to $userName...',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Try asking:',
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _commandChip(context, '⚡ "Turn on living room lights"'),
+          const SizedBox(height: 8),
+          _commandChip(context, '❄️ "Set AC temperature to 22°C"'),
+          const SizedBox(height: 8),
+          _commandChip(context, '🎬 "Activate Movie Time scene"'),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _commandChip(BuildContext context, String text) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Executing: $text'),
+            backgroundColor: const Color(0xFF00A38E),
+          ),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF334155),
           ),
         ),
       ),
