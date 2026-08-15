@@ -123,53 +123,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onSelect: (index, sceneName) {
                 setState(() => _activeSceneIndex = index);
 
-                RoutineThemeData themeData;
-
-                if (index == 0) {
-                  themeData = RoutineThemeData(
-                    routineId: 'good_morning',
-                    title: 'Good Morning',
-                    icon: Icons.wb_sunny_rounded,
-                    bgColor: AppColors.background,
-                    gradientStart: const Color(0xFF26C6DA),
-                    gradientEnd: AppColors.primary,
-                    primarySoft: AppColors.primarySoft,
-                    imagePath: 'assets/images/scene_morning.png',
-                  );
-                } else if (index == 1) {
-                  themeData = const RoutineThemeData(
-                    routineId: 'good_night',
-                    title: 'Good Night',
-                    icon: Icons.nights_stay_rounded,
-                    bgColor: Color(0xFFF3F2FA),
-                    gradientStart: Color(0xFF9074F9),
-                    gradientEnd: Color(0xFF5D3FDB),
-                    primarySoft: Color(0xFFEFE8FF),
-                    imagePath: 'assets/images/scene_night.png',
-                  );
-                } else if (index == 2) {
-                  themeData = const RoutineThemeData(
-                    routineId: 'movie_time',
-                    title: 'Movie Time',
-                    icon: Icons.movie_filter_rounded,
-                    bgColor: Color(0xFFFFF7F2),
-                    gradientStart: Color(0xFFFFB020),
-                    gradientEnd: Color(0xFFE5484D),
-                    primarySoft: Color(0xFFFFF0EC),
-                    imagePath: 'assets/images/scene_movie.png',
-                  );
-                } else {
-                  themeData = const RoutineThemeData(
-                    routineId: 'away_mode',
-                    title: 'Away Mode',
-                    icon: Icons.directions_run_rounded,
-                    bgColor: Color(0xFFF2F4F7), // Slate bg
-                    gradientStart: Color(0xFF6B7280),
-                    gradientEnd: Color(0xFF14161F), // Dark slate
-                    primarySoft: Color(0xFFE5E7EB),
-                    imagePath: 'assets/images/scene_away.png',
-                  );
-                }
+                final routineKeys = [
+                  'good_morning',
+                  'good_night',
+                  'movie_time',
+                  'away_mode',
+                ];
+                final routineKey = routineKeys[index.clamp(0, 3)];
+                final themeData = kAllRoutineThemes[routineKey]!;
 
                 Navigator.push(
                   context,
@@ -779,49 +740,58 @@ class _OverallEnergyMatrixCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF00C9A7), Color(0xFF00A38E)],
-                            ),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.bolt_rounded,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
-                              'Overall Energy Matrix',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF0F172A),
-                                letterSpacing: -0.2,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFF00C9A7), Color(0xFF00A38E)],
                               ),
+                              shape: BoxShape.circle,
                             ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Live Grid & Backup Load',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF64748B),
-                              ),
+                            child: const Icon(
+                              Icons.bolt_rounded,
+                              color: Colors.white,
+                              size: 24,
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'Overall Energy Matrix',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF0F172A),
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Live Grid & Backup Load',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 11,
@@ -887,13 +857,17 @@ class _OverallEnergyMatrixCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              liveWatts,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF00A38E),
-                                letterSpacing: -0.3,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                liveWatts,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF00A38E),
+                                  letterSpacing: -0.3,
+                                ),
                               ),
                             ),
                           ],
@@ -927,13 +901,17 @@ class _OverallEnergyMatrixCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              dailyKwh,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF0F172A),
-                                letterSpacing: -0.3,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                dailyKwh,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF0F172A),
+                                  letterSpacing: -0.3,
+                                ),
                               ),
                             ),
                           ],

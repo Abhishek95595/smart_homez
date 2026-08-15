@@ -38,7 +38,9 @@ class SectionHeader extends StatelessWidget {
               child: Text(
                 actionLabel!,
                 style: TextStyle(
-                  color: isDark ? const Color(0xFF26C6DA) : const Color(0xFF00A38E),
+                  color: isDark
+                      ? const Color(0xFF26C6DA)
+                      : const Color(0xFF00A38E),
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),

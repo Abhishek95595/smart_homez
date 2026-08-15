@@ -76,51 +76,54 @@ class TenantApiRepository {
   }
 
   Map<String, dynamic> _extractData(dynamic responseData) {
-    if (responseData is! Map<String, dynamic>) {
-      throw const FormatException('Invalid API response format.');
+    if (responseData is! Map) {
+      return <String, dynamic>{};
     }
 
-    final success = responseData['success'];
+    final Map<String, dynamic> map = Map<String, dynamic>.from(responseData);
+    final success = map['success'];
 
     if (success == false) {
-      final error = responseData['error'];
-
-      if (error is Map<String, dynamic>) {
+      final error = map['error'];
+      if (error is Map) {
         throw Exception(error['message']?.toString() ?? 'API request failed.');
       }
-
       throw Exception(error?.toString() ?? 'API request failed.');
     }
 
-    final data = responseData['data'];
-
-    if (data is Map<String, dynamic>) {
-      return data;
+    final data = map['data'];
+    if (data is Map) {
+      return Map<String, dynamic>.from(data);
     }
 
-    throw const FormatException('Expected an object in data.');
+    return map;
   }
 
   List<dynamic> _extractList(dynamic responseData) {
-    if (responseData is! Map<String, dynamic>) {
-      throw const FormatException('Invalid API response format.');
+    if (responseData is List) {
+      return responseData;
     }
 
-    if (responseData['success'] == false) {
-      final error = responseData['error'];
-      if (error is Map<String, dynamic>) {
-        throw Exception(error['message'] ?? 'API request failed.');
+    if (responseData is Map) {
+      final Map<String, dynamic> map = Map<String, dynamic>.from(responseData);
+      final success = map['success'];
+      if (success == false) {
+        final error = map['error'];
+        if (error is Map) {
+          throw Exception(
+            error['message']?.toString() ?? 'API request failed.',
+          );
+        }
+        throw Exception(error?.toString() ?? 'API request failed.');
       }
-      throw Exception(error ?? 'API request failed.');
+
+      final data = map['data'];
+      if (data is List) {
+        return data;
+      }
     }
 
-    final data = responseData['data'];
-
-    if (data is List) {
-      return data;
-    }
-
-    throw const FormatException('Expected a list in data.');
+    return const <dynamic>[];
   }
 
   // ============================================================

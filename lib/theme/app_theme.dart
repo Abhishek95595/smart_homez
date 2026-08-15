@@ -214,7 +214,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceElevated,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 15,
+        ),
         labelStyle: const TextStyle(color: AppColors.textSecondary),
         prefixIconColor: AppColors.textFaint,
         suffixIconColor: AppColors.textFaint,
@@ -269,6 +272,25 @@ class AppTheme {
   /// Retained as a compatibility alias for callers that still request a dark
   /// theme. The current product reference is intentionally light-only.
   static ThemeData get darkTheme => lightTheme;
+
+  static BoxShadow get softShadow => const BoxShadow(
+    color: Color(0x08000000),
+    blurRadius: 16,
+    offset: Offset(0, 6),
+  );
+
+  static BoxDecoration cardDecoration({
+    double radius = 24.0,
+    Color color = AppColors.surface,
+    Color borderColor = AppColors.divider,
+  }) {
+    return BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(color: borderColor, width: 1.0),
+      boxShadow: [softShadow],
+    );
+  }
 
   static Color severityColor(String severity) {
     switch (severity.toUpperCase()) {

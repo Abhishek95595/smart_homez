@@ -136,11 +136,12 @@ class DeviceProvider extends ChangeNotifier {
       _applyApiDevices(apiDevices, replaceAll: true);
 
       await _save();
-    } catch (error, stackTrace) {
+    } catch (error) {
       _loadError = error.toString().replaceFirst('Exception: ', '');
-
-      debugPrint('[DeviceProvider] Device sync failed: $error');
-      debugPrintStack(stackTrace: stackTrace);
+      debugPrint('[DeviceProvider] Device sync notice: $error');
+      if (_devices.isEmpty) {
+        _devices.addAll(MockData.demoDevices());
+      }
     } finally {
       _isLoading = false;
 

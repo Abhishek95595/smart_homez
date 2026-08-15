@@ -142,34 +142,35 @@ class DevicesScreen extends StatelessWidget {
     final user = context.watch<AuthProvider>().currentUser;
     final visibleDevices =
         (propertyName != null && floorName != null && roomName != null)
-            ? deviceProvider.visibleDevicesForRoom(
-                user,
-                propertyName: propertyName!,
-                floorName: floorName!,
-                roomName: roomName!,
-              )
-            : (propertyName != null && floorName != null)
-                ? deviceProvider.visibleDevicesForFloor(
-                    user,
-                    propertyName: propertyName!,
-                    floorName: floorName!,
-                  )
-                : roomId == null
-                    ? deviceProvider.visibleDevicesAt(
-                        user,
-                        buildingId: buildingId,
-                        towerId: towerId,
-                        flatId: flatId,
-                        zone: zone,
-                      )
-                    : deviceProvider
-                        .visibleDevices(user)
-                        .where((device) => device.roomId == roomId)
-                        .toList();
+        ? deviceProvider.visibleDevicesForRoom(
+            user,
+            propertyName: propertyName!,
+            floorName: floorName!,
+            roomName: roomName!,
+          )
+        : (propertyName != null && floorName != null)
+        ? deviceProvider.visibleDevicesForFloor(
+            user,
+            propertyName: propertyName!,
+            floorName: floorName!,
+          )
+        : roomId == null
+        ? deviceProvider.visibleDevicesAt(
+            user,
+            buildingId: buildingId,
+            towerId: towerId,
+            flatId: flatId,
+            zone: zone,
+          )
+        : deviceProvider
+              .visibleDevices(user)
+              .where((device) => device.roomId == roomId)
+              .toList();
     final propertyProvider = context.watch<PropertyProvider>();
     final floor = floorId == null ? null : propertyProvider.floorById(floorId!);
-    final property =
-        propertyId == null ? null : propertyProvider.propertyById(propertyId!);
+    final property = propertyId == null
+        ? null
+        : propertyProvider.propertyById(propertyId!);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -241,62 +242,62 @@ class DevicesScreen extends StatelessWidget {
         child: deviceProvider.isLoading
             ? const AppLoadingState(message: 'Loading devices…')
             : deviceProvider.loadError != null && deviceProvider.devices.isEmpty
-                ? AppStateCard.error(
-                    title: 'Could not load devices',
-                    message: deviceProvider.loadError!,
-                    actionLabel: 'Retry',
-                    onAction: () => context.read<DeviceProvider>().reload(),
-                  )
-                : _GenZDeviceDashboard(
-                    devices: visibleDevices,
-                    user: user,
-                    loadError: deviceProvider.loadError,
-                    emptyMessage: roomId == null && zone == null
-                        ? 'No devices visible for your role'
-                        : 'No devices connected to ${roomName ?? zone}',
-                    breadcrumbs: roomId == null
-                        ? const []
-                        : [
-                            HierarchyCrumb(
-                              'Properties',
-                              onTap: () => Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const HomesScreen(),
+            ? AppStateCard.error(
+                title: 'Could not load devices',
+                message: deviceProvider.loadError!,
+                actionLabel: 'Retry',
+                onAction: () => context.read<DeviceProvider>().reload(),
+              )
+            : _GenZDeviceDashboard(
+                devices: visibleDevices,
+                user: user,
+                loadError: deviceProvider.loadError,
+                emptyMessage: roomId == null && zone == null
+                    ? 'No devices visible for your role'
+                    : 'No devices connected to ${roomName ?? zone}',
+                breadcrumbs: roomId == null
+                    ? const []
+                    : [
+                        HierarchyCrumb(
+                          'Properties',
+                          onTap: () => Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const HomesScreen(),
+                            ),
+                            (route) => route.isFirst,
+                          ),
+                        ),
+                        HierarchyCrumb(
+                          property?.name ?? 'Property',
+                          onTap: property == null
+                              ? null
+                              : () => Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        FloorsScreen(propertyId: property.id),
+                                  ),
                                 ),
-                                (route) => route.isFirst,
-                              ),
-                            ),
-                            HierarchyCrumb(
-                              property?.name ?? 'Property',
-                              onTap: property == null
-                                  ? null
-                                  : () => Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => FloorsScreen(
-                                              propertyId: property.id),
-                                        ),
-                                      ),
-                            ),
-                            HierarchyCrumb(
-                              floor?.name ?? 'Floor',
-                              onTap: floor == null
-                                  ? null
-                                  : () => Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              RoomsScreen(floorId: floor.id),
-                                        ),
-                                      ),
-                            ),
-                            HierarchyCrumb(roomName ?? 'Room'),
-                          ],
-                    onEdit: (device) => _editDevice(context, device),
-                    onDelete: (device) => _deleteDevice(context, device),
-                    onMove: (device) => _moveDevice(context, device),
-                  ),
+                        ),
+                        HierarchyCrumb(
+                          floor?.name ?? 'Floor',
+                          onTap: floor == null
+                              ? null
+                              : () => Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        RoomsScreen(floorId: floor.id),
+                                  ),
+                                ),
+                        ),
+                        HierarchyCrumb(roomName ?? 'Room'),
+                      ],
+                onEdit: (device) => _editDevice(context, device),
+                onDelete: (device) => _deleteDevice(context, device),
+                onMove: (device) => _moveDevice(context, device),
+              ),
       ),
     );
   }
@@ -336,28 +337,34 @@ class _GenZDeviceDashboardState extends State<_GenZDeviceDashboard> {
   @override
   Widget build(BuildContext context) {
     final activeCount = widget.devices.where((d) => d.isOn).length;
-    final onlineCount =
-        widget.devices.where((d) => d.status == DeviceStatus.online).length;
+    final onlineCount = widget.devices
+        .where((d) => d.status == DeviceStatus.online)
+        .length;
 
-    final filteredDevices = widget.devices.where((device) {
-      final matchesQuery = _query.isEmpty ||
-          device.name.toLowerCase().contains(_query.toLowerCase()) ||
-          device.type.label.toLowerCase().contains(_query.toLowerCase()) ||
-          (device.roomName ?? '').toLowerCase().contains(_query.toLowerCase());
+    final filteredDevices =
+        widget.devices.where((device) {
+          final matchesQuery =
+              _query.isEmpty ||
+              device.name.toLowerCase().contains(_query.toLowerCase()) ||
+              device.type.label.toLowerCase().contains(_query.toLowerCase()) ||
+              (device.roomName ?? '').toLowerCase().contains(
+                _query.toLowerCase(),
+              );
 
-      final matchesFilter = switch (_filter) {
-        _DeviceFilter.all => true,
-        _DeviceFilter.on => device.isOn,
-        _DeviceFilter.lights => device.type == DeviceType.light,
-        _DeviceFilter.climate => device.type == DeviceType.ac,
-        _DeviceFilter.fans => device.type == DeviceType.fan,
-        _DeviceFilter.sensors => device.type.isSensorOnly,
-        _DeviceFilter.offline => device.status != DeviceStatus.online,
-      };
+          final matchesFilter = switch (_filter) {
+            _DeviceFilter.all => true,
+            _DeviceFilter.on => device.isOn,
+            _DeviceFilter.lights => device.type == DeviceType.light,
+            _DeviceFilter.climate => device.type == DeviceType.ac,
+            _DeviceFilter.fans => device.type == DeviceType.fan,
+            _DeviceFilter.sensors => device.type.isSensorOnly,
+            _DeviceFilter.offline => device.status != DeviceStatus.online,
+          };
 
-      return matchesQuery && matchesFilter;
-    }).toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+          return matchesQuery && matchesFilter;
+        }).toList()..sort(
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
 
     // Grouping by room
     final Map<String, List<Device>> grouped = {};
@@ -429,7 +436,8 @@ class _GenZDeviceDashboardState extends State<_GenZDeviceDashboard> {
           _DeviceEmptyState(message: widget.emptyMessage)
         else if (filteredDevices.isEmpty)
           const _DeviceEmptyState(
-              message: 'No smart devices found matching current filters.')
+            message: 'No smart devices found matching current filters.',
+          )
         else
           ...sortedRooms.expand((room) {
             final roomDevices = grouped[room]!;
@@ -467,7 +475,9 @@ class _GenZDeviceDashboardState extends State<_GenZDeviceDashboard> {
                     const Spacer(),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: roomOnCount > 0
                             ? const Color(0xFFECFDF5)
@@ -626,18 +636,24 @@ class _HeroDeviceMatrix extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEF4444).withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                            color: const Color(0xFFEF4444).withValues(alpha: 0.4)),
+                          color: const Color(0xFFEF4444).withValues(alpha: 0.4),
+                        ),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.power_settings_new_rounded,
-                              size: 15, color: Color(0xFFFCA5A5)),
+                          Icon(
+                            Icons.power_settings_new_rounded,
+                            size: 15,
+                            color: Color(0xFFFCA5A5),
+                          ),
                           SizedBox(width: 4),
                           Text(
                             'Turn All Off',
@@ -657,14 +673,26 @@ class _HeroDeviceMatrix extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              _heroStat('Online Network', '$onlineDevices',
-                  Icons.wifi_tethering_rounded, const Color(0xFF00C9A7)),
+              _heroStat(
+                'Online Network',
+                '$onlineDevices',
+                Icons.wifi_tethering_rounded,
+                const Color(0xFF00C9A7),
+              ),
               const SizedBox(width: 10),
-              _heroStat('Active Loads', '$activeDevices',
-                  Icons.bolt_rounded, const Color(0xFFF59E0B)),
+              _heroStat(
+                'Active Loads',
+                '$activeDevices',
+                Icons.bolt_rounded,
+                const Color(0xFFF59E0B),
+              ),
               const SizedBox(width: 10),
-              _heroStat('Total Hardware', '$totalDevices',
-                  Icons.hub_rounded, const Color(0xFF60A5FA)),
+              _heroStat(
+                'Total Hardware',
+                '$totalDevices',
+                Icons.hub_rounded,
+                const Color(0xFF60A5FA),
+              ),
             ],
           ),
         ],
@@ -673,7 +701,11 @@ class _HeroDeviceMatrix extends StatelessWidget {
   }
 
   Widget _heroStat(
-      String label, String value, IconData icon, Color accentColor) {
+    String label,
+    String value,
+    IconData icon,
+    Color accentColor,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
@@ -690,13 +722,17 @@ class _HeroDeviceMatrix extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w900,
-                      height: 1.1,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        height: 1.1,
+                      ),
                     ),
                   ),
                   Text(
@@ -769,8 +805,11 @@ class _DeviceSearchInput extends StatelessWidget {
               : IconButton(
                   tooltip: 'Clear search',
                   onPressed: onClear,
-                  icon: const Icon(Icons.close_rounded,
-                      color: Color(0xFF64748B), size: 18),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: Color(0xFF64748B),
+                    size: 18,
+                  ),
                 ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -789,13 +828,33 @@ class _FilterRail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const filters = [
-      {'f': _DeviceFilter.all, 'label': 'All Devices', 'icon': Icons.apps_rounded},
+      {
+        'f': _DeviceFilter.all,
+        'label': 'All Devices',
+        'icon': Icons.apps_rounded,
+      },
       {'f': _DeviceFilter.on, 'label': 'Active ON', 'icon': Icons.bolt_rounded},
-      {'f': _DeviceFilter.lights, 'label': 'Lights', 'icon': Icons.lightbulb_rounded},
-      {'f': _DeviceFilter.climate, 'label': 'Climate', 'icon': Icons.ac_unit_rounded},
+      {
+        'f': _DeviceFilter.lights,
+        'label': 'Lights',
+        'icon': Icons.lightbulb_rounded,
+      },
+      {
+        'f': _DeviceFilter.climate,
+        'label': 'Climate',
+        'icon': Icons.ac_unit_rounded,
+      },
       {'f': _DeviceFilter.fans, 'label': 'Fans', 'icon': Icons.cyclone_rounded},
-      {'f': _DeviceFilter.sensors, 'label': 'Sensors', 'icon': Icons.sensors_rounded},
-      {'f': _DeviceFilter.offline, 'label': 'Offline', 'icon': Icons.cloud_off_rounded},
+      {
+        'f': _DeviceFilter.sensors,
+        'label': 'Sensors',
+        'icon': Icons.sensors_rounded,
+      },
+      {
+        'f': _DeviceFilter.offline,
+        'label': 'Offline',
+        'icon': Icons.cloud_off_rounded,
+      },
     ];
 
     return SizedBox(
@@ -814,8 +873,10 @@ class _FilterRail extends StatelessWidget {
               onTap: () => onSelected(f),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   gradient: isSelected
                       ? const LinearGradient(
@@ -847,18 +908,21 @@ class _FilterRail extends StatelessWidget {
                     Icon(
                       icon,
                       size: 14,
-                      color:
-                          isSelected ? Colors.white : const Color(0xFF64748B),
+                      color: isSelected
+                          ? Colors.white
+                          : const Color(0xFF64748B),
                     ),
                     const SizedBox(width: 5),
                     Text(
                       label,
                       style: TextStyle(
                         fontSize: 11.5,
-                        fontWeight:
-                            isSelected ? FontWeight.w800 : FontWeight.w700,
-                        color:
-                            isSelected ? Colors.white : const Color(0xFF334155),
+                        fontWeight: isSelected
+                            ? FontWeight.w800
+                            : FontWeight.w700,
+                        color: isSelected
+                            ? Colors.white
+                            : const Color(0xFF334155),
                       ),
                     ),
                   ],
@@ -890,7 +954,8 @@ class _GenZDeviceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final deviceProvider = context.watch<DeviceProvider>();
-    final controllable = device.type.isControllable &&
+    final controllable =
+        device.type.isControllable &&
         deviceProvider.canControlDevice(device, user);
     final isUpdating = deviceProvider.isUpdating(device.deviceId);
     final bool isOn = device.isOn;
@@ -948,8 +1013,9 @@ class _GenZDeviceCard extends StatelessWidget {
                         boxShadow: isOn
                             ? [
                                 BoxShadow(
-                                  color: theme.iconGradient.first
-                                      .withValues(alpha: 0.35),
+                                  color: theme.iconGradient.first.withValues(
+                                    alpha: 0.35,
+                                  ),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -1005,8 +1071,8 @@ class _GenZDeviceCard extends StatelessWidget {
                                   fontWeight: FontWeight.w800,
                                   color: device.status == DeviceStatus.online
                                       ? (isOn
-                                          ? theme.iconGradient.first
-                                          : const Color(0xFF64748B))
+                                            ? theme.iconGradient.first
+                                            : const Color(0xFF64748B))
                                       : const Color(0xFF94A3B8),
                                   letterSpacing: 0.4,
                                 ),
@@ -1014,10 +1080,13 @@ class _GenZDeviceCard extends StatelessWidget {
                               if (device.roomName != null &&
                                   device.roomName!.isNotEmpty) ...[
                                 const SizedBox(width: 6),
-                                const Text('•',
-                                    style: TextStyle(
-                                        color: Color(0xFFCBD5E1),
-                                        fontSize: 10)),
+                                const Text(
+                                  '•',
+                                  style: TextStyle(
+                                    color: Color(0xFFCBD5E1),
+                                    fontSize: 10,
+                                  ),
+                                ),
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
@@ -1041,9 +1110,8 @@ class _GenZDeviceCard extends StatelessWidget {
                     // Tactile Gen-Z Power Button / Sensor Badge
                     if (controllable)
                       GestureDetector(
-                        onTap: () => context
-                            .read<DeviceProvider>()
-                            .toggleDevice(device),
+                        onTap: () =>
+                            context.read<DeviceProvider>().toggleDevice(device),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 240),
                           width: 44,
@@ -1088,16 +1156,23 @@ class _GenZDeviceCard extends StatelessWidget {
                     else if (device.type.isSensorOnly)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 9, vertical: 5),
+                          horizontal: 9,
+                          vertical: 5,
+                        ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
+                          color: const Color(
+                            0xFF8B5CF6,
+                          ).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.radar_rounded,
-                                size: 12, color: Color(0xFF8B5CF6)),
+                            Icon(
+                              Icons.radar_rounded,
+                              size: 12,
+                              color: Color(0xFF8B5CF6),
+                            ),
                             SizedBox(width: 4),
                             Text(
                               'SENSOR',
@@ -1111,15 +1186,21 @@ class _GenZDeviceCard extends StatelessWidget {
                         ),
                       )
                     else
-                      const Icon(Icons.lock_outline_rounded,
-                          color: Color(0xFF94A3B8), size: 18),
+                      const Icon(
+                        Icons.lock_outline_rounded,
+                        color: Color(0xFF94A3B8),
+                        size: 18,
+                      ),
 
                     // 3-dot popup menu
                     if (onEdit != null && onDelete != null) ...[
                       const SizedBox(width: 4),
                       PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert_rounded,
-                            size: 18, color: Color(0xFF94A3B8)),
+                        icon: const Icon(
+                          Icons.more_vert_rounded,
+                          size: 18,
+                          color: Color(0xFF94A3B8),
+                        ),
                         padding: EdgeInsets.zero,
                         offset: const Offset(0, 35),
                         onSelected: (value) {
@@ -1194,8 +1275,10 @@ class _GenZDeviceCard extends StatelessWidget {
                         device.type == DeviceType.ac)) ...[
                   const SizedBox(height: 12),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.85),
                       borderRadius: BorderRadius.circular(14),
@@ -1234,8 +1317,8 @@ class _GenZDeviceCard extends StatelessWidget {
                               onChanged: isUpdating
                                   ? null
                                   : (v) => context
-                                      .read<DeviceProvider>()
-                                      .setDimLevel(device, v),
+                                        .read<DeviceProvider>()
+                                        .setDimLevel(device, v),
                             ),
                           ),
                         ),

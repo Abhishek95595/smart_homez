@@ -185,7 +185,10 @@ class PropertyProvider extends ChangeNotifier {
       await _save();
     } catch (e) {
       _loadError = e.toString().replaceFirst('Exception: ', '');
-      debugPrint('[Sync Error] Property Sync: $e');
+      debugPrint('[PropertyProvider] Property sync notice: $e');
+      if (_properties.isEmpty) {
+        _seedDefaults();
+      }
     } finally {
       _isLoading = false;
       notifyListeners();

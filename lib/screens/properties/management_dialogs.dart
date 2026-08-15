@@ -1487,12 +1487,16 @@ class _FormDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(title),
-      content: SizedBox(
-        width: 420,
+      scrollable: true,
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 420,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+        ),
         child: SingleChildScrollView(
           child: Form(
             key: formKey,
-            child: Column(children: children),
+            child: Column(mainAxisSize: MainAxisSize.min, children: children),
           ),
         ),
       ),

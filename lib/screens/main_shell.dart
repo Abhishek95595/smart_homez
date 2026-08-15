@@ -6,9 +6,11 @@ import '../providers/alert_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/device_provider.dart';
 import 'automations/automations_screen.dart';
+import 'activity/activity_screen.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'devices/devices_screen.dart';
 import 'profile/profile_screen.dart';
+import '../theme/app_theme.dart';
 import '../widgets/app_navigation_drawer.dart';
 
 class MainShell extends StatefulWidget {
@@ -85,10 +87,16 @@ class _MainShellState extends State<MainShell> {
         navigatorKey: _navigatorKeys[2],
       ),
       _Tab(
+        icon: Icons.access_time_rounded,
+        label: 'Activity',
+        page: const ActivityScreen(),
+        navigatorKey: _navigatorKeys[3],
+      ),
+      _Tab(
         icon: Icons.person_outline_rounded,
         label: 'Profile',
         page: const ProfileScreen(),
-        navigatorKey: _navigatorKeys[3],
+        navigatorKey: _navigatorKeys[4],
       ),
     ];
   }
@@ -149,14 +157,14 @@ class _MainShellState extends State<MainShell> {
             bottomNavigationBar: desktop
                 ? null
                 : Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      border: Border(
-                        top: BorderSide(color: Color(0xFFE8ECEF), width: 1),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      border: const Border(
+                        top: BorderSide(color: AppColors.divider, width: 1),
                       ),
-                      boxShadow: [
+                      boxShadow: const [
                         BoxShadow(
-                          color: Color(0x0A000000),
+                          color: Color(0x06000000),
                           blurRadius: 16,
                           offset: Offset(0, -4),
                         ),
@@ -174,77 +182,82 @@ class _MainShellState extends State<MainShell> {
                             return Expanded(
                               child: InkWell(
                                 onTap: () => _onTabTapped(idx),
-                                splashColor: const Color(0x1000A38E),
+                                splashColor: AppColors.primarySoft,
                                 highlightColor: Colors.transparent,
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Stack(
-                                      clipBehavior: Clip.none,
-                                      children: [
-                                        Icon(
-                                          tab.icon,
-                                          color: isSelected
-                                              ? const Color(0xFF00A38E)
-                                              : const Color(0xFF64748B),
-                                          size: 26,
-                                        ),
-                                        if (tab.label == 'Alerts' &&
-                                            criticalCount > 0)
-                                          Positioned(
-                                            top: -3,
-                                            right: -6,
-                                            child: Container(
-                                              padding: const EdgeInsets.all(
-                                                3.5,
-                                              ),
-                                              decoration: const BoxDecoration(
-                                                color: Color(0xFFE53E3E),
-                                                shape: BoxShape.circle,
-                                              ),
-                                              constraints: const BoxConstraints(
-                                                minWidth: 16,
-                                                minHeight: 16,
-                                              ),
-                                              child: Text(
-                                                '$criticalCount',
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 9,
-                                                  fontWeight: FontWeight.w900,
-                                                  height: 1,
+                                    AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 180,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? AppColors.primarySoft
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Stack(
+                                        clipBehavior: Clip.none,
+                                        children: [
+                                          Icon(
+                                            tab.icon,
+                                            color: isSelected
+                                                ? AppColors.primaryDark
+                                                : AppColors.textSecondary,
+                                            size: 24,
+                                          ),
+                                          if (tab.label == 'Activity' &&
+                                              criticalCount > 0)
+                                            Positioned(
+                                              top: -6,
+                                              right: -9,
+                                              child: Container(
+                                                padding: const EdgeInsets.all(
+                                                  3,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.critical,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                constraints:
+                                                    const BoxConstraints(
+                                                      minWidth: 15,
+                                                      minHeight: 15,
+                                                    ),
+                                                child: Text(
+                                                  '$criticalCount',
+                                                  textAlign: TextAlign.center,
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 8,
+                                                    fontWeight: FontWeight.w900,
+                                                    height: 1,
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 5),
-                                    Text(
-                                      tab.label,
-                                      style: TextStyle(
-                                        color: isSelected
-                                            ? const Color(0xFF00A38E)
-                                            : const Color(0xFF64748B),
-                                        fontSize: 12,
-                                        fontWeight: isSelected
-                                            ? FontWeight.w700
-                                            : FontWeight.w600,
+                                        ],
                                       ),
                                     ),
                                     const SizedBox(height: 3),
-                                    AnimatedContainer(
-                                      duration: const Duration(
-                                        milliseconds: 200,
-                                      ),
-                                      height: 0,
-                                      width: 0,
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? const Color(0xFF00A38E)
-                                            : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(2),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        tab.label,
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? AppColors.primaryDark
+                                              : AppColors.textSecondary,
+                                          fontSize: 11,
+                                          fontWeight: isSelected
+                                              ? FontWeight.w800
+                                              : FontWeight.w600,
+                                        ),
                                       ),
                                     ),
                                   ],

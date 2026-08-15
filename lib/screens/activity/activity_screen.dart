@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/alert.dart';
 import '../../providers/alert_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../theme/app_theme.dart';
 import '../../widgets/severity_badge.dart';
 
 class ActivityScreen extends StatefulWidget {
@@ -168,10 +169,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => _ActivityDetailModal(
-        alert: alert,
-        userName: userName,
-      ),
+      builder: (_) => _ActivityDetailModal(alert: alert, userName: userName),
     );
   }
 }
@@ -186,8 +184,9 @@ class _ActivityHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = alertProvider.alerts.length;
-    final resolved =
-        alertProvider.alerts.where((activity) => activity.resolved).length;
+    final resolved = alertProvider.alerts
+        .where((activity) => activity.resolved)
+        .length;
     final activeCritical = alertProvider.criticalActiveCount;
     final unacknowledged = alertProvider.alerts
         .where((a) => !a.acknowledged && !a.resolved)
@@ -197,19 +196,10 @@ class _ActivityHero extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppColors.primarySoft,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x180F172A),
-            blurRadius: 18,
-            offset: Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: AppColors.divider),
+        boxShadow: [AppTheme.softShadow],
       ),
       child: Column(
         children: [
@@ -219,15 +209,11 @@ class _ActivityHero extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF00C9A7), Color(0xFF00A38E)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  gradient: AppColors.brandGradient,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: const [
                     BoxShadow(
-                      color: Color(0x3500A38E),
+                      color: Color(0x2500A38E),
                       blurRadius: 10,
                       offset: Offset(0, 4),
                     ),
@@ -250,14 +236,8 @@ class _ActivityHero extends StatelessWidget {
                           width: 7,
                           height: 7,
                           decoration: const BoxDecoration(
-                            color: Color(0xFF00C9A7),
+                            color: AppColors.primary,
                             shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Color(0x8000C9A7),
-                                blurRadius: 6,
-                              ),
-                            ],
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -266,7 +246,7 @@ class _ActivityHero extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w900,
-                            color: Color(0xFF00C9A7),
+                            color: AppColors.primaryDark,
                             letterSpacing: 0.8,
                           ),
                         ),
@@ -276,7 +256,7 @@ class _ActivityHero extends StatelessWidget {
                     const Text(
                       'Live System Events',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
                         letterSpacing: -0.3,
@@ -287,25 +267,30 @@ class _ActivityHero extends StatelessWidget {
               ),
               if (activeCritical > 0)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+                    color: AppColors.critical.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFFEF4444).withValues(alpha: 0.4),
+                      color: AppColors.critical.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.warning_amber_rounded,
-                          size: 14, color: Color(0xFFFCA5A5)),
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        size: 14,
+                        color: AppColors.critical,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '$activeCritical Critical',
                         style: const TextStyle(
-                          color: Color(0xFFFCA5A5),
+                          color: AppColors.critical,
                           fontSize: 11,
                           fontWeight: FontWeight.w900,
                         ),
@@ -318,14 +303,26 @@ class _ActivityHero extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              _statChip('Total Events', '$total', Icons.history_rounded,
-                  const Color(0xFF60A5FA)),
+              _statChip(
+                'Total Events',
+                '$total',
+                Icons.history_rounded,
+                AppColors.primaryDark,
+              ),
               const SizedBox(width: 10),
-              _statChip('Action Required', '$unacknowledged',
-                  Icons.priority_high_rounded, const Color(0xFFF59E0B)),
+              _statChip(
+                'Action Required',
+                '$unacknowledged',
+                Icons.priority_high_rounded,
+                AppColors.warning,
+              ),
               const SizedBox(width: 10),
-              _statChip('Resolved', '$resolved', Icons.task_alt_rounded,
-                  const Color(0xFF00C9A7)),
+              _statChip(
+                'Resolved',
+                '$resolved',
+                Icons.task_alt_rounded,
+                AppColors.success,
+              ),
             ],
           ),
         ],
@@ -334,14 +331,18 @@ class _ActivityHero extends StatelessWidget {
   }
 
   Widget _statChip(
-      String label, String value, IconData icon, Color accentColor) {
+    String label,
+    String value,
+    IconData icon,
+    Color accentColor,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.07),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          border: Border.all(color: AppColors.divider),
         ),
         child: Row(
           children: [
@@ -354,7 +355,7 @@ class _ActivityHero extends StatelessWidget {
                   Text(
                     value,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontSize: 13.5,
                       fontWeight: FontWeight.w900,
                       height: 1.1,
@@ -364,8 +365,8 @@ class _ActivityHero extends StatelessWidget {
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
                       fontSize: 9.5,
                       fontWeight: FontWeight.w600,
                     ),
@@ -431,8 +432,11 @@ class _ActivitySearchInput extends StatelessWidget {
               : IconButton(
                   tooltip: 'Clear search',
                   onPressed: onClear,
-                  icon: const Icon(Icons.close_rounded,
-                      color: Color(0xFF64748B), size: 18),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: Color(0xFF64748B),
+                    size: 18,
+                  ),
                 ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -451,11 +455,31 @@ class _FilterRail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const filters = [
-      {'f': _ActivityFilter.all, 'label': 'All Feed', 'icon': Icons.feed_rounded},
-      {'f': _ActivityFilter.newItems, 'label': 'New Unread', 'icon': Icons.fiber_new_rounded},
-      {'f': _ActivityFilter.acknowledged, 'label': 'Acknowledged', 'icon': Icons.visibility_rounded},
-      {'f': _ActivityFilter.resolved, 'label': 'Resolved', 'icon': Icons.check_circle_rounded},
-      {'f': _ActivityFilter.critical, 'label': 'Critical Only', 'icon': Icons.warning_rounded},
+      {
+        'f': _ActivityFilter.all,
+        'label': 'All Feed',
+        'icon': Icons.feed_rounded,
+      },
+      {
+        'f': _ActivityFilter.newItems,
+        'label': 'New Unread',
+        'icon': Icons.fiber_new_rounded,
+      },
+      {
+        'f': _ActivityFilter.acknowledged,
+        'label': 'Acknowledged',
+        'icon': Icons.visibility_rounded,
+      },
+      {
+        'f': _ActivityFilter.resolved,
+        'label': 'Resolved',
+        'icon': Icons.check_circle_rounded,
+      },
+      {
+        'f': _ActivityFilter.critical,
+        'label': 'Critical Only',
+        'icon': Icons.warning_rounded,
+      },
     ];
 
     return SizedBox(
@@ -474,8 +498,10 @@ class _FilterRail extends StatelessWidget {
               onTap: () => onSelected(f),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   gradient: isSelected
                       ? const LinearGradient(
@@ -507,18 +533,21 @@ class _FilterRail extends StatelessWidget {
                     Icon(
                       icon,
                       size: 14,
-                      color:
-                          isSelected ? Colors.white : const Color(0xFF64748B),
+                      color: isSelected
+                          ? Colors.white
+                          : const Color(0xFF64748B),
                     ),
                     const SizedBox(width: 5),
                     Text(
                       label,
                       style: TextStyle(
                         fontSize: 11.5,
-                        fontWeight:
-                            isSelected ? FontWeight.w800 : FontWeight.w700,
-                        color:
-                            isSelected ? Colors.white : const Color(0xFF334155),
+                        fontWeight: isSelected
+                            ? FontWeight.w800
+                            : FontWeight.w700,
+                        color: isSelected
+                            ? Colors.white
+                            : const Color(0xFF334155),
                       ),
                     ),
                   ],
@@ -552,41 +581,32 @@ class _GenZActivityCard extends StatelessWidget {
     final statusColor = alert.resolved
         ? const Color(0xFF10B981)
         : alert.acknowledged
-            ? const Color(0xFF0284C7)
-            : alert.severity == AlertSeverity.critical
-                ? const Color(0xFFEF4444)
-                : const Color(0xFFF59E0B);
+        ? const Color(0xFF0284C7)
+        : alert.severity == AlertSeverity.critical
+        ? const Color(0xFFEF4444)
+        : const Color(0xFFF59E0B);
 
     final statusText = alert.resolved
         ? 'RESOLVED'
         : alert.acknowledged
-            ? 'ACKNOWLEDGED'
-            : 'ACTION REQUIRED';
+        ? 'ACKNOWLEDGED'
+        : 'ACTION REQUIRED';
 
     final theme = _getTheme(alert);
 
     return Container(
       decoration: BoxDecoration(
-        color: alert.resolved ? const Color(0xFFFAFCFF) : Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: alert.resolved
-              ? const Color(0xFFE2E8F0)
-              : statusColor.withValues(alpha: 0.35),
-          width: alert.resolved ? 1 : 1.5,
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: const Border.fromBorderSide(
+          BorderSide(color: AppColors.divider, width: 1.0),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: statusColor.withValues(alpha: alert.resolved ? 0.03 : 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [AppTheme.softShadow],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(24),
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -615,11 +635,7 @@ class _GenZActivityCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: Icon(
-                        theme.icon,
-                        color: Colors.white,
-                        size: 22,
-                      ),
+                      child: Icon(theme.icon, color: Colors.white, size: 22),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -640,8 +656,11 @@ class _GenZActivityCard extends StatelessWidget {
                           const SizedBox(height: 3),
                           Row(
                             children: [
-                              const Icon(Icons.location_on_outlined,
-                                  size: 13, color: Color(0xFF94A3B8)),
+                              const Icon(
+                                Icons.location_on_outlined,
+                                size: 13,
+                                color: Color(0xFF94A3B8),
+                              ),
                               const SizedBox(width: 3),
                               Expanded(
                                 child: Text(
@@ -668,8 +687,10 @@ class _GenZActivityCard extends StatelessWidget {
 
                 // Device Chip and Telemetry
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(12),
@@ -677,8 +698,11 @@ class _GenZActivityCard extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.memory_rounded,
-                          size: 14, color: Color(0xFF00A38E)),
+                      const Icon(
+                        Icons.memory_rounded,
+                        size: 14,
+                        color: Color(0xFF00A38E),
+                      ),
                       const SizedBox(width: 5),
                       Text(
                         'Device: ${alert.deviceId}',
@@ -707,8 +731,11 @@ class _GenZActivityCard extends StatelessWidget {
                 // Footer: Timestamp, Status Pill, Quick Actions
                 Row(
                   children: [
-                    const Icon(Icons.access_time_rounded,
-                        size: 13, color: Color(0xFF94A3B8)),
+                    const Icon(
+                      Icons.access_time_rounded,
+                      size: 13,
+                      color: Color(0xFF94A3B8),
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       _formatTimestamp(alert.timestamp),
@@ -721,7 +748,9 @@ class _GenZActivityCard extends StatelessWidget {
                     const Spacer(),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3.5),
+                        horizontal: 8,
+                        vertical: 3.5,
+                      ),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8),
@@ -751,19 +780,24 @@ class _GenZActivityCard extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 7),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF0284C7)
-                                    .withValues(alpha: 0.1),
+                                color: const Color(
+                                  0xFF0284C7,
+                                ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: const Color(0xFF0284C7)
-                                      .withValues(alpha: 0.3),
+                                  color: const Color(
+                                    0xFF0284C7,
+                                  ).withValues(alpha: 0.3),
                                 ),
                               ),
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.visibility_rounded,
-                                      size: 14, color: Color(0xFF0284C7)),
+                                  Icon(
+                                    Icons.visibility_rounded,
+                                    size: 14,
+                                    color: Color(0xFF0284C7),
+                                  ),
                                   SizedBox(width: 5),
                                   Text(
                                     'Acknowledge',
@@ -802,8 +836,11 @@ class _GenZActivityCard extends StatelessWidget {
                             child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.check_circle_rounded,
-                                    size: 14, color: Colors.white),
+                                Icon(
+                                  Icons.check_circle_rounded,
+                                  size: 14,
+                                  color: Colors.white,
+                                ),
                                 SizedBox(width: 5),
                                 Text(
                                   'Mark Resolved',
@@ -890,10 +927,7 @@ class _ActivityDetailModal extends StatelessWidget {
   final AppAlert alert;
   final String userName;
 
-  const _ActivityDetailModal({
-    required this.alert,
-    required this.userName,
-  });
+  const _ActivityDetailModal({required this.alert, required this.userName});
 
   @override
   Widget build(BuildContext context) {
@@ -928,8 +962,11 @@ class _ActivityDetailModal extends StatelessWidget {
                   color: const Color(0xFF00A38E).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.history_edu_rounded,
-                    color: Color(0xFF00A38E), size: 22),
+                child: const Icon(
+                  Icons.history_edu_rounded,
+                  color: Color(0xFF00A38E),
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(

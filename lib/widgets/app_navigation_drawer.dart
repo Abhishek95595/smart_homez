@@ -153,7 +153,7 @@ class AppNavigationDrawer extends StatelessWidget {
     ];
 
     final content = Container(
-      color: const Color(0xFFFDFEFE),
+      color: AppColors.background,
       child: SafeArea(
         child: Column(
           children: [
@@ -184,7 +184,7 @@ class AppNavigationDrawer extends StatelessWidget {
     }
 
     return Drawer(
-      backgroundColor: const Color(0xFFFDFEFE),
+      backgroundColor: AppColors.background,
       width: MediaQuery.sizeOf(context).width * 0.82,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(right: Radius.circular(26)),
@@ -301,21 +301,21 @@ class _DrawerItemTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSelected = item.selected;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 3),
       child: Material(
-        color: isSelected ? const Color(0xFFF0FAF8) : Colors.transparent,
+        color: isSelected ? AppColors.primarySoft : Colors.transparent,
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
           onTap: item.onTap,
           borderRadius: BorderRadius.circular(18),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: isSelected
-                    ? const Color(0xFFBFE9E1)
+                    ? AppColors.primary.withValues(alpha: 0.3)
                     : Colors.transparent,
               ),
             ),
@@ -323,12 +323,12 @@ class _DrawerItemTile extends StatelessWidget {
               children: [
                 Icon(
                   item.icon,
-                  size: 23,
+                  size: 22,
                   color: isSelected
                       ? AppColors.primaryDark
-                      : const Color(0xFF6B7280),
+                      : AppColors.textSecondary,
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Text(
                     item.label,
@@ -336,7 +336,7 @@ class _DrawerItemTile extends StatelessWidget {
                       color: isSelected
                           ? AppColors.primaryDark
                           : AppColors.textPrimary,
-                      fontSize: 14.5,
+                      fontSize: 14,
                       fontWeight: isSelected
                           ? FontWeight.w800
                           : FontWeight.w600,
@@ -400,37 +400,22 @@ class _DrawerUserCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: Material(
-        color: Colors.white,
+        color: AppColors.surface,
         elevation: 0,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(24),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: const Color(0xFFEFF3F4)),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x11000000),
-                  blurRadius: 18,
-                  offset: Offset(0, 8),
-                ),
-              ],
-            ),
+            decoration: AppTheme.cardDecoration(radius: 24),
             child: Row(
               children: [
                 Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF8FE5D8), Color(0xFF23C9B5)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                  width: 50,
+                  height: 50,
+                  decoration: const BoxDecoration(
+                    gradient: AppColors.brandGradient,
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,

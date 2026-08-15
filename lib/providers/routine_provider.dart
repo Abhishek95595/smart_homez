@@ -22,8 +22,8 @@ class RoutineProvider extends ChangeNotifier {
   RoutineProvider({
     RoutineService? routineService,
     DeviceProvider? deviceProvider,
-  })  : _service = routineService ?? RoutineService(),
-        _deviceProvider = deviceProvider {
+  }) : _service = routineService ?? RoutineService(),
+       _deviceProvider = deviceProvider {
     _startScheduler();
   }
 
@@ -54,8 +54,7 @@ class RoutineProvider extends ChangeNotifier {
   bool get isLoading => _state == RoutineState.loading;
   bool get isSaving => _state == RoutineState.saving;
 
-  DaySchedule? get selectedDaySchedule =>
-      routine?.daySchedules[_selectedDay];
+  DaySchedule? get selectedDaySchedule => routine?.daySchedules[_selectedDay];
 
   List<ScheduleEntry> get selectedDayEntries =>
       selectedDaySchedule?.entries ?? [];
@@ -82,7 +81,7 @@ class RoutineProvider extends ChangeNotifier {
         'Good Morning Routine',
         'Good Night Routine',
         'Movie Time Routine',
-        'Away Mode Routine'
+        'Away Mode Routine',
       ];
 
       for (int i = 0; i < types.length; i++) {
@@ -123,7 +122,11 @@ class RoutineProvider extends ChangeNotifier {
   // ══════════════════════════════════════════════
 
   /// Add a new schedule entry for a specific day
-  void addScheduleEntry(String day, ScheduleEntry entry, {DeviceProvider? deviceProvider}) {
+  void addScheduleEntry(
+    String day,
+    ScheduleEntry entry, {
+    DeviceProvider? deviceProvider,
+  }) {
     if (routine == null) return;
     routine!.daySchedules.putIfAbsent(day, () => DaySchedule(day: day));
     routine!.daySchedules[day]!.entries.add(entry);
@@ -182,8 +185,13 @@ class RoutineProvider extends ChangeNotifier {
       schedule.entries[idx].isEnabled = enabled;
 
       // Sync hardware immediately if routine is active and today matches
-      if (routine!.isEnabled && day == _todayCode() && _deviceProvider != null) {
-        _syncSingleEntryHardware(schedule.entries[idx], enabled && schedule.entries[idx].startAction == 'on');
+      if (routine!.isEnabled &&
+          day == _todayCode() &&
+          _deviceProvider != null) {
+        _syncSingleEntryHardware(
+          schedule.entries[idx],
+          enabled && schedule.entries[idx].startAction == 'on',
+        );
       }
 
       notifyListeners();
@@ -209,7 +217,10 @@ class RoutineProvider extends ChangeNotifier {
   // MASTER TOGGLE
   // ══════════════════════════════════════════════
 
-  Future<void> toggleRoutineEnabled(bool isEnabled, {DeviceProvider? deviceProvider}) async {
+  Future<void> toggleRoutineEnabled(
+    bool isEnabled, {
+    DeviceProvider? deviceProvider,
+  }) async {
     if (routine == null) return;
     routine!.isEnabled = isEnabled;
 
@@ -277,7 +288,10 @@ class RoutineProvider extends ChangeNotifier {
   // HARDWARE SYNC HELPERS
   // ══════════════════════════════════════════════
 
-  Future<void> _syncSingleEntryHardware(ScheduleEntry entry, bool turnOn) async {
+  Future<void> _syncSingleEntryHardware(
+    ScheduleEntry entry,
+    bool turnOn,
+  ) async {
     final dp = _deviceProvider;
     if (dp == null) return;
     final device = _findOrCreateDevice(dp, entry);
@@ -376,7 +390,7 @@ class RoutineProvider extends ChangeNotifier {
     for (final MapEntry<String, Routine> r in _routines.entries) {
       final routineType = r.key;
       final rt = r.value;
-      
+
       if (!rt.isEnabled) continue;
 
       final schedule = rt.daySchedules[currentDay];

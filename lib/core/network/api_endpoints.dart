@@ -6,6 +6,11 @@ abstract final class ApiEndpoints {
   static const String authLogin = '/api/Auth/login';
   static const String sendOtp = '/auth/send-otp';
   static const String verifyOtp = '/auth/verify-otp';
+  static const String authInviteInfo = '/api/v1/auth/invite-info';
+
+  // OAuth (RFC 7009 / OAuth2)
+  static const String oauthToken = '/oauth/token';
+  static const String oauthRevoke = '/oauth/revoke';
 
   // SSE
   static String sseEvents(String token) =>
@@ -19,11 +24,31 @@ abstract final class ApiEndpoints {
   static String toggleAutomation(String automationId) =>
       '${automation(automationId)}/toggle';
 
+  // Scenes
+  static const String scenes = '/api/v1/scenes';
+
+  static String scene(String sceneId) => '$scenes/$sceneId';
+
+  static String activateScene(String sceneId) => '${scene(sceneId)}/activate';
+
+  static String sceneStatus(String sceneId) => '${scene(sceneId)}/status';
+
   // Clients
   static const String clients = '/api/v1/clients';
   static const String resolveClient = '$clients/resolve';
+  static const String createClient = '$clients/createClient';
+  static const String verifyClient = '$clients/createClient/verify';
 
   static String client(String clientId) => '$clients/$clientId';
+
+  static String resetPassword(String clientId) =>
+      '${client(clientId)}/reset-password';
+
+  static String verifyResetPassword(String clientId) =>
+      '${resetPassword(clientId)}/verify';
+
+  static String syncClientDevices(String clientId) =>
+      '${client(clientId)}/devices/sync';
 
   static String clientDevices(String clientId) => '${client(clientId)}/devices';
 
@@ -64,6 +89,22 @@ abstract final class ApiEndpoints {
     String roomId,
   ) => '${floorRooms(clientId, homeId, floorId)}/$roomId';
 
+  // Homes Layout & Device Batch Management
+  static const String homesTemplateSetup = '/api/v1/homes/template-setup';
+  static const String bulkAssignRooms = '/api/v1/devices/bulk-assign-rooms';
+  static String unassignedDevices(String homeId) =>
+      '/api/v1/homes/$homeId/unassigned-devices';
+
+  // Environment & Contextual Services
+  static const String environmentSolar = '/api/v1/environment/solar';
+  static const String environmentDuskDawn = '/api/v1/environment/dusk-dawn';
+  static const String environmentWeatherPrompts =
+      '/api/v1/environment/weather-prompts';
+  static const String environmentHomeLocation =
+      '/api/v1/environment/home-location';
+  static const String environmentPresence = '/api/v1/environment/presence';
+  static const String environmentWidgets = '/api/v1/environment/widgets';
+
   // Vendor endpoints
   static String vendorAccounts(String clientId) =>
       '${client(clientId)}/vendor/accounts';
@@ -79,4 +120,11 @@ abstract final class ApiEndpoints {
 
   static String pairVendorNode(String clientId, String nodeId) =>
       '${vendorNodes(clientId)}/$nodeId/pair';
+
+  // Alexa Integrations
+  static const String alexaLinkToken = '/api/integrations/alexa/link-token';
+  static const String alexaDirective = '/api/integrations/alexa/directive';
+  static const String alexaDiscovery = '/api/integrations/alexa/discovery';
+  static const String alexaState = '/api/integrations/alexa/state';
+  static const String alexaCommands = '/api/integrations/alexa/commands';
 }
