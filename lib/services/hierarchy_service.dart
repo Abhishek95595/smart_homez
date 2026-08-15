@@ -326,4 +326,33 @@ class HierarchyService {
       request: PairVendorNodeRequest.toFloor(floorId),
     );
   }
+
+  // ============================================================
+  // TEMPLATE SETUP & BATCH ROOM ASSIGNMENTS
+  // ============================================================
+
+  /// Creates a Home and seeds its rooms from chosen layout template.
+  Future<Map<String, dynamic>?> setupHomeFromTemplate({
+    required String template,
+    required String homeName,
+    String? address,
+  }) async {
+    return _repository.setupHomeFromTemplate(
+      template: template,
+      homeName: homeName,
+      address: address,
+    );
+  }
+
+  /// Batch-assigns a list of (DeviceId, RoomId) pairs within a home.
+  Future<bool> bulkAssignDevicesToRooms(
+    List<Map<String, String>> assignments,
+  ) async {
+    return _repository.bulkAssignDevicesToRooms(assignments);
+  }
+
+  /// Lists unassigned devices in a home with smart-suggested room.
+  Future<List<Map<String, dynamic>>> getUnassignedDevices(String homeId) async {
+    return _repository.getUnassignedDevices(homeId);
+  }
 }

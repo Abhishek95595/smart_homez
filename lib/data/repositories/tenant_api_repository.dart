@@ -725,4 +725,49 @@ class TenantApiRepository {
       return false;
     }
   }
+
+  Future<Map<String, dynamic>?> setupHomeFromTemplate({
+    required String template,
+    required String homeName,
+    String? address,
+  }) async {
+    try {
+      final response = await _api.post(
+        ApiEndpoints.homesTemplateSetup,
+        data: {
+          'template': template,
+          'home_name': homeName.trim(),
+          if (address != null) 'address': address.trim(),
+        },
+      );
+      return _extractData(response.data);
+    } on DioException catch (e) {
+      throw mapDioException(e);
+    }
+  }
+
+  Future<bool> bulkAssignDevicesToRooms(
+    List<Map<String, String>> assignments,
+  ) async {
+    try {
+      final response = await _api.post(
+        ApiEndpoints.bulkAssignRooms,
+        data: {'assignments': assignments},
+      );
+      final data = _extractData(response.data);
+      return data['success'] != false;
+    } on DioException catch (e) {
+      throw mapDioException(e);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getUnassignedDevices(String homeId) async {
+    try {
+      final response = await _api.get(ApiEndpoints.unassignedDevices(homeId));
+      final list = _extractList(response.data);
+      return list.whereType<Map<String, dynamic>>().toList();
+    } on DioException catch (e) {
+      throw mapDioException(e);
+    }
+  }
 }
