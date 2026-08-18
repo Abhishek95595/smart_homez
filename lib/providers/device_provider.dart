@@ -353,11 +353,19 @@ class DeviceProvider extends ChangeNotifier {
     }
   }
 
-  List<Device> visibleDevicesForProperty(AppUser? user, String propertyName) {
+  List<Device> visibleDevicesForProperty(
+    AppUser? user,
+    String propertyName, {
+    String? propertyId,
+  }) {
     final String target = propertyName.trim().toLowerCase();
+    final String? idTarget = propertyId?.trim().toLowerCase();
     return visibleDevices(user).where((d) {
-      return d.homeName?.trim().toLowerCase() == target ||
-          d.buildingId == propertyName;
+      final String bId = d.buildingId.trim().toLowerCase();
+      final String? hName = d.homeName?.trim().toLowerCase();
+      return bId == target ||
+          hName == target ||
+          (idTarget != null && (bId == idTarget || hName == idTarget));
     }).toList();
   }
 
