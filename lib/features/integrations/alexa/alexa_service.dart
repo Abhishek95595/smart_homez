@@ -1,57 +1,78 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_endpoints.dart';
 import '../../../models/device.dart';
+import 'alexa_link_response.dart';
 import 'alexa_status_model.dart';
 
 class AlexaService {
-  AlexaService({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
+  AlexaService({ApiClient? apiClient, FlutterSecureStorage? storage})
+      : _api = apiClient ?? ApiClient(),
+        _storage = storage ?? const FlutterSecureStorage();
 
   final ApiClient _api;
+  final FlutterSecureStorage _storage;
 
-  /// Default list of discovered local Wi-Fi Alexa devices on home network
-  static const List<AlexaWifiDevice> sampleWifiDevices = [
-    AlexaWifiDevice(
-      id: 'alexa_echo_dot_01',
-      name: 'Echo Dot (5th Gen)',
-      model: 'Echo Dot',
-      room: 'Living Room',
-      ipAddress: '192.168.1.105',
-      wifiFrequency: '5 GHz',
-      signalStrength: 4,
-    ),
-    AlexaWifiDevice(
-      id: 'alexa_echo_show_02',
-      name: 'Echo Show 8',
-      model: 'Echo Show',
-      room: 'Kitchen',
-      ipAddress: '192.168.1.112',
-      wifiFrequency: '2.4 GHz',
-      signalStrength: 4,
-    ),
-    AlexaWifiDevice(
-      id: 'alexa_echo_studio_03',
-      name: 'Amazon Echo Studio',
-      model: 'Echo Studio',
-      room: 'Master Bedroom',
-      ipAddress: '192.168.1.120',
-      wifiFrequency: '5 GHz',
-      signalStrength: 3,
-    ),
-    AlexaWifiDevice(
-      id: 'alexa_echo_pop_04',
-      name: 'Echo Pop Speaker',
-      model: 'Echo Pop',
-      room: 'Guest Room',
-      ipAddress: '192.168.1.135',
-      wifiFrequency: '2.4 GHz',
-      signalStrength: 4,
-    ),
-  ];
+  /// Production Alexa OAuth Link Constants
+  static const String alexaRedirectUri =
+      'https://tenant-api.saajsajja.in/api/integrations/alexa/callback';
+  static const String alexaScope = 'alexa::skills:account_linking';
 
-  /// Scans local Wi-Fi network for active Alexa & Echo devices or real user devices
+  String? _lastGeneratedState;
+  String? get lastGeneratedState => _lastGeneratedState;
+
+  /// Generates a cryptographically random secure state string
+  String generateSecureState() {
+    final String secureState = const Uuid().v4();
+    _lastGeneratedState = secureState;
+    return secureState;
+  }
+
+  /// Calls POST /api/integrations/alexa/link-token with authenticated platform JWT
+  Future<AlexaLinkResponse> createLinkToken({
+    String? redirectUri,
+    String? state,
+    String? scope,
+  }) async {
+    final String currentState = state ?? generateSecureState();
+    final String? clientId = await _storage.read(key: 'api_client_id') ??
+        await _storage.read(key: 'resolved_client_uuid');
+
+    final Map<String, dynamic> body = {
+      if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
+      'redirectUri': redirectUri ?? alexaRedirectUri,
+      'state': currentState,
+      'scope': scope ?? alexaScope,
+    };
+
+    final Response<dynamic> response = await _api.post(
+      ApiEndpoints.alexaLinkToken,
+      data: body,
+    );
+
+    debugPrint('[AlexaService] Status Code: ${response.statusCode}');
+    debugPrint('[AlexaService] Response Data: ${response.data}');
+
+    if (response.statusCode != 200) {
+      throw Exception('Alexa API failed with status ${response.statusCode}');
+    }
+
+    if (response.data is Map<String, dynamic>) {
+      final AlexaLinkResponse linkResponse = AlexaLinkResponse.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+      debugPrint('[AlexaService] authorizeUrl: ${linkResponse.authorizeUrl}');
+      return linkResponse;
+    }
+
+    throw Exception('Invalid server response format');
+  }
+
+  /// Scans local network for active user hardware devices ONLY (no mock devices)
   Future<List<AlexaWifiDevice>> scanLocalWifiDevices({List<Device>? realDevices}) async {
     try {
       final Response<dynamic> response = await _api.post(
@@ -68,8 +89,8 @@ class AlexaService {
               parsed.add(
                 AlexaWifiDevice(
                   id: item['endpointId']?.toString() ?? 'alexa_dev_$i',
-                  name: item['friendlyName']?.toString() ?? 'Echo Device ${i + 1}',
-                  model: item['displayCategories']?.first?.toString() ?? 'Echo Device',
+                  name: item['friendlyName']?.toString() ?? 'Device ${i + 1}',
+                  model: item['displayCategories']?.first?.toString() ?? 'Smart Device',
                   room: item['description']?.toString() ?? 'Smart Home',
                   ipAddress: '192.168.1.${100 + i}',
                 ),
@@ -80,11 +101,12 @@ class AlexaService {
         }
       }
     } catch (e) {
-      debugPrint('[AlexaService] Scan error, falling back to real devices: $e');
+      debugPrint('[AlexaService] Discovery API notice: $e');
     }
 
-    await Future.delayed(const Duration(milliseconds: 600));
+    await Future.delayed(const Duration(milliseconds: 500));
 
+    // Convert ONLY real user hardware devices from DeviceProvider (no mock data)
     if (realDevices != null && realDevices.isNotEmpty) {
       return realDevices.map((d) {
         return AlexaWifiDevice(
@@ -99,7 +121,7 @@ class AlexaService {
       }).toList();
     }
 
-    return sampleWifiDevices;
+    return [];
   }
 
   /// GET /integrations/alexa/status
@@ -118,71 +140,7 @@ class AlexaService {
       return AlexaStatus.notConnected();
     } catch (error) {
       debugPrint('[AlexaService] getStatus error: $error');
-      try {
-        final Response<dynamic> fallback = await _api.post(
-          ApiEndpoints.alexaDiscovery,
-        );
-        if (fallback.statusCode == 200 && fallback.data != null) {
-          return const AlexaStatus(
-            connected: true,
-            deviceCount: 4,
-            selectedDeviceName: 'Echo Dot (5th Gen)',
-            selectedDeviceIp: '192.168.1.105',
-          );
-        }
-      } catch (_) {}
       return AlexaStatus.notConnected();
-    }
-  }
-
-  /// GET /integrations/alexa/connect
-  Future<String> getAuthorizationUrl() async {
-    try {
-      final Response<dynamic> response = await _api.get(
-        ApiEndpoints.alexaConnect,
-      );
-      if (response.data is Map<String, dynamic>) {
-        final Map<String, dynamic> data = Map<String, dynamic>.from(response.data);
-        final String? url =
-            (data['authorizationUrl'] ?? data['authorization_url'] ?? data['url'])?.toString();
-        if (url != null && url.isNotEmpty) {
-          return url;
-        }
-      }
-      final Response<dynamic> tokenResp = await _api.post(
-        ApiEndpoints.alexaLinkToken,
-      );
-      if (tokenResp.data is Map<String, dynamic>) {
-        final Map<String, dynamic> tData = Map<String, dynamic>.from(tokenResp.data);
-        final String? token = (tData['token'] ?? tData['linkToken'])?.toString();
-        if (token != null && token.isNotEmpty) {
-          return 'https://alexa.amazon.com/oauth/authorize?client_id=smart_homez&token=$token';
-        }
-      }
-      return 'https://alexa.amazon.com';
-    } catch (error) {
-      debugPrint('[AlexaService] getAuthorizationUrl error: $error');
-      return 'https://alexa.amazon.com';
-    }
-  }
-
-  /// POST /integrations/alexa/sync
-  Future<bool> syncDevices() async {
-    try {
-      final Response<dynamic> response = await _api.post(
-        ApiEndpoints.alexaSync,
-      );
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        return true;
-      }
-      if (response.data is Map<String, dynamic>) {
-        final Map<String, dynamic> data = Map<String, dynamic>.from(response.data);
-        return data['success'] == true;
-      }
-      return true;
-    } catch (error) {
-      debugPrint('[AlexaService] syncDevices error: $error');
-      return false;
     }
   }
 
@@ -195,13 +153,9 @@ class AlexaService {
       if (response.statusCode == 200 || response.statusCode == 204) {
         return true;
       }
-      if (response.data is Map<String, dynamic>) {
-        final Map<String, dynamic> data = Map<String, dynamic>.from(response.data);
-        return data['success'] != false;
-      }
       return true;
     } catch (error) {
-      debugPrint('[AlexaService] disconnectAlexa API error (clearing local state): $error');
+      debugPrint('[AlexaService] disconnectAlexa API error: $error');
       return true;
     }
   }

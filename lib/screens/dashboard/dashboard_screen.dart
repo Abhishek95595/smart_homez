@@ -19,8 +19,6 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../services/alexa_integration_service.dart';
 import '../../widgets/hasomi_bottom_voice_bar.dart';
 import '../../features/integrations/alexa/alexa_provider.dart';
-import '../../features/integrations/alexa/alexa_bottom_sheet.dart';
-import '../../features/integrations/alexa/alexa_wifi_discovery_modal.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -1367,15 +1365,25 @@ class _SmartAssistantVoiceBanner extends StatelessWidget {
     required this.onTap,
   });
 
+  Future<void> _handleConnectAlexa(BuildContext context, AlexaProvider alexaProvider) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final success = await alexaProvider.connectAlexa();
+
+    if (!success && alexaProvider.errorMessage != null && alexaProvider.errorMessage!.isNotEmpty) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(alexaProvider.errorMessage!),
+          backgroundColor: const Color(0xFFEF4444),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final alexaProvider = context.watch<AlexaProvider>();
-    final isConnected = alexaProvider.isConnected;
     final isConnecting = alexaProvider.isConnecting;
-    final selectedDevice = alexaProvider.selectedDevice;
-    final deviceLabel = selectedDevice != null
-        ? 'Alexa Connected - ${selectedDevice.name}'
-        : 'Alexa Connected';
 
     return Container(
       width: double.infinity,
@@ -1454,7 +1462,7 @@ class _SmartAssistantVoiceBanner extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Bottom Row: Single Prominent Alexa Wi-Fi Device Connection Option
+          // Bottom Row: Single Prominent Connect Alexa Button (Calling POST /api/integrations/alexa/link-token)
           SizedBox(
             width: double.infinity,
             child: Material(
@@ -1462,38 +1470,18 @@ class _SmartAssistantVoiceBanner extends StatelessWidget {
               child: InkWell(
                 onTap: isConnecting
                     ? null
-                    : () {
-                        if (isConnected) {
-                          showModalBottomSheet(
-                            context: context,
-                            backgroundColor: Colors.transparent,
-                            isScrollControlled: true,
-                            builder: (_) => const AlexaBottomSheet(),
-                          );
-                        } else {
-                          showModalBottomSheet(
-                            context: context,
-                            backgroundColor: Colors.transparent,
-                            isScrollControlled: true,
-                            builder: (_) => const AlexaWifiDiscoveryModal(),
-                          );
-                        }
-                      },
+                    : () => _handleConnectAlexa(context, alexaProvider),
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: isConnected
-                        ? const Color(0xFF0F172A)
-                        : const Color(0xFF00CAFF),
+                    color: const Color(0xFF00CAFF),
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
+                    boxShadow: const [
                       BoxShadow(
-                        color: isConnected
-                            ? const Color(0x300F172A)
-                            : const Color(0x3000CAFF),
+                        color: Color(0x3000CAFF),
                         blurRadius: 8,
-                        offset: const Offset(0, 2),
+                        offset: Offset(0, 2),
                       ),
                     ],
                   ),
@@ -1512,30 +1500,11 @@ class _SmartAssistantVoiceBanner extends StatelessWidget {
                         const SizedBox(width: 8),
                         const Flexible(
                           child: Text(
-                            'Connecting to Alexa...',
+                            'Connecting...',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ] else if (isConnected) ...[
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          color: Color(0xFF34D399),
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            deviceLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 13.5,
+                              fontSize: 14,
                               fontWeight: FontWeight.w800,
                               color: Colors.white,
                             ),
@@ -1543,7 +1512,7 @@ class _SmartAssistantVoiceBanner extends StatelessWidget {
                         ),
                       ] else ...[
                         const Icon(
-                          Icons.wifi_rounded,
+                          Icons.graphic_eq_rounded,
                           color: Colors.white,
                           size: 18,
                         ),

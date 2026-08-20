@@ -54,7 +54,7 @@ class SmartBuildingApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => EnergyProvider()),
         ChangeNotifierProvider(create: (_) => WaterProvider()),
         ChangeNotifierProvider(create: (_) => TicketProvider()),
-        ChangeNotifierProvider(create: (_) => AlexaProvider()..fetchStatus()),
+        ChangeNotifierProvider(create: (_) => AlexaProvider()),
       ],
       child: MaterialApp(
         title: 'Smart Homez',

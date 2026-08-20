@@ -1,6 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../../../models/device.dart';
+import 'alexa_link_response.dart';
 import 'alexa_service.dart';
 import 'alexa_status_model.dart';
 
@@ -17,6 +21,7 @@ class AlexaProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool _isScanningWifi = false;
   String? _errorMessage;
+  AlexaLinkResponse? _lastLinkResponse;
 
   AlexaConnectionState get state => _state;
   AlexaStatus get status => _status;
@@ -24,45 +29,113 @@ class AlexaProvider extends ChangeNotifier {
   AlexaWifiDevice? get selectedDevice => _selectedDevice;
   bool get isLoading => _isLoading;
   bool get isScanningWifi => _isScanningWifi;
-  String? get errorMessage => _errorMessage;
-
-  bool get isConnected => _status.connected && _state == AlexaConnectionState.connected;
   bool get isConnecting => _state == AlexaConnectionState.connecting;
-  bool get isSyncing => _state == AlexaConnectionState.syncing;
+  bool get isConnected => _status.connected && _state == AlexaConnectionState.connected;
+  String? get errorMessage => _errorMessage;
+  AlexaLinkResponse? get lastLinkResponse => _lastLinkResponse;
 
-  /// Fetches current Alexa connection status from backend on initialization
-  Future<void> fetchStatus() async {
-    _isLoading = true;
+  /// Connect Alexa flow: Calls POST /api/integrations/alexa/link-token & launches authorizeUrl
+  Future<bool> connectAlexa() async {
+    if (_state == AlexaConnectionState.connecting) return false;
+
+    _state = AlexaConnectionState.connecting;
+    _errorMessage = null;
     notifyListeners();
 
     try {
-      final result = await _service.getStatus();
-      _status = result;
-      if (result.connected) {
-        _state = AlexaConnectionState.connected;
-        if (result.selectedDeviceName != null) {
-          _selectedDevice = AlexaWifiDevice(
-            id: 'saved_device',
-            name: result.selectedDeviceName!,
-            model: 'Echo Device',
-            room: 'Home Network',
-            ipAddress: result.selectedDeviceIp ?? '192.168.1.105',
-          );
-        }
-      } else {
-        _state = AlexaConnectionState.notConnected;
+      final AlexaLinkResponse result = await _service.createLinkToken();
+      _lastLinkResponse = result;
+
+      if (result.authorizeUrl.trim().isEmpty) {
+        _errorMessage = 'Unable to start Alexa connection. Please try again.';
+        _state = AlexaConnectionState.error;
+        notifyListeners();
+        return false;
       }
+
+      final Uri uri = Uri.parse(result.authorizeUrl);
+      bool launched = false;
+
+      try {
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (e) {
+        debugPrint('[AlexaProvider] Launch externalApplication failed: $e, trying platformDefault');
+        try {
+          launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
+        } catch (_) {}
+      }
+
+      if (!launched) {
+        try {
+          launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
+        } catch (_) {}
+      }
+
+      debugPrint('[AlexaProvider] Alexa URL launched: $launched');
+
+      if (!launched) {
+        _errorMessage = 'Unable to start Alexa connection. Please try again.';
+        _state = AlexaConnectionState.error;
+        notifyListeners();
+        return false;
+      }
+
+      // After launching system browser for Amazon authorization, reset connecting state
+      _state = AlexaConnectionState.notConnected;
       _errorMessage = null;
-    } catch (e) {
-      _errorMessage = e.toString();
-      _state = AlexaConnectionState.error;
-    } finally {
-      _isLoading = false;
       notifyListeners();
+      return true;
+    } on DioException catch (e) {
+      debugPrint('[AlexaProvider] Dio error: ${e.message}');
+      debugPrint('[AlexaProvider] Status: ${e.response?.statusCode}');
+      debugPrint('[AlexaProvider] Response: ${e.response?.data}');
+      if (e.response?.statusCode == 401) {
+        _errorMessage = 'Your session has expired. Please log in again.';
+      } else if (e.response?.statusCode == 503 || e.response?.statusCode == 500) {
+        _errorMessage =
+            'Alexa connection service is temporarily unavailable. Please try again later.';
+      } else {
+        _errorMessage = 'Unable to start Alexa connection. Please try again.';
+      }
+      _state = AlexaConnectionState.error;
+      notifyListeners();
+      return false;
+    } on ApiException catch (e) {
+      debugPrint('[AlexaProvider] Api error: ${e.message}');
+      if (e.statusCode == 401) {
+        _errorMessage = 'Your session has expired. Please log in again.';
+      } else if (e.statusCode == 503 || e.statusCode == 500) {
+        _errorMessage =
+            'Alexa connection service is temporarily unavailable. Please try again later.';
+      } else if (e.message.toLowerCase().contains('socket') ||
+          e.message.toLowerCase().contains('network') ||
+          e.message.toLowerCase().contains('connection')) {
+        _errorMessage =
+            'No internet connection. Please check your network and try again.';
+      } else {
+        _errorMessage = 'Unable to start Alexa connection. Please try again.';
+      }
+      _state = AlexaConnectionState.error;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      debugPrint('[AlexaProvider] Error: $e');
+      final String msg = e.toString().toLowerCase();
+      if (msg.contains('socket') ||
+          msg.contains('network') ||
+          msg.contains('connection')) {
+        _errorMessage =
+            'No internet connection. Please check your network and try again.';
+      } else {
+        _errorMessage = 'Unable to start Alexa connection. Please try again.';
+      }
+      _state = AlexaConnectionState.error;
+      notifyListeners();
+      return false;
     }
   }
 
-  /// Scans local Wi-Fi network for active Echo / Alexa devices or real user devices
+  /// Scans local network for active user hardware devices ONLY
   Future<List<AlexaWifiDevice>> scanLocalWifiDevices({List<Device>? realDevices}) async {
     _isScanningWifi = true;
     notifyListeners();
@@ -86,7 +159,7 @@ class AlexaProvider extends ChangeNotifier {
           );
         }).toList();
       } else {
-        _wifiDevices = AlexaService.sampleWifiDevices;
+        _wifiDevices = [];
       }
       return _wifiDevices;
     } finally {
@@ -95,62 +168,7 @@ class AlexaProvider extends ChangeNotifier {
     }
   }
 
-  /// Connects to selected local Wi-Fi Alexa device
-  Future<bool> connectToLocalWifiDevice(AlexaWifiDevice device) async {
-    _state = AlexaConnectionState.connecting;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      // Simulate fast secure pairing handshake with local device
-      await Future.delayed(const Duration(milliseconds: 1200));
-
-      _selectedDevice = device;
-      _status = AlexaStatus(
-        connected: true,
-        deviceCount: 4,
-        lastSyncedAt: DateTime.now(),
-        selectedDeviceName: device.name,
-        selectedDeviceIp: device.ipAddress,
-      );
-      _state = AlexaConnectionState.connected;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = 'Failed to connect to ${device.name}: $e';
-      _state = AlexaConnectionState.error;
-      notifyListeners();
-      return false;
-    }
-  }
-
-  /// Triggers device sync with Alexa backend
-  Future<bool> syncDevices() async {
-    final previousState = _state;
-    _state = AlexaConnectionState.syncing;
-    notifyListeners();
-
-    try {
-      final success = await _service.syncDevices();
-      if (success) {
-        _status = _status.copyWith(
-          connected: true,
-          deviceCount: _status.deviceCount > 0 ? _status.deviceCount : 4,
-          lastSyncedAt: DateTime.now(),
-        );
-      }
-      _state = AlexaConnectionState.connected;
-      notifyListeners();
-      return success;
-    } catch (e) {
-      _errorMessage = 'Sync failed: $e';
-      _state = previousState;
-      notifyListeners();
-      return false;
-    }
-  }
-
-  /// Disconnects Alexa integration and resets device list to show only real devices
+  /// Disconnects Alexa integration and filters device list to show ONLY real devices
   Future<bool> disconnectAlexa({List<Device>? realDevices}) async {
     _isLoading = true;
     notifyListeners();
@@ -158,7 +176,7 @@ class AlexaProvider extends ChangeNotifier {
     try {
       await _service.disconnectAlexa();
     } catch (e) {
-      debugPrint('[AlexaProvider] Disconnect API error: $e');
+      debugPrint('[AlexaProvider] Disconnect error: $e');
     }
 
     _status = AlexaStatus.notConnected();
