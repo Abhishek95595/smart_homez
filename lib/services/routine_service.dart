@@ -105,6 +105,18 @@ class RoutineService {
     }
   }
 
+  /// Activates a Quick Scene via the backend Scene API
+  Future<bool> activateScene(String sceneId) async {
+    try {
+      if (sceneId.isNotEmpty && !sceneId.startsWith('temp_')) {
+        return await _automationService.activateScene(sceneId);
+      }
+    } catch (e) {
+      debugPrint('[RoutineService] Activate scene backend error: $e');
+    }
+    return false;
+  }
+
   // ================= Cache Helpers =================
   Future<Routine?> _readFromCache(String routineType) async {
     try {

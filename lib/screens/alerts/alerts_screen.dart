@@ -37,11 +37,13 @@ class _AlertsScreenState extends State<AlertsScreen> {
     final alerts = _filteredAlerts(allAlerts);
 
     final activeCount = allAlerts.where((a) => !a.resolved).length;
-    final ackCount =
-        allAlerts.where((a) => a.acknowledged && !a.resolved).length;
+    final ackCount = allAlerts
+        .where((a) => a.acknowledged && !a.resolved)
+        .length;
     final resolvedCount = allAlerts.where((a) => a.resolved).length;
 
-    final hasActiveFilters = _severityFilter != null ||
+    final hasActiveFilters =
+        _severityFilter != null ||
         _typeFilter != null ||
         _searchController.text.isNotEmpty ||
         _statusFilter != _AlertStatusFilter.active;
@@ -92,8 +94,11 @@ class _AlertsScreenState extends State<AlertsScreen> {
                     _searchController.clear();
                   });
                 },
-                icon: const Icon(Icons.clear_all_rounded,
-                    size: 16, color: Color(0xFFEF4444)),
+                icon: const Icon(
+                  Icons.clear_all_rounded,
+                  size: 16,
+                  color: Color(0xFFEF4444),
+                ),
                 label: const Text(
                   'Reset',
                   style: TextStyle(
@@ -115,9 +120,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                border: Border(
-                  bottom: BorderSide(color: Color(0xFFE2E8F0)),
-                ),
+                border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
                 boxShadow: [
                   BoxShadow(
                     color: Color(0x04000000),
@@ -213,26 +216,27 @@ class _AlertsScreenState extends State<AlertsScreen> {
                       itemCount: alerts.length,
                       itemBuilder: (context, i) {
                         final alert = alerts[i];
-                        final canAck = !alert.acknowledged &&
+                        final canAck =
+                            !alert.acknowledged &&
                             !alert.resolved &&
                             (user?.role.canAcknowledgeAlerts ?? false);
-                        final canResolve = !alert.resolved &&
+                        final canResolve =
+                            !alert.resolved &&
                             (user?.role.canAcknowledgeAlerts ?? false);
                         return _AlertCard(
                           alert: alert,
                           onTap: () => _showAlertDetails(context, alert, user),
                           onAcknowledge: canAck
-                              ? () =>
-                                  context.read<AlertProvider>().acknowledge(
-                                        alert,
-                                        user?.name ?? 'You',
-                                      )
+                              ? () => context.read<AlertProvider>().acknowledge(
+                                  alert,
+                                  user?.name ?? 'You',
+                                )
                               : null,
                           onResolve: canResolve
                               ? () => context.read<AlertProvider>().resolve(
-                                    alert,
-                                    user?.name ?? 'You',
-                                  )
+                                  alert,
+                                  user?.name ?? 'You',
+                                )
                               : null,
                         );
                       },
@@ -269,23 +273,21 @@ class _AlertsScreenState extends State<AlertsScreen> {
     }).toList();
   }
 
-  void _showAlertDetails(
-      BuildContext context, AppAlert alert, AppUser? user) {
+  void _showAlertDetails(BuildContext context, AppAlert alert, AppUser? user) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _AlertDetailsSheet(
         alert: alert,
-        canAck: !alert.acknowledged &&
+        canAck:
+            !alert.acknowledged &&
             !alert.resolved &&
             (user?.role.canAcknowledgeAlerts ?? false),
         canResolve:
             !alert.resolved && (user?.role.canAcknowledgeAlerts ?? false),
         onAcknowledge: () {
-          context
-              .read<AlertProvider>()
-              .acknowledge(alert, user?.name ?? 'You');
+          context.read<AlertProvider>().acknowledge(alert, user?.name ?? 'You');
           Navigator.pop(context);
         },
         onResolve: () {
@@ -484,13 +486,17 @@ class _SummaryTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '$value',
-                        style: TextStyle(
-                          color: color,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          height: 1.1,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '$value',
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            height: 1.1,
+                          ),
                         ),
                       ),
                       Text(
@@ -560,8 +566,11 @@ class _SearchBox extends StatelessWidget {
               : IconButton(
                   tooltip: 'Clear search',
                   onPressed: onClear,
-                  icon: const Icon(Icons.close_rounded,
-                      color: Color(0xFF64748B), size: 18),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: Color(0xFF64748B),
+                    size: 18,
+                  ),
                 ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 11),
@@ -594,13 +603,17 @@ class _StatusTabs extends StatelessWidget {
       {
         'filter': _AlertStatusFilter.active,
         'label': 'Active',
-        'count': activeCount
+        'count': activeCount,
       },
-      {'filter': _AlertStatusFilter.acknowledged, 'label': 'Ack.', 'count': ackCount},
+      {
+        'filter': _AlertStatusFilter.acknowledged,
+        'label': 'Ack.',
+        'count': ackCount,
+      },
       {
         'filter': _AlertStatusFilter.resolved,
         'label': 'Resolved',
-        'count': resolvedCount
+        'count': resolvedCount,
       },
       {'filter': _AlertStatusFilter.all, 'label': 'All', 'count': totalCount},
     ];
@@ -650,17 +663,21 @@ class _StatusTabs extends StatelessWidget {
                     Text(
                       label,
                       style: TextStyle(
-                        color:
-                            isSelected ? Colors.white : const Color(0xFF64748B),
-                        fontWeight:
-                            isSelected ? FontWeight.w800 : FontWeight.w600,
+                        color: isSelected
+                            ? Colors.white
+                            : const Color(0xFF64748B),
+                        fontWeight: isSelected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
                         fontSize: 12,
                       ),
                     ),
                     const SizedBox(width: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 5, vertical: 1),
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? Colors.white.withValues(alpha: 0.25)
@@ -718,8 +735,10 @@ class _FilterScroller extends StatelessWidget {
               child: GestureDetector(
                 onTap: onClear,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFEF2F2),
                     borderRadius: BorderRadius.circular(999),
@@ -728,8 +747,11 @@ class _FilterScroller extends StatelessWidget {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.close_rounded,
-                          size: 13, color: Color(0xFFEF4444)),
+                      Icon(
+                        Icons.close_rounded,
+                        size: 13,
+                        color: Color(0xFFEF4444),
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'Clear Filters',
@@ -749,34 +771,36 @@ class _FilterScroller extends StatelessWidget {
             selected: severityFilter == AlertSeverity.critical,
             color: const Color(0xFFEF4444),
             onTap: () => onSeverityChanged(
-                severityFilter == AlertSeverity.critical
-                    ? null
-                    : AlertSeverity.critical),
+              severityFilter == AlertSeverity.critical
+                  ? null
+                  : AlertSeverity.critical,
+            ),
           ),
           _chip(
             label: 'High',
             selected: severityFilter == AlertSeverity.high,
             color: const Color(0xFFF59E0B),
-            onTap: () => onSeverityChanged(severityFilter == AlertSeverity.high
-                ? null
-                : AlertSeverity.high),
+            onTap: () => onSeverityChanged(
+              severityFilter == AlertSeverity.high ? null : AlertSeverity.high,
+            ),
           ),
           _chip(
             label: 'Medium',
             selected: severityFilter == AlertSeverity.medium,
             color: const Color(0xFF3B82F6),
             onTap: () => onSeverityChanged(
-                severityFilter == AlertSeverity.medium
-                    ? null
-                    : AlertSeverity.medium),
+              severityFilter == AlertSeverity.medium
+                  ? null
+                  : AlertSeverity.medium,
+            ),
           ),
           _chip(
             label: 'Low',
             selected: severityFilter == AlertSeverity.low,
             color: const Color(0xFF10B981),
-            onTap: () => onSeverityChanged(severityFilter == AlertSeverity.low
-                ? null
-                : AlertSeverity.low),
+            onTap: () => onSeverityChanged(
+              severityFilter == AlertSeverity.low ? null : AlertSeverity.low,
+            ),
           ),
           _chip(
             label: 'Smoke',
@@ -784,7 +808,8 @@ class _FilterScroller extends StatelessWidget {
             icon: Icons.local_fire_department_rounded,
             color: const Color(0xFFEA580C),
             onTap: () => onTypeChanged(
-                typeFilter == AlertType.smoke ? null : AlertType.smoke),
+              typeFilter == AlertType.smoke ? null : AlertType.smoke,
+            ),
           ),
           _chip(
             label: 'Gas Leak',
@@ -792,25 +817,30 @@ class _FilterScroller extends StatelessWidget {
             icon: Icons.gas_meter_rounded,
             color: const Color(0xFFDC2626),
             onTap: () => onTypeChanged(
-                typeFilter == AlertType.gasLeak ? null : AlertType.gasLeak),
+              typeFilter == AlertType.gasLeak ? null : AlertType.gasLeak,
+            ),
           ),
           _chip(
             label: 'Water Overflow',
             selected: typeFilter == AlertType.waterOverflow,
             icon: Icons.water_damage_rounded,
             color: const Color(0xFF0284C7),
-            onTap: () => onTypeChanged(typeFilter == AlertType.waterOverflow
-                ? null
-                : AlertType.waterOverflow),
+            onTap: () => onTypeChanged(
+              typeFilter == AlertType.waterOverflow
+                  ? null
+                  : AlertType.waterOverflow,
+            ),
           ),
           _chip(
             label: 'Offline',
             selected: typeFilter == AlertType.deviceOffline,
             icon: Icons.wifi_off_rounded,
             color: const Color(0xFF64748B),
-            onTap: () => onTypeChanged(typeFilter == AlertType.deviceOffline
-                ? null
-                : AlertType.deviceOffline),
+            onTap: () => onTypeChanged(
+              typeFilter == AlertType.deviceOffline
+                  ? null
+                  : AlertType.deviceOffline,
+            ),
           ),
         ],
       ),
@@ -852,11 +882,7 @@ class _FilterScroller extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(
-                  icon,
-                  size: 13,
-                  color: selected ? Colors.white : color,
-                ),
+                Icon(icon, size: 13, color: selected ? Colors.white : color),
                 const SizedBox(width: 4),
               ] else ...[
                 Container(
@@ -996,7 +1022,8 @@ class _AlertCard extends StatelessWidget {
                                       const _StatusPill(
                                         label: 'LIVE ACTIVE',
                                         color: Color(0xFFEF4444),
-                                        icon: Icons.radio_button_checked_rounded,
+                                        icon:
+                                            Icons.radio_button_checked_rounded,
                                       ),
                                   ],
                                 ),
@@ -1058,11 +1085,14 @@ class _AlertCard extends StatelessWidget {
                       ],
 
                       // Audit Log
-                      if (alert.acknowledged && alert.acknowledgedBy != null) ...[
+                      if (alert.acknowledged &&
+                          alert.acknowledgedBy != null) ...[
                         const SizedBox(height: 12),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF8FAFC),
                             borderRadius: BorderRadius.circular(10),
@@ -1071,8 +1101,11 @@ class _AlertCard extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.person_pin_rounded,
-                                  size: 14, color: Color(0xFF00A38E)),
+                              const Icon(
+                                Icons.person_pin_rounded,
+                                size: 14,
+                                color: Color(0xFF00A38E),
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 'Acknowledged by ${alert.acknowledgedBy}${alert.acknowledgedAt == null ? '' : ' • ${df.format(alert.acknowledgedAt!)}'}',
@@ -1091,7 +1124,9 @@ class _AlertCard extends StatelessWidget {
                         const SizedBox(height: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFECFDF5),
                             borderRadius: BorderRadius.circular(10),
@@ -1100,8 +1135,11 @@ class _AlertCard extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.verified_rounded,
-                                  size: 14, color: Color(0xFF10B981)),
+                              const Icon(
+                                Icons.verified_rounded,
+                                size: 14,
+                                color: Color(0xFF10B981),
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 'Resolved by ${alert.resolvedBy}${alert.resolvedAt == null ? '' : ' • ${df.format(alert.resolvedAt!)}'}',
@@ -1125,15 +1163,19 @@ class _AlertCard extends StatelessWidget {
                               Expanded(
                                 child: OutlinedButton.icon(
                                   onPressed: onAcknowledge,
-                                  icon:
-                                      const Icon(Icons.check_rounded, size: 16),
+                                  icon: const Icon(
+                                    Icons.check_rounded,
+                                    size: 16,
+                                  ),
                                   label: const Text('Acknowledge'),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: const Color(0xFF0F172A),
                                     side: const BorderSide(
-                                        color: Color(0xFFCBD5E1)),
+                                      color: Color(0xFFCBD5E1),
+                                    ),
                                     padding: const EdgeInsets.symmetric(
-                                        vertical: 12),
+                                      vertical: 12,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -1153,7 +1195,7 @@ class _AlertCard extends StatelessWidget {
                                     gradient: const LinearGradient(
                                       colors: [
                                         Color(0xFF00C9A7),
-                                        Color(0xFF00A38E)
+                                        Color(0xFF00A38E),
                                       ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
@@ -1180,10 +1222,10 @@ class _AlertCard extends StatelessWidget {
                                       shadowColor: Colors.transparent,
                                       foregroundColor: Colors.white,
                                       padding: const EdgeInsets.symmetric(
-                                          vertical: 12),
+                                        vertical: 12,
+                                      ),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
                                       textStyle: const TextStyle(
                                         fontWeight: FontWeight.w800,
@@ -1303,8 +1345,10 @@ class _ThresholdGauge extends StatelessWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 7,
+                  vertical: 2.5,
+                ),
                 decoration: BoxDecoration(
                   color: isOver
                       ? const Color(0xFFEF4444)
@@ -1531,16 +1575,16 @@ class _AlertDetailsSheet extends StatelessWidget {
                           alert.resolved
                               ? 'RESOLVED'
                               : (alert.acknowledged
-                                  ? 'ACKNOWLEDGED'
-                                  : 'ACTIVE'),
+                                    ? 'ACKNOWLEDGED'
+                                    : 'ACTIVE'),
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w900,
                             color: alert.resolved
                                 ? const Color(0xFF10B981)
                                 : (alert.acknowledged
-                                    ? const Color(0xFFF59E0B)
-                                    : const Color(0xFFEF4444)),
+                                      ? const Color(0xFFF59E0B)
+                                      : const Color(0xFFEF4444)),
                           ),
                         ),
                       ],
@@ -1566,8 +1610,11 @@ class _AlertDetailsSheet extends StatelessWidget {
           // Incident details
           _sheetRow(Icons.location_on_rounded, 'Location', alert.location),
           _sheetRow(Icons.memory_rounded, 'Device ID', alert.deviceId),
-          _sheetRow(Icons.schedule_rounded, 'Triggered',
-              df.format(alert.timestamp)),
+          _sheetRow(
+            Icons.schedule_rounded,
+            'Triggered',
+            df.format(alert.timestamp),
+          ),
 
           if (alert.value != null && alert.threshold != null)
             _sheetRow(
@@ -1606,8 +1653,10 @@ class _AlertDetailsSheet extends StatelessWidget {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: const Text('Acknowledge Alert',
-                          style: TextStyle(fontWeight: FontWeight.w800)),
+                      child: const Text(
+                        'Acknowledge Alert',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
                     ),
                   ),
                 if (canAck && canResolve) const SizedBox(width: 12),
@@ -1623,8 +1672,10 @@ class _AlertDetailsSheet extends StatelessWidget {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: const Text('Mark as Resolved',
-                          style: TextStyle(fontWeight: FontWeight.w800)),
+                      child: const Text(
+                        'Mark as Resolved',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
                     ),
                   ),
               ],

@@ -182,6 +182,49 @@ class DeviceDetailScreen extends StatelessWidget {
                             }
                           : null,
                     ),
+                    if (controllable &&
+                        device.isOn &&
+                        device.dimLevel != null &&
+                        (device.type == DeviceType.fan ||
+                            device.type == DeviceType.light ||
+                            device.type == DeviceType.ac)) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Icon(
+                            device.type == DeviceType.fan
+                                ? Icons.cyclone_rounded
+                                : device.type == DeviceType.ac
+                                    ? Icons.thermostat_rounded
+                                    : Icons.lightbulb_outline_rounded,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Slider(
+                              value: device.dimLevel!.clamp(0, 100).toDouble(),
+                              min: 0,
+                              max: 100,
+                              activeColor: AppColors.primary,
+                              inactiveColor: const Color(0xFFE2E8F0),
+                              onChanged: (value) {
+                                provider.setDimLevel(device, value);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            device.type == DeviceType.ac
+                                ? '${device.dimLevel!.toInt()}°C'
+                                : '${device.dimLevel!.toInt()}%',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ],
               ),

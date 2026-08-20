@@ -44,9 +44,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const AlertsScreen(),
-                  ),
+                  MaterialPageRoute<void>(builder: (_) => const AlertsScreen()),
                 );
               },
               icon: const _NotificationIcon(),
@@ -161,10 +159,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             'For privacy, account-access or data questions, contact the '
             'Smart Homez administrator or support contact provided by your '
             'organization.',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
+            style: TextStyle(color: AppColors.textSecondary, height: 1.5),
           ),
           actions: [
             FilledButton(

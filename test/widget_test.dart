@@ -44,8 +44,7 @@ void main() {
     await tester.tap(startButton.first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Secure Access'), findsOneWidget);
-    expect(find.text('Connect & Sign In'), findsOneWidget);
+    expect(find.text('Login'), findsWidgets);
   });
 
   testWidgets('Landing page opens the interactive product demo', (

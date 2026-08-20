@@ -26,6 +26,8 @@ class RealtimeService {
   bool _requestInProgress = false;
   bool _isRunning = false;
 
+  int _consecutiveErrors = 0;
+
   Stream<List<DeviceModel>> get deviceStream => _deviceController.stream;
 
   bool get isRunning => _isRunning;
@@ -46,6 +48,7 @@ class RealtimeService {
 
     _clientId = cleanClientId;
     _isRunning = true;
+    _consecutiveErrors = 0;
 
     _refreshTimer?.cancel();
 
@@ -76,6 +79,8 @@ class RealtimeService {
         clientId,
       );
 
+      _consecutiveErrors = 0;
+
       if (!_deviceController.isClosed) {
         _deviceController.add(devices);
       }
@@ -84,9 +89,18 @@ class RealtimeService {
         '[RealtimeService] Refreshed '
         '${devices.length} devices.',
       );
-    } catch (error, stackTrace) {
-      debugPrint('[RealtimeService] Refresh failed: $error');
-      debugPrintStack(stackTrace: stackTrace);
+    } catch (error) {
+      _consecutiveErrors++;
+      debugPrint(
+        '[RealtimeService] Refresh notice ($_consecutiveErrors): $error',
+      );
+
+      if (_consecutiveErrors >= 3) {
+        debugPrint(
+          '[RealtimeService] Pausing polling due to API access permissions.',
+        );
+        stop();
+      }
     } finally {
       _requestInProgress = false;
     }

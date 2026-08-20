@@ -210,39 +210,43 @@ class _WaterHeader extends StatelessWidget {
           Builder(
             builder: (context) => IconButton(
               onPressed: () => Scaffold.of(context).openDrawer(),
-              icon: const Icon(Icons.menu_rounded, size: 29),
+              icon: const Icon(Icons.menu_rounded, size: 28),
             ),
           ),
-          const Spacer(),
-          const Column(
-            children: [
-              Text(
-                'Water Management',
-                style: TextStyle(
-                  color: AppColors.primaryDark,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.6,
+          Expanded(
+            child: Column(
+              children: const [
+                Text(
+                  'Water Management',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.primaryDark,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.6,
+                  ),
                 ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'Monitor usage, tanks and prevent overflow',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+                SizedBox(height: 2),
+                Text(
+                  'Monitor usage, tanks and prevent overflow',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const Spacer(),
           Stack(
             clipBehavior: Clip.none,
             children: [
               IconButton(
                 onPressed: onAlerts,
-                icon: const Icon(Icons.notifications_none_rounded, size: 29),
+                icon: const Icon(Icons.notifications_none_rounded, size: 28),
               ),
               if (alertCount > 0)
                 Positioned(
@@ -291,7 +295,8 @@ class _WaterHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 242,
+      height: 250,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: const Color(0xFFEDF9F7),
         borderRadius: BorderRadius.circular(30),
@@ -300,18 +305,18 @@ class _WaterHero extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(
-            right: -6,
-            bottom: -8,
-            width: 250,
-            height: 230,
+            top: 10,
+            right: 10,
+            width: 140,
+            height: 135,
             child: Image.asset(
               'assets/images/water_robot_ref.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
+              fit: BoxFit.contain,
+              alignment: Alignment.topRight,
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 18, 15),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -319,7 +324,7 @@ class _WaterHero extends StatelessWidget {
                   allNormal ? 'All Systems' : 'Water System',
                   style: const TextStyle(
                     color: AppColors.textPrimary,
-                    fontSize: 21,
+                    fontSize: 20,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.4,
                   ),
@@ -332,38 +337,40 @@ class _WaterHero extends StatelessWidget {
                         color: allNormal
                             ? AppColors.primaryDark
                             : AppColors.danger,
-                        fontSize: 27,
+                        fontSize: 25,
                         fontWeight: FontWeight.w900,
                         letterSpacing: -0.7,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Icon(
                       allNormal
                           ? Icons.verified_user_outlined
                           : Icons.warning_amber_rounded,
                       color: allNormal ? AppColors.primary : AppColors.danger,
-                      size: 29,
+                      size: 26,
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 SizedBox(
-                  width: 235,
+                  width: 170,
                   child: Text(
                     allNormal
-                        ? 'Your water systems are working perfectly.\nNo leaks or overflow detected.'
+                        ? 'Your water systems are working perfectly.\nNo leaks detected.'
                         : '$activeLeaks water alert${activeLeaks == 1 ? '' : 's'} need review.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: AppColors.textSecondary,
-                      fontSize: 13,
-                      height: 1.4,
+                      fontSize: 11.5,
+                      height: 1.3,
                     ),
                   ),
                 ),
                 const Spacer(),
                 SizedBox(
-                  width: 365,
+                  width: double.infinity,
                   child: Row(
                     children: [
                       _HeroWaterMetric(
@@ -374,14 +381,14 @@ class _WaterHero extends StatelessWidget {
                             ? AppColors.primary
                             : AppColors.danger,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       _HeroWaterMetric(
                         icon: Icons.water_outlined,
                         value: '${mainTankLevel.round()}%',
                         label: 'Avg. Tank',
                         color: AppColors.primary,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       _HeroWaterMetric(
                         icon: Icons.settings_input_component_rounded,
                         value: pumpRunning ? 'ON' : 'OFF',
@@ -419,8 +426,8 @@ class _HeroWaterMetric extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        height: 63,
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 8),
+        height: 58,
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.94),
           borderRadius: BorderRadius.circular(16),
@@ -432,22 +439,23 @@ class _HeroWaterMetric extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, color: color, size: 18),
-                const SizedBox(width: 4),
+                Icon(icon, color: color, size: 16),
+                const SizedBox(width: 3),
                 Flexible(
                   child: Text(
                     value,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: AppColors.textPrimary,
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 2),
             Text(
               label,
               maxLines: 1,
@@ -576,11 +584,19 @@ class _TankLevelsCard extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              Image.asset(
-                'assets/images/water_tank_ref.png',
-                width: 125,
-                height: 125,
-                fit: BoxFit.contain,
+              SizedBox(
+                width: 110,
+                height: 110,
+                child: ClipRect(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    heightFactor: 0.84,
+                    child: Image.asset(
+                      'assets/images/water_tank_ref.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -757,11 +773,19 @@ class _PumpStatusCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Image.asset(
-                'assets/images/water_pump_ref.png',
-                width: 145,
-                height: 120,
-                fit: BoxFit.contain,
+              SizedBox(
+                width: 130,
+                height: 110,
+                child: ClipRect(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    heightFactor: 0.84,
+                    child: Image.asset(
+                      'assets/images/water_pump_ref.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1359,8 +1383,15 @@ class _WaterAssistantStrip extends StatelessWidget {
           ),
           OutlinedButton.icon(
             onPressed: () {},
-            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 17),
+            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 15),
             label: const Text('Ask Homez'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              textStyle: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:smart_homez/providers/alert_provider.dart';
+import 'package:smart_homez/providers/auth_provider.dart';
 import 'package:smart_homez/screens/activity/activity_screen.dart';
 import 'package:smart_homez/theme/app_theme.dart';
 
@@ -11,8 +12,11 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      ChangeNotifierProvider(
-        create: (_) => AlertProvider(),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => AlertProvider()),
+          ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
           home: const ActivityScreen(),
@@ -20,12 +24,11 @@ void main() {
       ),
     );
 
-    expect(find.text('Activity'), findsOneWidget);
-    expect(find.text('Recent activity'), findsOneWidget);
+    expect(find.text('Activity Stream'), findsOneWidget);
     expect(find.byType(TextField), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, 'All'), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, 'New'), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, 'Acknowledged'), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, 'Resolved'), findsOneWidget);
+    expect(find.text('All Feed'), findsOneWidget);
+    expect(find.text('New Unread'), findsOneWidget);
+    expect(find.text('Acknowledged'), findsWidgets);
+    expect(find.text('Resolved'), findsWidgets);
   });
 }

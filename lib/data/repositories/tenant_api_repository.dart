@@ -76,51 +76,54 @@ class TenantApiRepository {
   }
 
   Map<String, dynamic> _extractData(dynamic responseData) {
-    if (responseData is! Map<String, dynamic>) {
-      throw const FormatException('Invalid API response format.');
+    if (responseData is! Map) {
+      return <String, dynamic>{};
     }
 
-    final success = responseData['success'];
+    final Map<String, dynamic> map = Map<String, dynamic>.from(responseData);
+    final success = map['success'];
 
     if (success == false) {
-      final error = responseData['error'];
-
-      if (error is Map<String, dynamic>) {
+      final error = map['error'];
+      if (error is Map) {
         throw Exception(error['message']?.toString() ?? 'API request failed.');
       }
-
       throw Exception(error?.toString() ?? 'API request failed.');
     }
 
-    final data = responseData['data'];
-
-    if (data is Map<String, dynamic>) {
-      return data;
+    final data = map['data'];
+    if (data is Map) {
+      return Map<String, dynamic>.from(data);
     }
 
-    throw const FormatException('Expected an object in data.');
+    return map;
   }
 
   List<dynamic> _extractList(dynamic responseData) {
-    if (responseData is! Map<String, dynamic>) {
-      throw const FormatException('Invalid API response format.');
+    if (responseData is List) {
+      return responseData;
     }
 
-    if (responseData['success'] == false) {
-      final error = responseData['error'];
-      if (error is Map<String, dynamic>) {
-        throw Exception(error['message'] ?? 'API request failed.');
+    if (responseData is Map) {
+      final Map<String, dynamic> map = Map<String, dynamic>.from(responseData);
+      final success = map['success'];
+      if (success == false) {
+        final error = map['error'];
+        if (error is Map) {
+          throw Exception(
+            error['message']?.toString() ?? 'API request failed.',
+          );
+        }
+        throw Exception(error?.toString() ?? 'API request failed.');
       }
-      throw Exception(error ?? 'API request failed.');
+
+      final data = map['data'];
+      if (data is List) {
+        return data;
+      }
     }
 
-    final data = responseData['data'];
-
-    if (data is List) {
-      return data;
-    }
-
-    throw const FormatException('Expected a list in data.');
+    return const <dynamic>[];
   }
 
   // ============================================================
@@ -720,6 +723,51 @@ class TenantApiRepository {
       return true;
     } on DioException {
       return false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> setupHomeFromTemplate({
+    required String template,
+    required String homeName,
+    String? address,
+  }) async {
+    try {
+      final response = await _api.post(
+        ApiEndpoints.homesTemplateSetup,
+        data: {
+          'template': template,
+          'home_name': homeName.trim(),
+          if (address != null) 'address': address.trim(),
+        },
+      );
+      return _extractData(response.data);
+    } on DioException catch (e) {
+      throw mapDioException(e);
+    }
+  }
+
+  Future<bool> bulkAssignDevicesToRooms(
+    List<Map<String, String>> assignments,
+  ) async {
+    try {
+      final response = await _api.post(
+        ApiEndpoints.bulkAssignRooms,
+        data: {'assignments': assignments},
+      );
+      final data = _extractData(response.data);
+      return data['success'] != false;
+    } on DioException catch (e) {
+      throw mapDioException(e);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getUnassignedDevices(String homeId) async {
+    try {
+      final response = await _api.get(ApiEndpoints.unassignedDevices(homeId));
+      final list = _extractList(response.data);
+      return list.whereType<Map<String, dynamic>>().toList();
+    } on DioException catch (e) {
+      throw mapDioException(e);
     }
   }
 }

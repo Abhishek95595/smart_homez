@@ -512,18 +512,20 @@ class _SettingsHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 205,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: const Color(0xFFEBF9F7),
-        borderRadius: BorderRadius.circular(30),
+        color: AppColors.primarySoft,
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0xFFD6F0EC)),
+        boxShadow: [AppTheme.softShadow],
       ),
       child: Stack(
         children: [
           Positioned(
             right: -10,
-            bottom: -16,
-            width: 220,
-            height: 220,
+            bottom: -10,
+            width: 175,
+            height: 195,
             child: Image.asset(
               'assets/images/new_robot.png',
               fit: BoxFit.contain,
@@ -531,7 +533,7 @@ class _SettingsHeroCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(22, 20, 160, 18),
+            padding: const EdgeInsets.fromLTRB(20, 18, 150, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

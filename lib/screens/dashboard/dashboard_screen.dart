@@ -12,6 +12,9 @@ import '../properties/floors_screen.dart';
 import '../properties/homes_screen.dart';
 import '../scenes/routine_scene_screen.dart';
 import '../../theme/app_theme.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import '../../services/alexa_integration_service.dart';
+import '../../widgets/hasomi_bottom_voice_bar.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -66,6 +69,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            tooltip: 'Talk to HASOMI',
+            icon: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [Color(0xFF00E5FF), Color(0xFF3B82F6)],
+                ),
+              ),
+              child: const Icon(
+                Icons.mic_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            onPressed: () {
+              final barState = context.findAncestorStateOfType<HasomiBottomVoiceBarState>();
+              if (barState != null) {
+                barState.triggerVoiceListening();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Tap HASOMI mic at the bottom of the screen...'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: Stack(
@@ -120,56 +153,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 16),
             _QuickScenesRow(
               selectedIndex: _activeSceneIndex,
-              onSelect: (index, sceneName) {
+              onSelect: (index, sceneName) async {
                 setState(() => _activeSceneIndex = index);
 
-                RoutineThemeData themeData;
-
-                if (index == 0) {
-                  themeData = RoutineThemeData(
-                    routineId: 'good_morning',
-                    title: 'Good Morning',
-                    icon: Icons.wb_sunny_rounded,
-                    bgColor: AppColors.background,
-                    gradientStart: const Color(0xFF26C6DA),
-                    gradientEnd: AppColors.primary,
-                    primarySoft: AppColors.primarySoft,
-                    imagePath: 'assets/images/scene_morning.png',
-                  );
-                } else if (index == 1) {
-                  themeData = const RoutineThemeData(
-                    routineId: 'good_night',
-                    title: 'Good Night',
-                    icon: Icons.nights_stay_rounded,
-                    bgColor: Color(0xFFF3F2FA),
-                    gradientStart: Color(0xFF9074F9),
-                    gradientEnd: Color(0xFF5D3FDB),
-                    primarySoft: Color(0xFFEFE8FF),
-                    imagePath: 'assets/images/scene_night.png',
-                  );
-                } else if (index == 2) {
-                  themeData = const RoutineThemeData(
-                    routineId: 'movie_time',
-                    title: 'Movie Time',
-                    icon: Icons.movie_filter_rounded,
-                    bgColor: Color(0xFFFFF7F2),
-                    gradientStart: Color(0xFFFFB020),
-                    gradientEnd: Color(0xFFE5484D),
-                    primarySoft: Color(0xFFFFF0EC),
-                    imagePath: 'assets/images/scene_movie.png',
-                  );
-                } else {
-                  themeData = const RoutineThemeData(
-                    routineId: 'away_mode',
-                    title: 'Away Mode',
-                    icon: Icons.directions_run_rounded,
-                    bgColor: Color(0xFFF2F4F7), // Slate bg
-                    gradientStart: Color(0xFF6B7280),
-                    gradientEnd: Color(0xFF14161F), // Dark slate
-                    primarySoft: Color(0xFFE5E7EB),
-                    imagePath: 'assets/images/scene_away.png',
-                  );
-                }
+                final routineKeys = [
+                  'good_morning',
+                  'good_night',
+                  'movie_time',
+                  'away_mode',
+                ];
+                final routineKey = routineKeys[index.clamp(0, 3)];
+                final themeData = kAllRoutineThemes[routineKey]!;
 
                 Navigator.push(
                   context,
@@ -779,49 +773,58 @@ class _OverallEnergyMatrixCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF00C9A7), Color(0xFF00A38E)],
-                            ),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.bolt_rounded,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
-                              'Overall Energy Matrix',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF0F172A),
-                                letterSpacing: -0.2,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFF00C9A7), Color(0xFF00A38E)],
                               ),
+                              shape: BoxShape.circle,
                             ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Live Grid & Backup Load',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF64748B),
-                              ),
+                            child: const Icon(
+                              Icons.bolt_rounded,
+                              color: Colors.white,
+                              size: 24,
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'Overall Energy Matrix',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF0F172A),
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Live Grid & Backup Load',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 11,
@@ -887,13 +890,17 @@ class _OverallEnergyMatrixCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              liveWatts,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF00A38E),
-                                letterSpacing: -0.3,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                liveWatts,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF00A38E),
+                                  letterSpacing: -0.3,
+                                ),
                               ),
                             ),
                           ],
@@ -927,13 +934,17 @@ class _OverallEnergyMatrixCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              dailyKwh,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF0F172A),
-                                letterSpacing: -0.3,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                dailyKwh,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF0F172A),
+                                  letterSpacing: -0.3,
+                                ),
                               ),
                             ),
                           ],
@@ -1117,10 +1128,123 @@ class _SmartAssistantVoiceBanner extends StatelessWidget {
   }
 }
 
-class _VoiceAssistantModal extends StatelessWidget {
+class _VoiceAssistantModal extends StatefulWidget {
   final String userName;
-
   const _VoiceAssistantModal({required this.userName});
+
+  @override
+  State<_VoiceAssistantModal> createState() => _VoiceAssistantModalState();
+}
+
+class _VoiceAssistantModalState extends State<_VoiceAssistantModal> {
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
+  String _text = 'Try asking:';
+  bool _hasSpeech = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initSpeech();
+  }
+
+  Future<void> _initSpeech() async {
+    try {
+      _hasSpeech = await _speech.initialize(
+        onError: (val) => debugPrint('Error: $val'),
+        onStatus: (val) {
+          if (val == 'done' || val == 'notListening') {
+            setState(() => _isListening = false);
+            if (_text.isNotEmpty && _text != 'Try asking:') {
+              _executeCommand(_text);
+              _text = ''; // Clear text to prevent multiple executions
+            }
+          }
+        },
+      );
+    } catch (e) {
+      debugPrint('Speech init failed: $e');
+      _hasSpeech = false;
+    }
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  void _listen() async {
+    if (!_hasSpeech) {
+      // Try to initialize again if it failed the first time
+      try {
+        _hasSpeech = await _speech.initialize(
+          onError: (val) => debugPrint('Error: $val'),
+          onStatus: (val) {
+            if (val == 'done' || val == 'notListening') {
+              setState(() => _isListening = false);
+              if (_text.isNotEmpty && _text != 'Try asking:') {
+                _executeCommand(_text);
+                _text = ''; // Clear text to prevent multiple executions
+              }
+            }
+          },
+        );
+      } catch (e) {
+        debugPrint('Speech fallback init failed: $e');
+        _hasSpeech = false;
+      }
+    }
+    
+    if (!_hasSpeech) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Speech recognition is not available on this device. Try fully restarting the app (Shift+R) if you just added the plugin.'),
+        ),
+      );
+      return;
+    }
+    
+    if (!_isListening) {
+      try {
+        bool available = await _speech.initialize();
+        if (available) {
+          setState(() {
+            _isListening = true;
+            _text = '';
+          });
+          _speech.listen(
+            onResult: (val) => setState(() {
+              _text = val.recognizedWords;
+            }),
+          );
+        }
+      } catch (e) {
+        debugPrint('Speech start failed: $e');
+      }
+    } else {
+      setState(() => _isListening = false);
+      _speech.stop();
+    }
+  }
+
+  Future<void> _executeCommand(String commandText) async {
+    // Strip emojis if they clicked a chip
+    final cleanCommand = commandText.replaceAll(RegExp(r'[⚡❄️🎬""]'), '').trim();
+    
+    if (mounted && Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Executing: $cleanCommand'),
+          backgroundColor: const Color(0xFF00A38E),
+        ),
+      );
+    }
+
+    final service = AlexaIntegrationService();
+    await service.sendCommands({'command': cleanCommand});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1142,31 +1266,38 @@ class _VoiceAssistantModal extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF00C9A7), Color(0xFF00A38E)],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x3500A38E),
-                  blurRadius: 16,
-                  offset: Offset(0, 6),
+          GestureDetector(
+            onTap: _listen,
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: _isListening
+                      ? [const Color(0xFFEF4444), const Color(0xFFDC2626)]
+                      : [const Color(0xFF00C9A7), const Color(0xFF00A38E)],
                 ),
-              ],
-            ),
-            child: const Icon(
-              Icons.graphic_eq_rounded,
-              color: Colors.white,
-              size: 34,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: _isListening
+                        ? const Color(0x35EF4444)
+                        : const Color(0x3500A38E),
+                    blurRadius: _isListening ? 24 : 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Icon(
+                _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
+                color: Colors.white,
+                size: 34,
+              ),
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            'Listening to $userName...',
+            _isListening ? 'Listening...' : 'Tap mic to speak to ${widget.userName}',
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
@@ -1174,37 +1305,32 @@ class _VoiceAssistantModal extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Try asking:',
+          Text(
+            _text,
+            textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF64748B),
+              fontSize: _isListening ? 16 : 12.5,
+              fontWeight: _isListening ? FontWeight.w700 : FontWeight.w600,
+              color: _isListening ? const Color(0xFF0F172A) : const Color(0xFF64748B),
             ),
           ),
           const SizedBox(height: 16),
-          _commandChip(context, '⚡ "Turn on living room lights"'),
-          const SizedBox(height: 8),
-          _commandChip(context, '❄️ "Set AC temperature to 22°C"'),
-          const SizedBox(height: 8),
-          _commandChip(context, '🎬 "Activate Movie Time scene"'),
+          if (!_isListening) ...[
+            _commandChip('⚡ "Turn on living room lights"'),
+            const SizedBox(height: 8),
+            _commandChip('❄️ "Set AC temperature to 22°C"'),
+            const SizedBox(height: 8),
+            _commandChip('🎬 "Activate Movie Time scene"'),
+          ],
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _commandChip(BuildContext context, String text) {
+  Widget _commandChip(String text) {
     return GestureDetector(
-      onTap: () {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Executing: $text'),
-            backgroundColor: const Color(0xFF00A38E),
-          ),
-        );
-      },
+      onTap: () => _executeCommand(text),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),

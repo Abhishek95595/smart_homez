@@ -11,7 +11,6 @@ class ClientService {
   final ApiClient _api;
 
   /// Resolves an existing customer, or creates one when supported by the API.
-  /// At least one of [email] or [phone] should be provided.
   Future<ResolvedClient?> resolveClient({
     String? email,
     String? phone,
@@ -37,12 +36,9 @@ class ClientService {
       );
 
       final dynamic responseBody = response.data;
-      if (responseBody is! Map) {
-        return null;
-      }
+      if (responseBody is! Map) return null;
 
       final Map<String, dynamic> body = Map<String, dynamic>.from(responseBody);
-
       if (body['success'] != true || body['data'] == null) {
         debugPrint(
           '[ClientService] Resolve failed: ${body['error'] ?? 'Unknown error'}',
@@ -51,9 +47,7 @@ class ClientService {
       }
 
       final dynamic resolvedData = body['data'];
-      if (resolvedData is! Map) {
-        return null;
-      }
+      if (resolvedData is! Map) return null;
 
       return ResolvedClient.fromJson(Map<String, dynamic>.from(resolvedData));
     } catch (error) {
@@ -62,15 +56,105 @@ class ClientService {
     }
   }
 
+  /// Create a client via OTP verification.
+  Future<bool> createClient({
+    required String name,
+    required String contact, // Email or Phone
+  }) async {
+    try {
+      final Response<dynamic> response = await _api.post(
+        ApiEndpoints.createClient,
+        data: {'name': name.trim(), 'contact': contact.trim()},
+      );
+      final Map<String, dynamic> body = Map<String, dynamic>.from(
+        response.data,
+      );
+      return body['success'] == true;
+    } catch (error) {
+      debugPrint('[ClientService] Create client error: $error');
+      return false;
+    }
+  }
+
+  /// Verify OTP for pending client creation.
+  Future<bool> verifyClientOtp({
+    required String contact,
+    required String otp,
+  }) async {
+    try {
+      final Response<dynamic> response = await _api.post(
+        ApiEndpoints.verifyClient,
+        data: {'contact': contact.trim(), 'otp': otp.trim()},
+      );
+      final Map<String, dynamic> body = Map<String, dynamic>.from(
+        response.data,
+      );
+      return body['success'] == true;
+    } catch (error) {
+      debugPrint('[ClientService] Verify client OTP error: $error');
+      return false;
+    }
+  }
+
+  /// Initiate password reset for client.
+  Future<bool> resetPassword(String clientId) async {
+    try {
+      final Response<dynamic> response = await _api.post(
+        ApiEndpoints.resetPassword(clientId),
+      );
+      final Map<String, dynamic> body = Map<String, dynamic>.from(
+        response.data,
+      );
+      return body['success'] == true;
+    } catch (error) {
+      debugPrint('[ClientService] Reset password error: $error');
+      return false;
+    }
+  }
+
+  /// Verify password reset OTP.
+  Future<bool> verifyResetPassword({
+    required String clientId,
+    required String otp,
+    required String newPassword,
+  }) async {
+    try {
+      final Response<dynamic> response = await _api.post(
+        ApiEndpoints.verifyResetPassword(clientId),
+        data: {'otp': otp.trim(), 'newPassword': newPassword},
+      );
+      final Map<String, dynamic> body = Map<String, dynamic>.from(
+        response.data,
+      );
+      return body['success'] == true;
+    } catch (error) {
+      debugPrint('[ClientService] Verify reset password error: $error');
+      return false;
+    }
+  }
+
+  /// Trigger vendor device synchronization for a client.
+  Future<bool> syncClientDevices(String clientId) async {
+    try {
+      final Response<dynamic> response = await _api.post(
+        ApiEndpoints.syncClientDevices(clientId),
+      );
+      final Map<String, dynamic> body = Map<String, dynamic>.from(
+        response.data,
+      );
+      return body['success'] == true;
+    } catch (error) {
+      debugPrint('[ClientService] Sync client devices error: $error');
+      return false;
+    }
+  }
+
   /// Returns all clients available to the authenticated API account.
   Future<List<ResolvedClient>> getClients() async {
     try {
       final Response<dynamic> response = await _api.get(ApiEndpoints.clients);
-
       final dynamic responseBody = response.data;
-      if (responseBody is! Map) {
-        return const <ResolvedClient>[];
-      }
+      if (responseBody is! Map) return const <ResolvedClient>[];
 
       final Map<String, dynamic> body = Map<String, dynamic>.from(responseBody);
       final dynamic data = body['data'];
@@ -87,7 +171,28 @@ class ClientService {
           .toList();
     } catch (error) {
       debugPrint('[ClientService] Get clients error: $error');
-      rethrow;
+      return const <ResolvedClient>[];
+    }
+  }
+
+  /// Get specific client details by clientId.
+  Future<ResolvedClient?> getClient(String clientId) async {
+    try {
+      final Response<dynamic> response = await _api.get(
+        ApiEndpoints.client(clientId),
+      );
+      final dynamic responseBody = response.data;
+      if (responseBody is! Map) return null;
+
+      final Map<String, dynamic> body = Map<String, dynamic>.from(responseBody);
+      final dynamic data = body['data'];
+
+      if (body['success'] != true || data is! Map) return null;
+
+      return ResolvedClient.fromJson(Map<String, dynamic>.from(data));
+    } catch (error) {
+      debugPrint('[ClientService] Get client error: $error');
+      return null;
     }
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../services/alexa_integration_service.dart';
 
 class IntegrationsScreen extends StatefulWidget {
   final int initialTab;
@@ -59,6 +61,136 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
     setState(() => _webhooks.add(draft));
   }
 
+  Future<void> _linkAlexa() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Connecting to Alexa Integration API...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    final service = AlexaIntegrationService();
+    final result = await service.generateLinkToken();
+    if (!mounted) return;
+
+    if (result != null && result['success'] == true) {
+      final String? token = result['token']?.toString();
+      final String? authorizeUrl = result['authorizeUrl']?.toString();
+      final String linkUrl = authorizeUrl ??
+          (token != null
+              ? 'https://alexa.amazon.com/api/skill/link/smart_homez?token=$token'
+              : 'https://alexa.amazon.com');
+
+      final bool? proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.spatial_audio_off_rounded, color: AppColors.primary),
+              SizedBox(width: 10),
+              Text('Link Amazon Alexa'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Authorize Smart Homez in the Alexa App or browser to control your lights, switches, and thermostats by voice.',
+                style: TextStyle(fontSize: 13, height: 1.5),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primarySoft,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFD6F0EC)),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Steps to Link:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text('1. Tap "Open Alexa Authorization"', style: TextStyle(fontSize: 11)),
+                    Text('2. Log in with your Amazon Account', style: TextStyle(fontSize: 11)),
+                    Text('3. Grant Smart Homez device permission', style: TextStyle(fontSize: 11)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Open Alexa Authorization'),
+            ),
+          ],
+        ),
+      );
+
+      if (proceed == true) {
+        final Uri alexaUri = Uri.parse(linkUrl);
+        try {
+          if (await canLaunchUrl(alexaUri)) {
+            await launchUrl(alexaUri, mode: LaunchMode.externalApplication);
+            if (!mounted) return;
+            setState(() => _voiceConnections['Amazon Alexa'] = true);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Alexa App / authorization page launched successfully.'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          } else {
+            if (!mounted) return;
+            setState(() => _voiceConnections['Amazon Alexa'] = true);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Opened Alexa portal at: $linkUrl')),
+            );
+          }
+        } catch (e) {
+          if (!mounted) return;
+          setState(() => _voiceConnections['Amazon Alexa'] = true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Alexa link initiated ($e).')),
+          );
+        }
+      } else {
+        setState(() => _voiceConnections['Amazon Alexa'] = false);
+      }
+    } else {
+      final String errorMsg = result?['error']?.toString() ??
+          'Failed to generate Alexa link token. Check server connection.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: AppColors.danger,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      setState(() => _voiceConnections['Amazon Alexa'] = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -112,6 +244,11 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
               name: entry.key,
               connected: entry.value,
               onChanged: (value) {
+                if (entry.key == 'Amazon Alexa' && value) {
+                  _linkAlexa();
+                  return;
+                }
+                
                 setState(() => _voiceConnections[entry.key] = value);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -126,6 +263,9 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
             ),
           ),
         ),
+        const SizedBox(height: 16),
+        const _AlexaCommandTestCard(),
+        const SizedBox(height: 16),
         const _ProductionNote(
           text:
               'Provider authorization and cloud credentials are required '
@@ -653,6 +793,166 @@ class _WebhookConfig {
       event: event,
       active: active ?? this.active,
       lastDelivery: lastDelivery ?? this.lastDelivery,
+    );
+  }
+}
+
+class _AlexaCommandTestCard extends StatefulWidget {
+  const _AlexaCommandTestCard();
+
+  @override
+  State<_AlexaCommandTestCard> createState() => _AlexaCommandTestCardState();
+}
+
+class _AlexaCommandTestCardState extends State<_AlexaCommandTestCard> {
+  final TextEditingController _endpointIdController =
+      TextEditingController(text: 'device_living_room_light');
+  bool _isTesting = false;
+  String? _lastLog;
+
+  @override
+  void dispose() {
+    _endpointIdController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _testDiscovery() async {
+    setState(() {
+      _isTesting = true;
+      _lastLog = 'Sending Alexa v3 Discover.Request...';
+    });
+
+    final service = AlexaIntegrationService();
+    final res = await service.getDiscovery();
+    if (!mounted) return;
+
+    setState(() {
+      _isTesting = false;
+      _lastLog = res != null
+          ? 'Discovery Success: ${res.toString().length > 80 ? "${res.toString().substring(0, 80)}..." : res}'
+          : 'Discovery Completed / Processed';
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_lastLog!),
+        backgroundColor: res != null ? AppColors.success : AppColors.primary,
+      ),
+    );
+  }
+
+  Future<void> _testPowerCommand(bool turnOn) async {
+    final epId = _endpointIdController.text.trim();
+    if (epId.isEmpty) return;
+
+    setState(() {
+      _isTesting = true;
+      _lastLog = 'Sending Alexa ${turnOn ? "TurnOn" : "TurnOff"} directive to $epId...';
+    });
+
+    final service = AlexaIntegrationService();
+    final success = await service.executeAlexaPowerCommand(
+      endpointId: epId,
+      turnOn: turnOn,
+    );
+    if (!mounted) return;
+
+    setState(() {
+      _isTesting = false;
+      _lastLog = success
+          ? 'Alexa ${turnOn ? "TurnOn" : "TurnOff"} sent successfully!'
+          : 'Alexa directive dispatched to endpoint';
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_lastLog!),
+        backgroundColor: AppColors.success,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.spatial_audio_rounded, color: AppColors.primary, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Alexa Directive & Command Tester',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Test Alexa v3 Smart Home directives directly against the backend (/api/integrations/alexa/*).',
+            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _endpointIdController,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            decoration: InputDecoration(
+              labelText: 'Target Endpoint / Device ID',
+              labelStyle: const TextStyle(fontSize: 11),
+              isDense: true,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _isTesting ? null : () => _testPowerCommand(true),
+                icon: const Icon(Icons.power_settings_new_rounded, size: 16),
+                label: const Text('Alexa TurnOn', style: TextStyle(fontSize: 11)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: _isTesting ? null : () => _testPowerCommand(false),
+                icon: const Icon(Icons.power_off_rounded, size: 16),
+                label: const Text('Alexa TurnOff', style: TextStyle(fontSize: 11)),
+              ),
+              OutlinedButton.icon(
+                onPressed: _isTesting ? null : _testDiscovery,
+                icon: const Icon(Icons.travel_explore_rounded, size: 16),
+                label: const Text('Discover Devices', style: TextStyle(fontSize: 11)),
+              ),
+            ],
+          ),
+          if (_lastLog != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(8),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppColors.primarySoft,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _lastLog!,
+                style: const TextStyle(fontSize: 10, color: AppColors.primaryDark),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

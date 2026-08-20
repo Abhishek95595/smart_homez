@@ -37,6 +37,9 @@ dependencies:
   image: ^4.9.1
   firebase_core: ^4.13.0
   firebase_auth: ^6.5.7
+  url_launcher: ^6.3.2
+  speech_to_text: ^7.4.0
+  flutter_tts: ^4.2.0
 
 dev_dependencies:
   flutter_test:

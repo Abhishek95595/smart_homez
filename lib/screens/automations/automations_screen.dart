@@ -5,6 +5,7 @@ import '../../data/models/requests/create_automation_request.dart';
 import '../../models/automation_model.dart';
 import '../../providers/alert_provider.dart';
 import '../../providers/automation_provider.dart';
+import '../../providers/property_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_navigation_drawer.dart';
 import '../../widgets/app_state_widgets.dart';
@@ -18,8 +19,8 @@ class AutomationsScreen extends StatefulWidget {
 }
 
 class _AutomationsScreenState extends State<AutomationsScreen> {
-  _AutomationFilter _filter = _AutomationFilter.all;
-  _AutomationSort _sort = _AutomationSort.recent;
+  _AutomationSection _section = _AutomationSection.all;
+  String? _selectedHomeId;
   final Set<String> _favoriteIds = <String>{};
 
   @override
@@ -39,9 +40,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => _AutomationForm(draft: draft),
     );
-    if (result == null || !mounted) {
-      return;
-    }
+    if (result == null || !mounted) return;
 
     final messenger = ScaffoldMessenger.of(context);
     final provider = context.read<AutomationProvider>();
@@ -49,9 +48,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
       CreateAutomationRequest(name: result.name, isActive: true),
     );
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     messenger.showSnackBar(
       SnackBar(
         content: Text(
@@ -77,9 +74,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
         ),
       ),
     );
-    if (result == null || !mounted) {
-      return;
-    }
+    if (result == null || !mounted) return;
 
     final messenger = ScaffoldMessenger.of(context);
     final provider = context.read<AutomationProvider>();
@@ -91,9 +86,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
       ),
     );
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     messenger.showSnackBar(
       SnackBar(
         content: Text(
@@ -123,16 +116,12 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
       ),
     );
 
-    if (confirmed != true || !mounted) {
-      return;
-    }
+    if (confirmed != true || !mounted) return;
 
     final messenger = ScaffoldMessenger.of(context);
     final provider = context.read<AutomationProvider>();
     final success = await provider.deleteRule(rule.id);
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     setState(() => _favoriteIds.remove(rule.id));
     messenger.showSnackBar(
@@ -150,20 +139,16 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
       final fullRule = await context.read<AutomationProvider>().getAutomation(
         rule.id,
       );
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (ctx) => _AutomationDetailsSheet(rule: fullRule),
+        builder: (_) => _AutomationDetailsSheet(rule: fullRule),
       );
     } catch (e) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(
           content: Text(
@@ -200,7 +185,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
             ),
             const SizedBox(height: 18),
             const Text(
-              'Automation helper',
+              'Ask Homez',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w900,
@@ -209,7 +194,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
             ),
             const SizedBox(height: 6),
             const Text(
-              'Start with one trigger and one clear action. You can refine the rule later.',
+              'Create a simple trigger and action. Homez can help you turn it into a useful routine.',
               style: TextStyle(color: AppColors.textSecondary, height: 1.4),
             ),
             const SizedBox(height: 18),
@@ -221,12 +206,12 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
             const _HelpTip(
               icon: Icons.sensors_rounded,
               title: 'Sensor based',
-              text: 'Use device state or sensor changes as the trigger.',
+              text: 'Use a device or sensor change as the trigger.',
             ),
             const _HelpTip(
               icon: Icons.auto_awesome_rounded,
               title: 'Scene based',
-              text: 'Group several device actions into a simple routine.',
+              text: 'Group several device actions into one routine.',
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -246,84 +231,12 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
     );
   }
 
-  List<AutomationModel> _visibleRules(List<AutomationModel> allRules) {
-    Iterable<AutomationModel> result = allRules;
-
-    switch (_filter) {
-      case _AutomationFilter.all:
-        break;
-      case _AutomationFilter.byRoom:
-        result = result.where((rule) {
-          final conditionScoped = rule.conditions.any(
-            (c) => c.targetDeviceId?.trim().isNotEmpty == true,
-          );
-          final actionScoped = rule.actions.any(
-            (a) => a.targetDeviceId?.trim().isNotEmpty == true,
-          );
-          return conditionScoped || actionScoped;
-        });
-        break;
-      case _AutomationFilter.scheduled:
-        result = result.where(
-          (rule) => rule.conditions.any(
-            (c) => c.timeValue?.trim().isNotEmpty == true,
-          ),
-        );
-        break;
-      case _AutomationFilter.manual:
-        result = result.where((rule) => rule.conditions.isEmpty);
-        break;
-      case _AutomationFilter.favorites:
-        result = result.where((rule) => _favoriteIds.contains(rule.id));
-        break;
-    }
-
-    final rules = result.toList();
-    switch (_sort) {
-      case _AutomationSort.recent:
-        rules.sort((a, b) {
-          final ad =
-              a.updatedAt ??
-              a.createdAt ??
-              DateTime.fromMillisecondsSinceEpoch(0);
-          final bd =
-              b.updatedAt ??
-              b.createdAt ??
-              DateTime.fromMillisecondsSinceEpoch(0);
-          return bd.compareTo(ad);
-        });
-        break;
-      case _AutomationSort.name:
-        rules.sort(
-          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-        );
-        break;
-      case _AutomationSort.activeFirst:
-        rules.sort((a, b) {
-          if (a.isActive == b.isActive) {
-            return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-          }
-          return a.isActive ? -1 : 1;
-        });
-        break;
-    }
-    return rules;
-  }
-
   static String _sceneName(AutomationModel rule) {
     final name = rule.name.toLowerCase();
-    if (name.contains('morning') || name.contains('sunrise')) {
-      return 'Morning';
-    }
-    if (name.contains('night') || name.contains('sleep')) {
-      return 'Night';
-    }
-    if (name.contains('away') || name.contains('leave')) {
-      return 'Away';
-    }
-    if (name.contains('movie')) {
-      return 'Movie';
-    }
+    if (name.contains('morning') || name.contains('sunrise')) return 'Morning';
+    if (name.contains('night') || name.contains('sleep')) return 'Night';
+    if (name.contains('away') || name.contains('leave')) return 'Away';
+    if (name.contains('movie')) return 'Movie';
 
     if (rule.conditions.any((c) => c.timeValue?.contains('08:00') == true)) {
       return 'Morning';
@@ -337,9 +250,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
   static String _triggerTime(AutomationModel rule) {
     for (final condition in rule.conditions) {
       final value = condition.timeValue;
-      if (value != null && value.trim().isNotEmpty) {
-        return value;
-      }
+      if (value != null && value.trim().isNotEmpty) return value;
     }
     return '08:00';
   }
@@ -355,24 +266,42 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
     if (rule.actions.isEmpty) {
       return rule.description ?? 'Run automation';
     }
-    final first = rule.actions.first;
-    final command = first.command?.trim();
-    if (command != null && command.isNotEmpty) {
-      return command;
-    }
-    return 'Run automation';
+    final command = rule.actions.first.command?.trim();
+    return command?.isNotEmpty == true ? command! : 'Run automation';
+  }
+
+  List<AutomationModel> _scheduledRules(List<AutomationModel> rules) {
+    return rules
+        .where(
+          (rule) => rule.conditions.any(
+            (condition) => condition.timeValue?.trim().isNotEmpty == true,
+          ),
+        )
+        .toList();
+  }
+
+  bool _show(_AutomationSection section) {
+    return _section == _AutomationSection.all || _section == section;
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AutomationProvider>();
     final alertCount = context.watch<AlertProvider>().criticalActiveCount;
-    final visibleRules = _visibleRules(provider.rules);
+    final properties = context.watch<PropertyProvider>().properties;
+    final scheduled = _scheduledRules(provider.rules);
+
+    String? effectiveHomeId = _selectedHomeId;
+    if (properties.isNotEmpty &&
+        !properties.any((property) => property.id == effectiveHomeId)) {
+      effectiveHomeId = properties.first.id;
+    }
 
     return Scaffold(
       drawer: const AppNavigationDrawer(),
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFFBFDFD),
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             _AutomationHeader(
@@ -392,113 +321,135 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
                         physics: const BouncingScrollPhysics(
                           parent: AlwaysScrollableScrollPhysics(),
                         ),
-                        padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
+                        padding: const EdgeInsets.fromLTRB(14, 5, 14, 26),
                         children: [
-                          _AutomationHero(onCreate: () => _addAutomation()),
-                          const SizedBox(height: 18),
-                          _AutomationFilterBar(
-                            selected: _filter,
-                            onSelected: (filter) =>
-                                setState(() => _filter = filter),
+                          _TopControls(
+                            properties: properties
+                                .map(
+                                  (property) => _HomeChoice(
+                                    id: property.id,
+                                    name: property.name,
+                                  ),
+                                )
+                                .toList(),
+                            selectedHomeId: effectiveHomeId,
+                            selectedSection: _section,
+                            onHomeChanged: (id) {
+                              setState(() => _selectedHomeId = id);
+                            },
+                            onSectionChanged: (section) {
+                              setState(() => _section = section);
+                            },
+                            onCreate: () => _addAutomation(),
                           ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Text(
-                                'My Automations (${visibleRules.length})',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                  color: AppColors.textPrimary,
-                                  letterSpacing: -0.3,
-                                ),
-                              ),
-                              const Spacer(),
-                              PopupMenuButton<_AutomationSort>(
-                                tooltip: 'Sort automations',
-                                onSelected: (sort) =>
-                                    setState(() => _sort = sort),
-                                itemBuilder: (_) => const [
-                                  PopupMenuItem(
-                                    value: _AutomationSort.recent,
-                                    child: Text('Recent'),
-                                  ),
-                                  PopupMenuItem(
-                                    value: _AutomationSort.name,
-                                    child: Text('Name'),
-                                  ),
-                                  PopupMenuItem(
-                                    value: _AutomationSort.activeFirst,
-                                    child: Text('Active first'),
-                                  ),
-                                ],
-                                child: Row(
-                                  children: [
-                                    const Text(
-                                      'Sort by: ',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                    Text(
-                                      _sort.label,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textPrimary,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 3),
-                                    const Icon(
-                                      Icons.keyboard_arrow_down_rounded,
-                                      size: 18,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                          const SizedBox(height: 14),
+                          _AutomationHero(
+                            onExplore: () {
+                              setState(
+                                () => _section = _AutomationSection.scenes,
+                              );
+                            },
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 14),
+                          _AutomationSectionBar(
+                            selected: _section,
+                            onSelected: (section) {
+                              setState(() => _section = section);
+                            },
+                          ),
+                          const SizedBox(height: 17),
                           if (provider.errorMessage != null) ...[
                             _AutomationErrorBanner(
                               message: provider.errorMessage!,
                               onRetry: provider.fetchRules,
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 16),
                           ],
-                          if (visibleRules.isEmpty)
-                            _EmptyAutomation(
-                              filter: _filter,
+                          if (_show(_AutomationSection.scenes)) ...[
+                            _MyScenesSection(
+                              onApply: (draft) => _addAutomation(draft: draft),
+                            ),
+                            const SizedBox(height: 18),
+                          ],
+                          if (_show(_AutomationSection.rules)) ...[
+                            _AutomationRulesSection(
+                              rules: provider.rules,
+                              favoriteIds: _favoriteIds,
+                              onEdit: _editAutomation,
+                              onDelete: _confirmDelete,
+                              onView: _showAutomationDetails,
+                              onFavorite: (rule) {
+                                setState(() {
+                                  if (_favoriteIds.contains(rule.id)) {
+                                    _favoriteIds.remove(rule.id);
+                                  } else {
+                                    _favoriteIds.add(rule.id);
+                                  }
+                                });
+                              },
                               onAdd: () => _addAutomation(),
-                            )
-                          else
-                            ...visibleRules.map(
-                              (rule) => Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: _AutomationCard(
-                                  rule: rule,
-                                  isFavorite: _favoriteIds.contains(rule.id),
-                                  onEdit: () => _editAutomation(rule),
-                                  onDelete: () => _confirmDelete(rule),
-                                  onView: () => _showAutomationDetails(rule),
-                                  onFavorite: () {
-                                    setState(() {
-                                      if (_favoriteIds.contains(rule.id)) {
-                                        _favoriteIds.remove(rule.id);
-                                      } else {
-                                        _favoriteIds.add(rule.id);
-                                      }
-                                    });
-                                  },
+                            ),
+                            const SizedBox(height: 18),
+                          ],
+                          if (_show(_AutomationSection.schedules)) ...[
+                            _ScheduledAutomationsSection(
+                              rules: scheduled,
+                              onTapRule: _showAutomationDetails,
+                              onAdd: () => _addAutomation(
+                                draft: const _AutomationDraft(
+                                  name: 'New Schedule',
+                                  trigger: '08:00',
+                                  action: 'Run scheduled devices',
+                                  repeat: 'Daily',
+                                  scene: 'Custom',
                                 ),
                               ),
                             ),
-                          const SizedBox(height: 12),
-                          _SceneSuggestions(
-                            onApply: (template) =>
-                                _addAutomation(draft: template),
+                            const SizedBox(height: 18),
+                          ],
+                          if (_show(_AutomationSection.timers)) ...[
+                            _TimersPanel(
+                              onAdd: () => _addAutomation(
+                                draft: const _AutomationDraft(
+                                  name: 'New Timer',
+                                  trigger: '08:00',
+                                  action: 'Turn device off after timer',
+                                  repeat: 'Custom',
+                                  scene: 'Custom',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                          ],
+                          _QuickActions(
+                            onCreateRule: () => _addAutomation(),
+                            onCreateScene: () => _addAutomation(
+                              draft: const _AutomationDraft(
+                                name: 'New Scene',
+                                trigger: '08:00',
+                                action: 'Run scene devices',
+                                repeat: 'Custom',
+                                scene: 'Custom',
+                              ),
+                            ),
+                            onAddSchedule: () => _addAutomation(
+                              draft: const _AutomationDraft(
+                                name: 'New Schedule',
+                                trigger: '08:00',
+                                action: 'Run scheduled devices',
+                                repeat: 'Daily',
+                                scene: 'Custom',
+                              ),
+                            ),
+                            onAddTimer: () => _addAutomation(
+                              draft: const _AutomationDraft(
+                                name: 'New Timer',
+                                trigger: '08:00',
+                                action: 'Turn device off after timer',
+                                repeat: 'Custom',
+                                scene: 'Custom',
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 16),
                           _AutomationHelpBanner(onTap: _showAutomationHelp),
@@ -513,15 +464,23 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
   }
 }
 
-enum _AutomationFilter { all, byRoom, scheduled, manual, favorites }
+enum _AutomationSection { all, scenes, schedules, rules, timers }
 
-enum _AutomationSort { recent, name, activeFirst }
-
-extension on _AutomationSort {
+extension on _AutomationSection {
   String get label => switch (this) {
-    _AutomationSort.recent => 'Recent',
-    _AutomationSort.name => 'Name',
-    _AutomationSort.activeFirst => 'Active',
+    _AutomationSection.all => 'All Automations',
+    _AutomationSection.scenes => 'Scenes',
+    _AutomationSection.schedules => 'Schedules',
+    _AutomationSection.rules => 'Rules',
+    _AutomationSection.timers => 'Timers',
+  };
+
+  IconData get icon => switch (this) {
+    _AutomationSection.all => Icons.hub_outlined,
+    _AutomationSection.scenes => Icons.wb_twilight_outlined,
+    _AutomationSection.schedules => Icons.calendar_month_outlined,
+    _AutomationSection.rules => Icons.account_tree_outlined,
+    _AutomationSection.timers => Icons.schedule_outlined,
   };
 }
 
@@ -535,251 +494,468 @@ class _AutomationHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Builder(
       builder: (scaffoldContext) => Padding(
-        padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-        child: Row(
-          children: [
-            IconButton(
-              onPressed: () => Scaffold.of(scaffoldContext).openDrawer(),
-              icon: const Icon(Icons.menu_rounded, size: 29),
-              color: AppColors.textPrimary,
-            ),
-            const Spacer(),
-            const Column(
-              children: [
-                Text(
-                  'Automations',
-                  style: TextStyle(
-                    color: AppColors.primaryDark,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 25,
-                    letterSpacing: -0.7,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Create smart rules that work for you',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                IconButton(
-                  onPressed: onAlerts,
-                  icon: const Icon(Icons.notifications_none_rounded, size: 29),
+        padding: const EdgeInsets.fromLTRB(8, 4, 8, 2),
+        child: SizedBox(
+          height: 72,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  onPressed: () => Scaffold.of(scaffoldContext).openDrawer(),
+                  icon: const Icon(Icons.menu_rounded, size: 30),
                   color: AppColors.textPrimary,
                 ),
-                if (alertCount > 0)
-                  Positioned(
-                    top: 3,
-                    right: 3,
-                    child: Container(
-                      constraints: const BoxConstraints(
-                        minWidth: 18,
-                        minHeight: 18,
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '$alertCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
+              ),
+              const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Automations',
+                    style: TextStyle(
+                      color: AppColors.primaryDark,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 27,
+                      letterSpacing: -0.8,
                     ),
                   ),
-              ],
-            ),
-          ],
+                  SizedBox(height: 2),
+                  Text(
+                    'Make your home smarter. Automate with ease.',
+                    style: TextStyle(
+                      color: Color(0xFF26345B),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      onPressed: onAlerts,
+                      icon: const Icon(
+                        Icons.notifications_none_rounded,
+                        size: 29,
+                      ),
+                      color: AppColors.textPrimary,
+                    ),
+                    if (alertCount > 0)
+                      Positioned(
+                        top: 3,
+                        right: 3,
+                        child: Container(
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: const BoxDecoration(
+                            color: AppColors.primaryDark,
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '$alertCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _AutomationHero extends StatelessWidget {
+class _HomeChoice {
+  final String id;
+  final String name;
+
+  const _HomeChoice({required this.id, required this.name});
+}
+
+class _TopControls extends StatelessWidget {
+  final List<_HomeChoice> properties;
+  final String? selectedHomeId;
+  final _AutomationSection selectedSection;
+  final ValueChanged<String?> onHomeChanged;
+  final ValueChanged<_AutomationSection> onSectionChanged;
   final VoidCallback onCreate;
 
-  const _AutomationHero({required this.onCreate});
+  const _TopControls({
+    required this.properties,
+    required this.selectedHomeId,
+    required this.selectedSection,
+    required this.onHomeChanged,
+    required this.onSectionChanged,
+    required this.onCreate,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 206,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: const Color(0xFFEAF9F6),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFD7F1EC)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.05),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -12,
-            bottom: -22,
-            width: 230,
-            height: 230,
-            child: Image.asset(
-              'assets/images/new_robot.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
-            ),
-          ),
-          Positioned(
-            top: 22,
-            right: 18,
-            child: Column(
-              children: const [
-                _HeroFeatureIcon(icon: Icons.lightbulb_outline_rounded),
-                SizedBox(height: 10),
-                _HeroFeatureIcon(icon: Icons.device_thermostat_rounded),
-                SizedBox(height: 10),
-                _HeroFeatureIcon(icon: Icons.health_and_safety_outlined),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(22, 24, 190, 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 430;
+        return Column(
+          children: [
+            Row(
               children: [
                 const Text(
-                  'Make your\nhome smarter ✦',
+                  'Select Home',
                   style: TextStyle(
-                    fontSize: 28,
-                    height: 1.02,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -1.1,
-                    color: AppColors.textPrimary,
+                    fontSize: 12,
+                    color: AppColors.primaryDark,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Automate your devices and enjoy comfort, savings and peace of mind.',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12.5,
-                    height: 1.35,
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 5,
+                  child: _HomeSelector(
+                    properties: properties,
+                    selectedHomeId: selectedHomeId,
+                    onChanged: onHomeChanged,
                   ),
                 ),
-                const Spacer(),
+                if (!compact) ...[
+                  const SizedBox(width: 15),
+                  const Text(
+                    'Filter',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.primaryDark,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 4,
+                    child: _SectionSelector(
+                      selected: selectedSection,
+                      onSelected: onSectionChanged,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                if (compact) ...[
+                  const Text(
+                    'Filter',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.primaryDark,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _SectionSelector(
+                      selected: selectedSection,
+                      onSelected: onSectionChanged,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ] else
+                  const Spacer(),
                 SizedBox(
-                  height: 44,
+                  height: 42,
                   child: FilledButton.icon(
                     onPressed: onCreate,
                     icon: const Icon(Icons.add_rounded, size: 20),
-                    label: const Text('Create Automation'),
+                    label: const Text('Create New'),
                     style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(17),
                       ),
                     ),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 }
 
-class _HeroFeatureIcon extends StatelessWidget {
-  final IconData icon;
+class _HomeSelector extends StatelessWidget {
+  final List<_HomeChoice> properties;
+  final String? selectedHomeId;
+  final ValueChanged<String?> onChanged;
 
-  const _HeroFeatureIcon({required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x10000000),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Icon(icon, color: AppColors.primary, size: 21),
-    );
-  }
-}
-
-class _AutomationFilterBar extends StatelessWidget {
-  final _AutomationFilter selected;
-  final ValueChanged<_AutomationFilter> onSelected;
-
-  const _AutomationFilterBar({
-    required this.selected,
-    required this.onSelected,
+  const _HomeSelector({
+    required this.properties,
+    required this.selectedHomeId,
+    required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    const items = <(_AutomationFilter, String)>[
-      (_AutomationFilter.all, 'All Automations'),
-      (_AutomationFilter.byRoom, 'By Room'),
-      (_AutomationFilter.scheduled, 'Scheduled'),
-      (_AutomationFilter.manual, 'Manual'),
-      (_AutomationFilter.favorites, 'Favorites'),
-    ];
+    if (properties.isEmpty) {
+      return _ControlPill(
+        icon: Icons.home_outlined,
+        label: 'My Home',
+        trailing: Icons.keyboard_arrow_down_rounded,
+        onTap: null,
+      );
+    }
 
-    return SizedBox(
+    return Container(
       height: 42,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        itemCount: items.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final item = items[index];
-          final active = selected == item.$1;
-          return ChoiceChip(
-            selected: active,
-            onSelected: (_) => onSelected(item.$1),
-            showCheckmark: false,
-            label: Text(item.$2),
-            labelStyle: TextStyle(
-              color: active ? Colors.white : AppColors.textPrimary,
-              fontSize: 12,
-              fontWeight: active ? FontWeight.w800 : FontWeight.w700,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: selectedHomeId,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+          items: properties
+              .map(
+                (property) => DropdownMenuItem<String>(
+                  value: property.id,
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.home_outlined,
+                        size: 19,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 7),
+                      Expanded(
+                        child: Text(
+                          property.name,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionSelector extends StatelessWidget {
+  final _AutomationSection selected;
+  final ValueChanged<_AutomationSection> onSelected;
+
+  const _SectionSelector({required this.selected, required this.onSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_AutomationSection>(
+      tooltip: 'Filter automations',
+      onSelected: onSelected,
+      itemBuilder: (_) => _AutomationSection.values
+          .map(
+            (section) => PopupMenuItem(
+              value: section,
+              child: Row(
+                children: [
+                  Icon(section.icon, size: 19, color: AppColors.primaryDark),
+                  const SizedBox(width: 9),
+                  Text(section.label),
+                ],
+              ),
             ),
-            selectedColor: AppColors.primary,
-            backgroundColor: Colors.white,
-            side: BorderSide(
-              color: active ? AppColors.primary : AppColors.divider,
+          )
+          .toList(),
+      child: _ControlPill(
+        icon: Icons.grid_view_rounded,
+        label: selected.label,
+        trailing: Icons.keyboard_arrow_down_rounded,
+      ),
+    );
+  }
+}
+
+class _ControlPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final IconData trailing;
+  final VoidCallback? onTap;
+
+  const _ControlPill({
+    required this.icon,
+    required this.label,
+    required this.trailing,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Container(
+      height: 42,
+      padding: const EdgeInsets.symmetric(horizontal: 11),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: AppColors.primaryDark),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11.5,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(999),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+          ),
+          Icon(trailing, size: 18, color: AppColors.textSecondary),
+        ],
+      ),
+    );
+    if (onTap == null) return content;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: content,
+    );
+  }
+}
+
+class _AutomationHero extends StatelessWidget {
+  final VoidCallback onExplore;
+
+  const _AutomationHero({required this.onExplore});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 210,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1FAF8),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE3F0ED)),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Stack(
+            children: [
+              Positioned(
+                right: -22,
+                bottom: -10,
+                width: constraints.maxWidth * 0.62,
+                height: 215,
+                child: Opacity(
+                  opacity: 0.96,
+                  child: Image.asset(
+                    'assets/images/home_hero_reference.png',
+                    fit: BoxFit.cover,
+                    alignment: Alignment.centerRight,
+                  ),
+                ),
+              ),
+              const Positioned(
+                top: 20,
+                right: 14,
+                child: _HeroFeatureBubble(
+                  icon: Icons.lightbulb_outline_rounded,
+                ),
+              ),
+              const Positioned(
+                top: 67,
+                right: 8,
+                child: _HeroFeatureBubble(icon: Icons.videocam_outlined),
+              ),
+              const Positioned(
+                bottom: 18,
+                right: 16,
+                child: _HeroFeatureBubble(icon: Icons.water_drop_outlined),
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  18,
+                  20,
+                  (constraints.maxWidth * 0.54).clamp(180.0, 285.0).toDouble(),
+                  16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Let Homez\ntake care of the rest!',
+                      style: TextStyle(
+                        fontSize: 24,
+                        height: 1.12,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.primaryDark,
+                        letterSpacing: -0.7,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    const Text(
+                      'Save time, save energy,\nand live worry-free.',
+                      style: TextStyle(
+                        color: Color(0xFF26345B),
+                        fontSize: 11.5,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Spacer(),
+                    SizedBox(
+                      height: 38,
+                      child: OutlinedButton.icon(
+                        onPressed: onExplore,
+                        iconAlignment: IconAlignment.end,
+                        icon: const Icon(Icons.chevron_right_rounded, size: 18),
+                        label: const Text('Explore Smart Scenes'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primaryDark,
+                          backgroundColor: Colors.white.withValues(alpha: 0.88),
+                          side: const BorderSide(color: AppColors.primary),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          textStyle: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -787,7 +963,419 @@ class _AutomationFilterBar extends StatelessWidget {
   }
 }
 
-class _AutomationCard extends StatelessWidget {
+class _HeroFeatureBubble extends StatelessWidget {
+  final IconData icon;
+
+  const _HeroFeatureBubble({required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xFFD8ECE8)),
+      ),
+      child: Icon(icon, size: 19, color: AppColors.primaryDark),
+    );
+  }
+}
+
+class _AutomationSectionBar extends StatelessWidget {
+  final _AutomationSection selected;
+  final ValueChanged<_AutomationSection> onSelected;
+
+  const _AutomationSectionBar({
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 49,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: _AutomationSection.values.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 4),
+        itemBuilder: (context, index) {
+          final section = _AutomationSection.values[index];
+          final active = selected == section;
+          return InkWell(
+            onTap: () => onSelected(section),
+            borderRadius: BorderRadius.circular(16),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                gradient: active ? AppColors.brandGradient : null,
+                color: active ? null : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    section.icon,
+                    size: 18,
+                    color: active ? Colors.white : const Color(0xFF26345B),
+                  ),
+                  const SizedBox(width: 7),
+                  Text(
+                    section.label,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: active ? Colors.white : const Color(0xFF26345B),
+                      fontWeight: active ? FontWeight.w800 : FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  final String actionLabel;
+  final VoidCallback? onAction;
+
+  const _SectionTitle({
+    required this.title,
+    required this.actionLabel,
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16.5,
+            fontWeight: FontWeight.w900,
+            color: AppColors.textPrimary,
+            letterSpacing: -0.3,
+          ),
+        ),
+        const Spacer(),
+        InkWell(
+          onTap: onAction,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+            child: Row(
+              children: [
+                Text(
+                  actionLabel,
+                  style: const TextStyle(
+                    color: Color(0xFF26345B),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 2),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 17,
+                  color: Color(0xFF26345B),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MyScenesSection extends StatelessWidget {
+  final ValueChanged<_AutomationDraft> onApply;
+
+  const _MyScenesSection({required this.onApply});
+
+  @override
+  Widget build(BuildContext context) {
+    const scenes = <_SceneCardData>[
+      _SceneCardData(
+        title: 'Morning',
+        actions: 4,
+        image: 'assets/images/scene_morning.png',
+        draft: _AutomationDraft(
+          name: 'Morning Scene',
+          trigger: '06:00',
+          action: 'Turn on morning devices',
+          repeat: 'Daily',
+          scene: 'Morning',
+        ),
+      ),
+      _SceneCardData(
+        title: 'Night',
+        actions: 5,
+        image: 'assets/images/scene_night.png',
+        draft: _AutomationDraft(
+          name: 'Night Scene',
+          trigger: '22:00',
+          action: 'Dim lights and secure the home',
+          repeat: 'Daily',
+          scene: 'Night',
+        ),
+      ),
+      _SceneCardData(
+        title: 'Away',
+        actions: 6,
+        image: 'assets/images/scene_away.png',
+        draft: _AutomationDraft(
+          name: 'Away Mode',
+          trigger: '09:00',
+          action: 'Turn off devices and secure the home',
+          repeat: 'Custom',
+          scene: 'Away',
+        ),
+      ),
+      _SceneCardData(
+        title: 'Movie Time',
+        actions: 3,
+        image: 'assets/images/scene_movie.png',
+        draft: _AutomationDraft(
+          name: 'Movie Time',
+          trigger: '20:00',
+          action: 'Dim lights and activate movie mode',
+          repeat: 'Custom',
+          scene: 'Custom',
+        ),
+      ),
+      _SceneCardData(
+        title: 'Party',
+        actions: 7,
+        icon: Icons.celebration_rounded,
+        draft: _AutomationDraft(
+          name: 'Party Scene',
+          trigger: '19:00',
+          action: 'Activate party lights and music',
+          repeat: 'Custom',
+          scene: 'Custom',
+        ),
+      ),
+    ];
+
+    return Column(
+      children: [
+        const _SectionTitle(title: 'My Scenes', actionLabel: 'View All'),
+        const SizedBox(height: 9),
+        SizedBox(
+          height: 158,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: scenes.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 9),
+            itemBuilder: (context, index) {
+              final scene = scenes[index];
+              return _SceneCard(
+                scene: scene,
+                onPlay: () => onApply(scene.draft),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SceneCardData {
+  final String title;
+  final int actions;
+  final String? image;
+  final IconData? icon;
+  final _AutomationDraft draft;
+
+  const _SceneCardData({
+    required this.title,
+    required this.actions,
+    required this.draft,
+    this.image,
+    this.icon,
+  });
+}
+
+class _SceneCard extends StatelessWidget {
+  final _SceneCardData scene;
+  final VoidCallback onPlay;
+
+  const _SceneCard({required this.scene, required this.onPlay});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 124,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 92,
+            width: double.infinity,
+            child: scene.image != null
+                ? Image.asset(scene.image!, fit: BoxFit.cover)
+                : Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFFFD7E8), Color(0xFFDCC9FF)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Icon(
+                      scene.icon ?? Icons.auto_awesome_rounded,
+                      size: 44,
+                      color: const Color(0xFF8B4BB4),
+                    ),
+                  ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(9, 7, 7, 7),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        scene.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${scene.actions} Actions',
+                        style: const TextStyle(
+                          fontSize: 9.5,
+                          color: AppColors.primaryDark,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                InkWell(
+                  onTap: onPlay,
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    child: const Icon(
+                      Icons.play_arrow_rounded,
+                      size: 19,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AutomationRulesSection extends StatelessWidget {
+  final List<AutomationModel> rules;
+  final Set<String> favoriteIds;
+  final ValueChanged<AutomationModel> onEdit;
+  final ValueChanged<AutomationModel> onDelete;
+  final ValueChanged<AutomationModel> onView;
+  final ValueChanged<AutomationModel> onFavorite;
+  final VoidCallback onAdd;
+
+  const _AutomationRulesSection({
+    required this.rules,
+    required this.favoriteIds,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onView,
+    required this.onFavorite,
+    required this.onAdd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final displayed = rules.take(6).toList();
+    return Column(
+      children: [
+        _SectionTitle(
+          title: 'Automation Rules',
+          actionLabel: 'View All',
+          onAction: () {},
+        ),
+        const SizedBox(height: 8),
+        if (displayed.isEmpty)
+          _CompactEmptyState(onAdd: onAdd)
+        else
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(17),
+              border: Border.all(color: AppColors.divider),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: List.generate(displayed.length, (index) {
+                final rule = displayed[index];
+                return Column(
+                  children: [
+                    _AutomationRuleRow(
+                      rule: rule,
+                      isFavorite: favoriteIds.contains(rule.id),
+                      onEdit: () => onEdit(rule),
+                      onDelete: () => onDelete(rule),
+                      onView: () => onView(rule),
+                      onFavorite: () => onFavorite(rule),
+                    ),
+                    if (index != displayed.length - 1)
+                      const Divider(height: 1, indent: 54),
+                  ],
+                );
+              }),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _AutomationRuleRow extends StatelessWidget {
   final AutomationModel rule;
   final bool isFavorite;
   final VoidCallback onEdit;
@@ -795,7 +1383,7 @@ class _AutomationCard extends StatelessWidget {
   final VoidCallback onView;
   final VoidCallback onFavorite;
 
-  const _AutomationCard({
+  const _AutomationRuleRow({
     required this.rule,
     required this.isFavorite,
     required this.onEdit,
@@ -808,163 +1396,96 @@ class _AutomationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<AutomationProvider>();
     final isUpdating = provider.isRuleUpdating(rule.id);
-    final scene = _AutomationsScreenState._sceneName(rule);
-    final accent = _sceneColor(scene, rule.name);
-    final statusText = _statusText(rule);
-    final statusColor = _statusColor(rule);
-    final extraMeta = _metaCount(rule) - 4;
+    final accent = _accentForRule(rule);
 
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: onView,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(13, 12, 8, 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.divider),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x08000000),
-                blurRadius: 12,
-                offset: Offset(0, 5),
-              ),
-            ],
-          ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(11, 9, 4, 9),
           child: Row(
             children: [
               Container(
-                width: 56,
-                height: 56,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.11),
                   shape: BoxShape.circle,
+                  color: accent.withValues(alpha: 0.11),
                 ),
-                child: Icon(
-                  _sceneIcon(scene, rule.name),
-                  color: accent,
-                  size: 28,
-                ),
+                child: Icon(_iconForRule(rule), size: 20, color: accent),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            rule.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.textPrimary,
-                              letterSpacing: -0.25,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 7),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            statusText,
-                            style: TextStyle(
-                              color: statusColor,
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
                     Text(
-                      _triggerSummary(rule),
+                      rule.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 11.5,
-                        color: AppColors.textSecondary,
+                        fontSize: 12.2,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 7),
-                    Row(
-                      children: [
-                        ..._metaIcons(rule, accent).take(4),
-                        if (extraMeta > 0)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 5),
-                            child: Text(
-                              '+$extraMeta',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                      ],
+                    const SizedBox(height: 2),
+                    Text(
+                      _ruleSubtitle(rule),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 9.8,
+                        color: Color(0xFF34446A),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
               if (isUpdating)
                 const SizedBox(
-                  width: 25,
-                  height: 25,
-                  child: CircularProgressIndicator(strokeWidth: 2.2),
+                  width: 34,
+                  height: 34,
+                  child: Padding(
+                    padding: EdgeInsets.all(8),
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
                 )
               else
-                Switch(
-                  value: rule.isActive,
-                  onChanged: (value) async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    final success = await provider.toggleRule(
-                      automationId: rule.id,
-                      isActive: value,
-                    );
-                    if (!success && context.mounted) {
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('Unable to update automation.'),
-                        ),
+                Transform.scale(
+                  scale: 0.82,
+                  child: Switch(
+                    value: rule.isActive,
+                    onChanged: (value) async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final success = await provider.toggleRule(
+                        automationId: rule.id,
+                        isActive: value,
                       );
-                    }
-                  },
+                      if (!success && context.mounted) {
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text('Unable to update automation.'),
+                          ),
+                        );
+                      }
+                    },
+                  ),
                 ),
               PopupMenuButton<String>(
-                tooltip: 'Automation actions',
+                padding: EdgeInsets.zero,
                 icon: const Icon(
                   Icons.more_vert_rounded,
-                  size: 21,
-                  color: AppColors.textSecondary,
+                  size: 20,
+                  color: Color(0xFF26345B),
                 ),
                 onSelected: (value) {
-                  if (value == 'view') {
-                    onView();
-                  }
-                  if (value == 'edit') {
-                    onEdit();
-                  }
-                  if (value == 'favorite') {
-                    onFavorite();
-                  }
-                  if (value == 'delete') {
-                    onDelete();
-                  }
+                  if (value == 'view') onView();
+                  if (value == 'edit') onEdit();
+                  if (value == 'favorite') onFavorite();
+                  if (value == 'delete') onDelete();
                 },
                 itemBuilder: (_) => [
                   const PopupMenuItem(
@@ -995,214 +1516,314 @@ class _AutomationCard extends StatelessWidget {
     );
   }
 
-  static String _triggerSummary(AutomationModel rule) {
-    if (rule.conditions.isEmpty) {
-      return rule.description?.trim().isNotEmpty == true
-          ? rule.description!.trim()
-          : 'Manual automation';
+  static String _ruleSubtitle(AutomationModel rule) {
+    for (final condition in rule.conditions) {
+      final time = condition.timeValue?.trim();
+      if (time != null && time.isNotEmpty) return 'At $time  •  Daily';
+
+      final property = condition.propertyName?.trim();
+      final value = condition.expectedValue?.trim();
+      if (property != null && property.isNotEmpty) {
+        return value?.isNotEmpty == true
+            ? 'When $property ${condition.operator ?? ''} $value'
+            : 'When $property changes';
+      }
     }
-    final condition = rule.conditions.first;
-    final time = condition.timeValue?.trim();
-    if (time != null && time.isNotEmpty) {
-      return '$time • Scheduled';
-    }
-    final property = condition.propertyName?.trim();
-    if (property != null && property.isNotEmpty) {
-      return '$property • Sensor trigger';
-    }
-    return 'Smart trigger';
+    return rule.description?.trim().isNotEmpty == true
+        ? rule.description!.trim()
+        : 'Smart automation rule';
   }
 
-  static int _metaCount(AutomationModel rule) {
-    final total = rule.conditions.length + rule.actions.length;
-    return total == 0 ? 1 : total;
-  }
-
-  static Iterable<Widget> _metaIcons(AutomationModel rule, Color accent) sync* {
-    final count = _metaCount(rule).clamp(1, 6).toInt();
-    final iconPool = <IconData>[
-      Icons.lightbulb_outline_rounded,
-      Icons.blinds_rounded,
-      Icons.sensors_rounded,
-      Icons.security_rounded,
-      Icons.power_rounded,
-      Icons.schedule_rounded,
-    ];
-    for (var i = 0; i < count; i++) {
-      yield Padding(
-        padding: const EdgeInsets.only(right: 5),
-        child: Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            color: accent.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(7),
-            border: Border.all(color: accent.withValues(alpha: 0.18)),
-          ),
-          child: Icon(iconPool[i % iconPool.length], color: accent, size: 14),
-        ),
-      );
-    }
-  }
-
-  static String _statusText(AutomationModel rule) {
+  static IconData _iconForRule(AutomationModel rule) {
     final name = rule.name.toLowerCase();
-    if (name.contains('alert') || name.contains('leak')) {
-      return 'Alert';
+    if (name.contains('light')) return Icons.light_mode_outlined;
+    if (name.contains('ac') || name.contains('temperature')) {
+      return Icons.device_thermostat_rounded;
     }
-    return rule.isActive ? 'Active' : 'Paused';
+    if (name.contains('water') || name.contains('pump')) {
+      return Icons.water_drop_outlined;
+    }
+    if (name.contains('security') || name.contains('arm')) {
+      return Icons.shield_outlined;
+    }
+    if (name.contains('night')) return Icons.nightlight_outlined;
+    return Icons.auto_awesome_rounded;
   }
 
-  static Color _statusColor(AutomationModel rule) {
+  static Color _accentForRule(AutomationModel rule) {
     final name = rule.name.toLowerCase();
-    if (name.contains('alert') || name.contains('leak')) {
-      return AppColors.warning;
+    if (name.contains('light')) return const Color(0xFFF0A11A);
+    if (name.contains('ac') || name.contains('temperature')) {
+      return const Color(0xFFFF6B6B);
     }
-    return rule.isActive ? AppColors.success : AppColors.textFaint;
-  }
-
-  static IconData _sceneIcon(String scene, String ruleName) {
-    final name = ruleName.toLowerCase();
-    if (name.contains('water') || name.contains('leak')) {
-      return Icons.water_drop_rounded;
+    if (name.contains('water') || name.contains('pump')) {
+      return const Color(0xFF2F80ED);
     }
-    if (name.contains('energy')) {
-      return Icons.bolt_rounded;
-    }
-    switch (scene) {
-      case 'Morning':
-        return Icons.wb_sunny_rounded;
-      case 'Night':
-        return Icons.nightlight_round;
-      case 'Away':
-        return Icons.shield_rounded;
-      case 'Movie':
-        return Icons.movie_rounded;
-      default:
-        return Icons.calendar_month_rounded;
-    }
-  }
-
-  static Color _sceneColor(String scene, String ruleName) {
-    final name = ruleName.toLowerCase();
-    if (name.contains('water') || name.contains('leak')) {
-      return AppColors.warning;
-    }
-    if (name.contains('energy')) {
+    if (name.contains('security') || name.contains('arm')) {
       return const Color(0xFF7C3AED);
     }
-    switch (scene) {
-      case 'Morning':
-        return AppColors.primary;
-      case 'Night':
-        return const Color(0xFF3B82F6);
-      case 'Away':
-        return AppColors.primaryDark;
-      case 'Movie':
-        return const Color(0xFF6D28D9);
-      default:
-        return AppColors.primary;
-    }
+    if (name.contains('night')) return const Color(0xFF7057C7);
+    return AppColors.primary;
   }
 }
 
-class _SceneSuggestions extends StatelessWidget {
-  final ValueChanged<_AutomationDraft> onApply;
+class _CompactEmptyState extends StatelessWidget {
+  final VoidCallback onAdd;
 
-  const _SceneSuggestions({required this.onApply});
+  const _CompactEmptyState({required this.onAdd});
 
   @override
   Widget build(BuildContext context) {
-    const suggestions = <_SceneSuggestion>[
-      _SceneSuggestion(
-        title: 'Morning Energy',
-        subtitle: 'Bright lights and fresh start',
-        image: 'assets/images/scene_morning_ref.png',
-        draft: _AutomationDraft(
-          name: 'Morning Energy',
-          trigger: '07:00',
-          action: 'Turn on morning devices',
-          repeat: 'Weekdays',
-          scene: 'Morning',
-        ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: AppColors.divider),
       ),
-      _SceneSuggestion(
-        title: 'Movie Night',
-        subtitle: 'Dim lights and perfect ambiance',
-        image: 'assets/images/scene_movie_ref.png',
-        draft: _AutomationDraft(
-          name: 'Movie Night',
-          trigger: '20:00',
-          action: 'Dim lights and activate movie scene',
-          repeat: 'Custom',
-          scene: 'Custom',
-        ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.auto_awesome_outlined,
+            color: AppColors.primary,
+            size: 30,
+          ),
+          const SizedBox(height: 7),
+          const Text(
+            'No automation rules yet',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            onPressed: onAdd,
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Create Rule'),
+          ),
+        ],
       ),
-      _SceneSuggestion(
-        title: 'Away Mode',
-        subtitle: 'Secure your home automatically',
-        image: 'assets/images/scene_away_ref.png',
-        draft: _AutomationDraft(
-          name: 'Away Mode',
-          trigger: '09:00',
-          action: 'Turn off devices and secure the home',
-          repeat: 'Custom',
-          scene: 'Away',
-        ),
-      ),
-      _SceneSuggestion(
-        title: 'Sunset Calm',
-        subtitle: 'Cozy lights and relaxing vibes',
-        image: 'assets/images/scene_night_ref.png',
-        draft: _AutomationDraft(
-          name: 'Sunset Calm',
-          trigger: '18:30',
-          action: 'Set warm lights for the evening',
-          repeat: 'Daily',
-          scene: 'Night',
-        ),
-      ),
-    ];
+    );
+  }
+}
 
+class _ScheduledAutomationsSection extends StatelessWidget {
+  final List<AutomationModel> rules;
+  final ValueChanged<AutomationModel> onTapRule;
+  final VoidCallback onAdd;
+
+  const _ScheduledAutomationsSection({
+    required this.rules,
+    required this.onTapRule,
+    required this.onAdd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
-          children: [
-            Text(
-              'Scene Suggestions',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w900,
-                color: AppColors.textPrimary,
+        _SectionTitle(
+          title: 'Scheduled Automations',
+          actionLabel: 'View Calendar',
+          onAction: () {},
+        ),
+        const SizedBox(height: 8),
+        if (rules.isEmpty)
+          InkWell(
+            onTap: onAdd,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.divider),
+              ),
+              child: const Column(
+                children: [
+                  Icon(Icons.add_alarm_rounded, color: AppColors.primary),
+                  SizedBox(height: 5),
+                  Text(
+                    'Add a scheduled automation',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                  ),
+                ],
               ),
             ),
-            Spacer(),
+          )
+        else
+          SizedBox(
+            height: 108,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: rules.take(6).length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final rule = rules[index];
+                return _ScheduleCard(rule: rule, onTap: () => onTapRule(rule));
+              },
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _ScheduleCard extends StatelessWidget {
+  final AutomationModel rule;
+  final VoidCallback onTap;
+
+  const _ScheduleCard({required this.rule, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final time = _AutomationsScreenState._triggerTime(rule);
+    final scene = _AutomationsScreenState._sceneName(rule);
+    final icon = switch (scene) {
+      'Morning' => Icons.wb_sunny_outlined,
+      'Night' => Icons.nightlight_outlined,
+      'Away' => Icons.energy_savings_leaf_outlined,
+      _ => Icons.schedule_rounded,
+    };
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        width: 154,
+        padding: const EdgeInsets.all(11),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.primarySoft,
+                  ),
+                  child: Icon(icon, size: 17, color: AppColors.primaryDark),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        time,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const Text(
+                        'Daily',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          color: Color(0xFF34446A),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
             Text(
-              'Swipe to explore',
-              style: TextStyle(
-                fontSize: 11,
-                color: AppColors.primary,
+              rule.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '${rule.actions.isEmpty ? 1 : rule.actions.length} Actions',
+              style: const TextStyle(
+                fontSize: 9.5,
+                color: AppColors.primaryDark,
                 fontWeight: FontWeight.w700,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
-        SizedBox(
-          height: 214,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            itemCount: suggestions.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 10),
-            itemBuilder: (context, index) {
-              final suggestion = suggestions[index];
-              return _SceneSuggestionCard(
-                suggestion: suggestion,
-                onApply: () => onApply(suggestion.draft),
-              );
-            },
+      ),
+    );
+  }
+}
+
+class _TimersPanel extends StatelessWidget {
+  final VoidCallback onAdd;
+
+  const _TimersPanel({required this.onAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const _SectionTitle(title: 'Timers', actionLabel: 'View All'),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primarySoft,
+                ),
+                child: const Icon(
+                  Icons.timer_outlined,
+                  color: AppColors.primaryDark,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Create a device timer',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Automatically turn a device on or off after a duration.',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton.filledTonal(
+                onPressed: onAdd,
+                icon: const Icon(Icons.add_rounded),
+              ),
+            ],
           ),
         ),
       ],
@@ -1210,87 +1831,102 @@ class _SceneSuggestions extends StatelessWidget {
   }
 }
 
-class _SceneSuggestionCard extends StatelessWidget {
-  final _SceneSuggestion suggestion;
-  final VoidCallback onApply;
+class _QuickActions extends StatelessWidget {
+  final VoidCallback onCreateRule;
+  final VoidCallback onCreateScene;
+  final VoidCallback onAddSchedule;
+  final VoidCallback onAddTimer;
 
-  const _SceneSuggestionCard({required this.suggestion, required this.onApply});
+  const _QuickActions({
+    required this.onCreateRule,
+    required this.onCreateScene,
+    required this.onAddSchedule,
+    required this.onAddTimer,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 154,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.divider),
+    final items = <_QuickActionData>[
+      _QuickActionData(
+        icon: Icons.add_circle_outline_rounded,
+        label: 'Create New Rule',
+        onTap: onCreateRule,
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            height: 96,
-            width: double.infinity,
-            child: Image.asset(suggestion.image, fit: BoxFit.cover),
+      _QuickActionData(
+        icon: Icons.wb_twilight_outlined,
+        label: 'Create Scene',
+        onTap: onCreateScene,
+      ),
+      _QuickActionData(
+        icon: Icons.calendar_month_outlined,
+        label: 'Add Schedule',
+        onTap: onAddSchedule,
+      ),
+      _QuickActionData(
+        icon: Icons.timer_outlined,
+        label: 'Add Timer',
+        onTap: onAddTimer,
+      ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Quick Actions',
+          style: TextStyle(
+            fontSize: 16.5,
+            fontWeight: FontWeight.w900,
+            color: AppColors.textPrimary,
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 9, 10, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  suggestion.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  suggestion.subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    height: 1.25,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  height: 30,
-                  child: OutlinedButton(
-                    onPressed: onApply,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      backgroundColor: AppColors.primarySoft,
-                      side: BorderSide.none,
-                      padding: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+        ),
+        const SizedBox(height: 9),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final width = (constraints.maxWidth - 9) / 2;
+            return Wrap(
+              spacing: 9,
+              runSpacing: 9,
+              children: items
+                  .map(
+                    (item) => SizedBox(
+                      width: width,
+                      height: 47,
+                      child: OutlinedButton.icon(
+                        onPressed: item.onTap,
+                        icon: Icon(item.icon, size: 20),
+                        label: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(item.label),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.primaryDark,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          side: const BorderSide(color: AppColors.divider),
+                        ),
                       ),
                     ),
-                    child: const Text(
-                      'Apply',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+                  )
+                  .toList(),
+            );
+          },
+        ),
+      ],
     );
   }
+}
+
+class _QuickActionData {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickActionData({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 }
 
 class _AutomationHelpBanner extends StatelessWidget {
@@ -1301,25 +1937,25 @@ class _AutomationHelpBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 82,
-      padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
+      height: 84,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF8F6),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFD6EFEB)),
+        color: const Color(0xFFEFF9F7),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFDCF0EC)),
       ),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(18),
+          SizedBox(
+            width: 76,
+            height: 84,
             child: Image.asset(
               'assets/images/smart_robot.png',
-              width: 66,
-              height: 66,
-              fit: BoxFit.cover,
+              fit: BoxFit.contain,
+              alignment: Alignment.bottomCenter,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 4),
           const Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1330,32 +1966,43 @@ class _AutomationHelpBanner extends StatelessWidget {
                   style: TextStyle(
                     color: AppColors.primaryDark,
                     fontWeight: FontWeight.w900,
-                    fontSize: 13,
+                    fontSize: 12.5,
                   ),
                 ),
                 SizedBox(height: 3),
                 Text(
-                  "I'm here to help you set the perfect rules.",
+                  'Ask Homez to create custom automations based on your routine.',
                   maxLines: 2,
                   style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 10.5,
+                    color: Color(0xFF34446A),
+                    fontSize: 9.5,
                     height: 1.25,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          OutlinedButton.icon(
-            onPressed: onTap,
-            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
-            label: const Text('Ask Homez'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primaryDark,
-              backgroundColor: Colors.white.withValues(alpha: 0.75),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-              side: const BorderSide(color: AppColors.primary),
+          const SizedBox(width: 7),
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: SizedBox(
+              height: 38,
+              child: OutlinedButton.icon(
+                onPressed: onTap,
+                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                label: const Text('Ask Homez'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primaryDark,
+                  backgroundColor: Colors.white,
+                  side: const BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  textStyle: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -1393,66 +2040,6 @@ class _AutomationErrorBanner extends StatelessWidget {
             ),
           ),
           TextButton(onPressed: onRetry, child: const Text('Retry')),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyAutomation extends StatelessWidget {
-  final _AutomationFilter filter;
-  final VoidCallback onAdd;
-
-  const _EmptyAutomation({required this.filter, required this.onAdd});
-
-  @override
-  Widget build(BuildContext context) {
-    final filtered = filter != _AutomationFilter.all;
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.primarySoft,
-            ),
-            child: const Icon(
-              Icons.auto_awesome_outlined,
-              size: 30,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            filtered ? 'No matching automations' : 'No automations yet',
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w900,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            filtered
-                ? 'Try another filter or create a new automation.'
-                : 'Create a schedule, timer, or scene for your devices.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: onAdd,
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Create automation'),
-          ),
         ],
       ),
     );
@@ -1682,9 +2269,7 @@ class _AutomationFormState extends State<_AutomationForm> {
         minute: initialMinute.clamp(0, 59).toInt(),
       ),
     );
-    if (selected == null || !mounted) {
-      return;
-    }
+    if (selected == null || !mounted) return;
     setState(() {
       _trigger =
           '${selected.hour.toString().padLeft(2, '0')}:${selected.minute.toString().padLeft(2, '0')}';
@@ -1692,9 +2277,7 @@ class _AutomationFormState extends State<_AutomationForm> {
   }
 
   void _save() {
-    if (!_key.currentState!.validate()) {
-      return;
-    }
+    if (!_key.currentState!.validate()) return;
     Navigator.pop(
       context,
       _AutomationDraft(
@@ -1858,19 +2441,5 @@ class _AutomationDraft {
     required this.action,
     required this.repeat,
     required this.scene,
-  });
-}
-
-class _SceneSuggestion {
-  final String title;
-  final String subtitle;
-  final String image;
-  final _AutomationDraft draft;
-
-  const _SceneSuggestion({
-    required this.title,
-    required this.subtitle,
-    required this.image,
-    required this.draft,
   });
 }

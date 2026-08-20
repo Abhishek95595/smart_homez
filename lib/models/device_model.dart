@@ -44,10 +44,45 @@ class DeviceModel {
         ? Map<String, dynamic>.from(json['state'] as Map)
         : <String, dynamic>{};
 
-    final rawState = (state['state'] ?? json['status'] ?? json['value'] ?? '')
-        .toString()
-        .trim();
-    final normalized = rawState.toLowerCase();
+    final String statusStr =
+        (json['status'] ?? '').toString().trim().toLowerCase();
+
+    final bool isOnlineStatus =
+        statusStr == 'online' ||
+        statusStr == 'connected' ||
+        json['is_online'] == true ||
+        json['isOnline'] == true ||
+        (json['is_online'] == null && json['isOnline'] == null);
+
+    // Extract power state from dedicated fields without confusing 'status: online'
+    dynamic rawPower = json['is_on'] ??
+        json['isOn'] ??
+        state['is_on'] ??
+        state['isOn'] ??
+        state['state'] ??
+        state['power'] ??
+        json['power'] ??
+        json['value'];
+
+    if (rawPower == null &&
+        statusStr.isNotEmpty &&
+        statusStr != 'online' &&
+        statusStr != 'offline') {
+      rawPower = statusStr;
+    }
+
+    bool computedIsOn = false;
+    if (rawPower is bool) {
+      computedIsOn = rawPower;
+    } else if (rawPower != null) {
+      final String normPower = rawPower.toString().trim().toLowerCase();
+      computedIsOn =
+          normPower == 'on' ||
+          normPower == '1' ||
+          normPower == 'true' ||
+          normPower == 'active' ||
+          normPower == 'high';
+    }
 
     return DeviceModel(
       id: (json['id'] ?? json['deviceId'] ?? json['device_id'] ?? '')
@@ -56,7 +91,7 @@ class DeviceModel {
       type: json['type']?.toString(),
       subtype: json['subtype']?.toString(),
       vendor: json['vendor']?.toString(),
-      status: rawState.isEmpty ? null : rawState,
+      status: json['status']?.toString(),
       value: state['state'] ?? json['value'],
       homeId: (json['homeId'] ?? json['home_id'])?.toString(),
       floorId: (json['floorId'] ?? json['floor_id'])?.toString(),
@@ -68,12 +103,8 @@ class DeviceModel {
       roomName: (json['room'] ?? json['roomName'] ?? json['room_name'])
           ?.toString(),
       zone: json['zone']?.toString(),
-      isOnline: json['is_online'] == true || json['isOnline'] == true,
-      isOn:
-          normalized == 'on' ||
-          normalized == '1' ||
-          normalized == 'true' ||
-          normalized == 'active',
+      isOnline: isOnlineStatus,
+      isOn: computedIsOn,
       brightness: _toInt(state['brightness'] ?? json['brightness']),
       lastUpdated: DateTime.tryParse(
         (json['last_updated'] ?? json['lastUpdated'] ?? '').toString(),

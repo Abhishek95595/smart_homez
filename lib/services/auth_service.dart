@@ -72,6 +72,8 @@ class AuthService {
         data: {'email': email.trim(), 'password': password},
       );
 
+      debugPrint('[LOGIN RAW RESPONSE] ${response.data}');
+
       final AuthResponse auth = AuthResponse.fromJson(response.data);
 
       if (!auth.success) {
@@ -119,7 +121,10 @@ class AuthService {
   }
 
   /// Verifies OTP and returns authentication token.
-  Future<AuthResponse> verifyOtp({required String phone, required String otp}) async {
+  Future<AuthResponse> verifyOtp({
+    required String phone,
+    required String otp,
+  }) async {
     try {
       final response = await _api.post(
         ApiEndpoints.verifyOtp,

@@ -87,7 +87,8 @@ class ScheduleEntry {
       offTime: offTime ?? this.offTime,
       isEnabled: isEnabled ?? this.isEnabled,
       startAction: startAction ?? this.startAction,
-      customSettings: customSettings ?? Map<String, dynamic>.from(this.customSettings),
+      customSettings:
+          customSettings ?? Map<String, dynamic>.from(this.customSettings),
     );
   }
 
@@ -116,7 +117,9 @@ class ScheduleEntry {
     }
 
     return ScheduleEntry(
-      id: json['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      id:
+          json['id']?.toString() ??
+          DateTime.now().millisecondsSinceEpoch.toString(),
       deviceId: json['deviceId']?.toString() ?? '',
       deviceName: json['deviceName']?.toString() ?? 'Device',
       roomId: json['roomId']?.toString() ?? 'room_default',
@@ -142,10 +145,8 @@ class DaySchedule {
   final String day; // 'MON', 'TUE', etc.
   List<ScheduleEntry> entries;
 
-  DaySchedule({
-    required this.day,
-    List<ScheduleEntry>? entries,
-  }) : entries = entries ?? [];
+  DaySchedule({required this.day, List<ScheduleEntry>? entries})
+    : entries = entries ?? [];
 
   int get enabledCount => entries.where((e) => e.isEnabled).length;
   bool get isEmpty => entries.isEmpty;
@@ -154,16 +155,17 @@ class DaySchedule {
   DaySchedule copyTo(String targetDay) {
     return DaySchedule(
       day: targetDay,
-      entries: entries.map((e) => e.copyWith(
-        id: '${targetDay}_${e.deviceId}_${DateTime.now().millisecondsSinceEpoch}',
-      )).toList(),
+      entries: entries
+          .map(
+            (e) => e.copyWith(
+              id: '${targetDay}_${e.deviceId}_${DateTime.now().millisecondsSinceEpoch}',
+            ),
+          )
+          .toList(),
     );
   }
 
-  DaySchedule copyWith({
-    String? day,
-    List<ScheduleEntry>? entries,
-  }) {
+  DaySchedule copyWith({String? day, List<ScheduleEntry>? entries}) {
     return DaySchedule(
       day: day ?? this.day,
       entries: entries ?? this.entries.map((e) => e.copyWith()).toList(),
@@ -171,10 +173,7 @@ class DaySchedule {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'day': day,
-      'entries': entries.map((e) => e.toJson()).toList(),
-    };
+    return {'day': day, 'entries': entries.map((e) => e.toJson()).toList()};
   }
 
   factory DaySchedule.fromJson(Map<String, dynamic> json) {
@@ -182,14 +181,16 @@ class DaySchedule {
       day: json['day']?.toString() ?? 'MON',
       entries: json['entries'] is List
           ? (json['entries'] as List)
-              .map((item) {
-                if (item is Map) {
-                  return ScheduleEntry.fromJson(Map<String, dynamic>.from(item));
-                }
-                return null;
-              })
-              .whereType<ScheduleEntry>()
-              .toList()
+                .map((item) {
+                  if (item is Map) {
+                    return ScheduleEntry.fromJson(
+                      Map<String, dynamic>.from(item),
+                    );
+                  }
+                  return null;
+                })
+                .whereType<ScheduleEntry>()
+                .toList()
           : [],
     );
   }
@@ -224,9 +225,8 @@ class Routine {
     this.createdAt,
     this.updatedAt,
     this.lastExecutedAt,
-  }) : daySchedules = daySchedules ?? {
-         for (final d in kAllDays) d: DaySchedule(day: d),
-       };
+  }) : daySchedules =
+           daySchedules ?? {for (final d in kAllDays) d: DaySchedule(day: d)};
 
   /// Total enabled entries across all days
   int get configuredDeviceCount {
@@ -271,7 +271,8 @@ class Routine {
       type: type ?? this.type,
       isEnabled: isEnabled ?? this.isEnabled,
       timezone: timezone ?? this.timezone,
-      daySchedules: daySchedules ??
+      daySchedules:
+          daySchedules ??
           this.daySchedules.map((k, v) => MapEntry(k, v.copyWith())),
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -302,7 +303,8 @@ class Routine {
       for (final day in kAllDays) {
         if (rawSchedules.containsKey(day) && rawSchedules[day] is Map) {
           schedules[day] = DaySchedule.fromJson(
-              Map<String, dynamic>.from(rawSchedules[day] as Map));
+            Map<String, dynamic>.from(rawSchedules[day] as Map),
+          );
         } else {
           schedules[day] = DaySchedule(day: day);
         }
@@ -330,7 +332,9 @@ class Routine {
     final onTime = json['turnOnTime']?.toString() ?? '07:00 AM';
     final offTime = json['turnOffTime']?.toString() ?? '09:30 AM';
     final repeatDays = json['repeatDays'] is List
-        ? (json['repeatDays'] as List).map((e) => _normalizeDay(e.toString())).toList()
+        ? (json['repeatDays'] as List)
+              .map((e) => _normalizeDay(e.toString()))
+              .toList()
         : kAllDays;
 
     final Map<String, DaySchedule> migrated = {
@@ -355,32 +359,37 @@ class Routine {
           if (!isIncluded) continue; // skip excluded devices
 
           DeviceType parseType(String? t) => DeviceType.values.firstWhere(
-                (v) => v.name == t,
-                orElse: () => DeviceType.light,
-              );
+            (v) => v.name == t,
+            orElse: () => DeviceType.light,
+          );
 
           final deviceOnTime = actionJson['onTime']?.toString();
           final deviceOffTime = actionJson['offTime']?.toString();
 
-          entries.add(ScheduleEntry(
-            id: '${normalDay}_${actionJson['deviceId']}_migrated',
-            deviceId: actionJson['deviceId']?.toString() ?? '',
-            deviceName: actionJson['deviceName']?.toString() ?? 'Device',
-            roomId: actionJson['roomId']?.toString() ?? 'room_default',
-            roomName: actionJson['roomName']?.toString() ?? 'Room',
-            deviceType: parseType(actionJson['deviceType']?.toString()),
-            onTime: (deviceOnTime != null && deviceOnTime.trim().isNotEmpty)
-                ? deviceOnTime
-                : onTime,
-            offTime: (deviceOffTime != null && deviceOffTime.trim().isNotEmpty)
-                ? deviceOffTime
-                : offTime,
-            isEnabled: true,
-            startAction: actionJson['startAction']?.toString() ?? 'on',
-            customSettings: actionJson['customSettings'] is Map
-                ? Map<String, dynamic>.from(actionJson['customSettings'] as Map)
-                : {},
-          ));
+          entries.add(
+            ScheduleEntry(
+              id: '${normalDay}_${actionJson['deviceId']}_migrated',
+              deviceId: actionJson['deviceId']?.toString() ?? '',
+              deviceName: actionJson['deviceName']?.toString() ?? 'Device',
+              roomId: actionJson['roomId']?.toString() ?? 'room_default',
+              roomName: actionJson['roomName']?.toString() ?? 'Room',
+              deviceType: parseType(actionJson['deviceType']?.toString()),
+              onTime: (deviceOnTime != null && deviceOnTime.trim().isNotEmpty)
+                  ? deviceOnTime
+                  : onTime,
+              offTime:
+                  (deviceOffTime != null && deviceOffTime.trim().isNotEmpty)
+                  ? deviceOffTime
+                  : offTime,
+              isEnabled: true,
+              startAction: actionJson['startAction']?.toString() ?? 'on',
+              customSettings: actionJson['customSettings'] is Map
+                  ? Map<String, dynamic>.from(
+                      actionJson['customSettings'] as Map,
+                    )
+                  : {},
+            ),
+          );
         }
         migrated[normalDay] = DaySchedule(day: normalDay, entries: entries);
       }
