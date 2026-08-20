@@ -265,6 +265,10 @@ class _EnergyScreenState extends State<EnergyScreen> {
                       _ConsumptionCard(
                         dashboard: dashboard,
                         period: energyProvider.selectedPeriod,
+                        onPeriodChanged: (period) {
+                          energyProvider.setSelectedPeriod(period);
+                          _fetchData();
+                        },
                       ),
                       const SizedBox(height: 14),
                       _LowerAnalytics(dashboard: dashboard),
@@ -1082,8 +1086,13 @@ class _MetricCard extends StatelessWidget {
 class _ConsumptionCard extends StatelessWidget {
   final ClientDashboardModel dashboard;
   final DashboardPeriod period;
+  final ValueChanged<DashboardPeriod>? onPeriodChanged;
 
-  const _ConsumptionCard({required this.dashboard, required this.period});
+  const _ConsumptionCard({
+    required this.dashboard,
+    required this.period,
+    this.onPeriodChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1096,6 +1105,37 @@ class _ConsumptionCard extends StatelessWidget {
         ? 0.0
         : points.reduce((a, b) => a > b ? a : b);
     final interval = (labels.length / 6).ceil().clamp(1, 999);
+
+    final pillWidget = Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 7,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _periodText(period),
+            style: const TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF25335D),
+            ),
+          ),
+          const SizedBox(width: 4),
+          const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 16,
+            color: Color(0xFF25335D),
+          ),
+        ],
+      ),
+    );
 
     return Container(
       height: 310,
@@ -1120,36 +1160,30 @@ class _ConsumptionCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.divider),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _periodText(period),
-                      style: const TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF25335D),
+              if (onPeriodChanged != null)
+                PopupMenuButton<DashboardPeriod>(
+                  initialValue: period,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  onSelected: onPeriodChanged,
+                  itemBuilder: (context) => DashboardPeriod.values.map((p) {
+                    return PopupMenuItem<DashboardPeriod>(
+                      value: p,
+                      child: Text(
+                        _periodText(p),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: p == period ? FontWeight.w800 : FontWeight.w500,
+                          color: p == period ? AppColors.primary : const Color(0xFF0F172A),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 16,
-                      color: Color(0xFF25335D),
-                    ),
-                  ],
-                ),
-              ),
+                    );
+                  }).toList(),
+                  child: pillWidget,
+                )
+              else
+                pillWidget,
             ],
           ),
           const SizedBox(height: 16),
@@ -1285,18 +1319,7 @@ class _ConsumptionCard extends StatelessWidget {
     );
   }
 
-  static String _periodText(DashboardPeriod period) {
-    switch (period) {
-      case DashboardPeriod.hourly:
-        return 'Last 24 Hours';
-      case DashboardPeriod.daily:
-        return 'This Month';
-      case DashboardPeriod.weekly:
-        return 'Recent Weeks';
-      case DashboardPeriod.monthly:
-        return 'This Year';
-    }
-  }
+  static String _periodText(DashboardPeriod period) => period.label;
 }
 
 class _LowerAnalytics extends StatelessWidget {

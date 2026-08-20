@@ -64,6 +64,57 @@ class DeviceProvider extends ChangeNotifier {
 
   int get totalCount => _devices.length;
 
+  /// Real-time live load in Watts calculated dynamically from active devices and telemetry readings
+  double get activeLiveWatts {
+    double total = 0;
+    for (final device in _devices) {
+      if (device.status != DeviceStatus.online) continue;
+
+      final telemetry = _latestTelemetry[device.deviceId];
+      if (telemetry?.power != null && telemetry!.power! > 0) {
+        total += telemetry.power!;
+        continue;
+      }
+
+      if (device.isOn) {
+        switch (device.type) {
+          case DeviceType.ac:
+            total += 1250.0;
+            break;
+          case DeviceType.pump:
+            total += 750.0;
+            break;
+          case DeviceType.fan:
+            final speed = (device.dimLevel ?? 100).clamp(0, 100);
+            total += 25.0 + (speed / 100.0) * 50.0;
+            break;
+          case DeviceType.light:
+            final dim = (device.dimLevel ?? 100).clamp(0, 100);
+            total += 5.0 + (dim / 100.0) * 35.0;
+            break;
+          case DeviceType.energyMeter:
+          case DeviceType.smokeSensor:
+          case DeviceType.gasSensor:
+          case DeviceType.waterLevelSensor:
+          case DeviceType.scene:
+            total += 2.0;
+            break;
+        }
+      } else {
+        total += 1.5; // Baseline standby
+      }
+    }
+    return total;
+  }
+
+  /// Real-time estimated daily energy consumption in kWh based on active load
+  double get estimatedDailyKwh {
+    final watts = activeLiveWatts;
+    if (watts <= 0) return 0.0;
+    // Typical active 8-hour operational projection + baseline standby
+    return ((watts * 8.0) / 1000.0);
+  }
+
   bool isUpdating(String deviceId) {
     return _updatingDeviceIds.contains(deviceId);
   }

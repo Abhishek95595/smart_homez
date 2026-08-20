@@ -26,6 +26,26 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _activeSceneIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _fetchEnergyData();
+    });
+  }
+
+  void _fetchEnergyData() {
+    final clientId = context.read<AuthProvider>().resolvedClientId;
+    final properties = context.read<PropertyProvider>().properties;
+    if (clientId != null && properties.isNotEmpty) {
+      context.read<EnergyProvider>().fetchDashboard(
+        clientId: clientId,
+        homeId: properties.first.id,
+      );
+    }
+  }
+
   String _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) return 'Good Morning,';
@@ -38,6 +58,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final auth = context.watch<AuthProvider>();
     final user = auth.currentUser;
     final propertyProvider = context.watch<PropertyProvider>();
+    final deviceProvider = context.watch<DeviceProvider>();
     final energyProvider = context.watch<EnergyProvider>();
     final userName = user?.name.split(' ').first ?? 'Ayesha';
 
@@ -158,6 +179,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _PropertiesAndEnergySection(
               properties: propertyProvider.properties,
               energyProvider: energyProvider,
+              deviceProvider: deviceProvider,
             ),
             const SizedBox(height: 20),
 
@@ -488,10 +510,12 @@ class _SceneCard extends StatelessWidget {
 class _PropertiesAndEnergySection extends StatelessWidget {
   final List<ManagedProperty> properties;
   final EnergyProvider energyProvider;
+  final DeviceProvider deviceProvider;
 
   const _PropertiesAndEnergySection({
     required this.properties,
     required this.energyProvider,
+    required this.deviceProvider,
   });
 
   IconData _iconForProperty(ManagedProperty property) {
@@ -672,6 +696,7 @@ class _PropertiesAndEnergySection extends StatelessWidget {
         // Overall Energy Matrix Card (Full Width)
         _OverallEnergyMatrixCard(
           energyProvider: energyProvider,
+          deviceProvider: deviceProvider,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const EnergyScreen()),
@@ -985,22 +1010,38 @@ class _AddPropertyFullCard extends StatelessWidget {
 
 class _OverallEnergyMatrixCard extends StatelessWidget {
   final EnergyProvider energyProvider;
+  final DeviceProvider deviceProvider;
   final VoidCallback onTap;
 
   const _OverallEnergyMatrixCard({
     required this.energyProvider,
+    required this.deviceProvider,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final liveWatts = energyProvider.instantPowerWatts > 0
-        ? '${energyProvider.instantPowerWatts.toStringAsFixed(0)} W'
-        : '2,480 W';
+    final double rawLiveWatts = energyProvider.instantPowerWatts > 0
+        ? energyProvider.instantPowerWatts
+        : deviceProvider.activeLiveWatts;
 
-    final dailyKwh = energyProvider.totalKwh > 0
-        ? '${energyProvider.totalKwh.toStringAsFixed(1)} kWh'
-        : '18.4 kWh';
+    final String liveWatts = '${rawLiveWatts.toStringAsFixed(0)} W';
+
+    final double rawDailyKwh = energyProvider.totalKwh > 0
+        ? energyProvider.totalKwh
+        : deviceProvider.estimatedDailyKwh;
+
+    final String dailyKwh = '${rawDailyKwh.toStringAsFixed(1)} kWh';
+
+    final totalDevices = deviceProvider.totalCount;
+    final onlineDevices = deviceProvider.onlineCount;
+    final String statusText;
+    if (totalDevices == 0) {
+      statusText = '⚡ Connected';
+    } else {
+      final ratio = (onlineDevices / totalDevices * 100).round();
+      statusText = ratio >= 90 ? '⚡ $ratio% Optimal' : '⚡ $onlineDevices/$totalDevices Online';
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -1223,8 +1264,8 @@ class _OverallEnergyMatrixCard extends StatelessWidget {
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
+                          children: [
+                            const Text(
                               'SYSTEM STATUS',
                               style: TextStyle(
                                 fontSize: 9.5,
@@ -1233,12 +1274,12 @@ class _OverallEnergyMatrixCard extends StatelessWidget {
                                 letterSpacing: 0.3,
                               ),
                             ),
-                            SizedBox(height: 4),
+                            const SizedBox(height: 4),
                             Text(
-                              '⚡ 98% Optimal',
+                              statusText,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w900,
                                 color: Color(0xFF00A38E),

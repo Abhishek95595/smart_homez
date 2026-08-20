@@ -37,7 +37,9 @@ class AppNavigationDrawer extends StatelessWidget {
   });
 
   void _open(BuildContext context, Widget page) {
-    if (!permanent) Navigator.pop(context);
+    if (!permanent) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
     Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 
@@ -52,10 +54,12 @@ class AppNavigationDrawer extends StatelessWidget {
     final menuItems = <_DrawerMenuItem>[
       _DrawerMenuItem(
         icon: Icons.home_outlined,
-        label: 'Dashboard',
+        label: 'Home',
         selected: true,
         onTap: () {
-          if (!permanent) Navigator.pop(context);
+          if (!permanent) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
           onDashboard?.call();
         },
       ),
@@ -66,7 +70,7 @@ class AppNavigationDrawer extends StatelessWidget {
       ),
       _DrawerMenuItem(
         icon: Icons.home_work_outlined,
-        label: 'Homes',
+        label: 'Properties',
         onTap: () => _open(context, const HomesScreen()),
       ),
       _DrawerMenuItem(
@@ -157,7 +161,15 @@ class AppNavigationDrawer extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-            const _DrawerBrand(),
+            InkWell(
+              onTap: () {
+                if (!permanent) {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                }
+                onDashboard?.call();
+              },
+              child: const _DrawerBrand(),
+            ),
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.fromLTRB(14, 8, 14, 18),
