@@ -1272,6 +1272,7 @@ class _GenZDeviceCard extends StatelessWidget {
                     isOn &&
                     device.dimLevel != null &&
                     (device.type == DeviceType.fan ||
+                        device.type == DeviceType.light ||
                         device.type == DeviceType.ac)) ...[
                   const SizedBox(height: 12),
                   Container(
@@ -1291,7 +1292,9 @@ class _GenZDeviceCard extends StatelessWidget {
                         Icon(
                           device.type == DeviceType.fan
                               ? Icons.cyclone_rounded
-                              : Icons.thermostat_rounded,
+                              : device.type == DeviceType.ac
+                                  ? Icons.thermostat_rounded
+                                  : Icons.lightbulb_outline_rounded,
                           size: 16,
                           color: theme.iconGradient.first,
                         ),

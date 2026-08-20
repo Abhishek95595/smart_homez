@@ -400,6 +400,20 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     _errorMessage = null;
     try {
+      // Firebase Phone Auth is not used for the Windows desktop build.
+      // Use the same backend OTP endpoints that the desktop client already
+      // uses for email/API authentication.
+      if (defaultTargetPlatform == TargetPlatform.windows) {
+        final response = await _authService.sendOtp(phone: phone);
+        if (!response.success) {
+          _fail(response.error ?? 'Failed to send OTP');
+          return;
+        }
+        _otpSent = true;
+        notifyListeners();
+        return;
+      }
+
       await FirebaseAuth.instance.verifyPhoneNumber(
         phoneNumber: phone.trim(),
         timeout: const Duration(seconds: 60),
@@ -448,6 +462,37 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     _errorMessage = null;
     try {
+      // Windows desktop uses the backend OTP endpoint instead of Firebase
+      // Phone Auth, which keeps the desktop build independent of mobile
+      // Firebase phone-auth capabilities.
+      if (defaultTargetPlatform == TargetPlatform.windows) {
+        final response = await _authService.verifyOtp(
+          phone: phone,
+          otp: otp,
+        );
+        if (!response.success || response.token == null || response.token!.isEmpty) {
+          _fail(response.error ?? 'OTP verification failed');
+          return;
+        }
+
+        _apiToken = response.token;
+        _resolvedClientUuid = response.clientId ?? 'otp_user_${phone.trim()}';
+        _currentUser = AppUser(
+          id: _resolvedClientUuid!,
+          name: 'OTP User',
+          email: '',
+          phone: phone.trim(),
+          role: UserRole.resident,
+          tenantId: 'aurabrain',
+          avatarInitials: 'OU',
+        );
+        await _authService.saveResolvedClientUuid(_resolvedClientUuid!);
+        _otpSent = false;
+        _verificationId = null;
+        notifyListeners();
+        return;
+      }
+
       if (_verificationId == null) {
         _fail('Verification ID missing. Request OTP first.');
         return;

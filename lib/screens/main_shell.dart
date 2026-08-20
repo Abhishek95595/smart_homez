@@ -12,6 +12,7 @@ import 'devices/devices_screen.dart';
 import 'profile/profile_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_navigation_drawer.dart';
+import '../widgets/hasomi_bottom_voice_bar.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -22,6 +23,9 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _index = 0;
+  final GlobalKey<HasomiBottomVoiceBarState> _voiceBarKey =
+      GlobalKey<HasomiBottomVoiceBarState>();
+
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
     GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
@@ -158,26 +162,57 @@ class _MainShellState extends State<MainShell> {
                     index: safeIndex,
                     children: tabs.map((t) => _TabNavigator(tab: t)).toList(),
                   ),
+            floatingActionButton: FloatingActionButton.extended(
+              heroTag: 'hasomi_voice_fab',
+              onPressed: () {
+                _voiceBarKey.currentState?.triggerVoiceListening();
+              },
+              backgroundColor: const Color(0xFF0F172A),
+              elevation: 4,
+              icon: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF00E5FF), Color(0xFF3B82F6)],
+                  ),
+                ),
+                child: const Icon(Icons.mic_rounded, color: Colors.white, size: 16),
+              ),
+              label: const Text(
+                'HASOMI',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
             bottomNavigationBar: desktop
                 ? null
-                : Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      border: const Border(
-                        top: BorderSide(color: AppColors.divider, width: 1),
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x06000000),
-                          blurRadius: 16,
-                          offset: Offset(0, -4),
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      HasomiBottomVoiceBar(key: _voiceBarKey),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          border: const Border(
+                            top: BorderSide(color: AppColors.divider, width: 1),
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x06000000),
+                              blurRadius: 16,
+                              offset: Offset(0, -4),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: SafeArea(
-                      top: false,
-                      child: Container(
-                        height: 74,
+                        child: SafeArea(
+                          top: false,
+                          child: Container(
+                            height: 74,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Row(
                           children: List.generate(tabs.length, (idx) {
@@ -273,6 +308,8 @@ class _MainShellState extends State<MainShell> {
                       ),
                     ),
                   ),
+                ],
+              ),
           );
         },
       ),

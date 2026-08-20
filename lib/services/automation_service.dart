@@ -55,6 +55,13 @@ class AutomationService {
     );
   }
 
+  Future<bool> activateScene(String sceneId) {
+    if (sceneId.trim().isEmpty) {
+      throw const FormatException('Scene ID is missing.');
+    }
+    return _repository.activateScene(sceneId);
+  }
+
   void _validateAutomationRequest(CreateAutomationRequest request) {
     if (request.name == null || request.name!.trim().isEmpty) {
       throw const FormatException('Automation name cannot be empty.');

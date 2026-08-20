@@ -119,7 +119,7 @@ class SceneService {
           'description': ?description?.trim(),
           'icon': ?icon,
           'isFavorite': ?isFavorite,
-          'actions': ?(actions?.map((a) => a.toJson()).toList()),
+          'actions': ?actions?.map((a) => a.toJson()).toList(),
         },
       );
 

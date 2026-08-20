@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +19,12 @@ import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  // Firebase phone authentication is used on supported mobile platforms.
+  // Windows uses the app's API OTP flow, so startup does not depend on a
+  // machine-specific Firebase desktop configuration.
+  if (defaultTargetPlatform != TargetPlatform.windows) {
+    await Firebase.initializeApp();
+  }
   await Hive.initFlutter();
   runApp(const SmartBuildingApp());
 }

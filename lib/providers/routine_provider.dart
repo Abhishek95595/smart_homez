@@ -191,6 +191,7 @@ class RoutineProvider extends ChangeNotifier {
         _syncSingleEntryHardware(
           schedule.entries[idx],
           enabled && schedule.entries[idx].startAction == 'on',
+          _deviceProvider,
         );
       }
 
@@ -223,20 +224,38 @@ class RoutineProvider extends ChangeNotifier {
   }) async {
     if (routine == null) return;
     routine!.isEnabled = isEnabled;
-
-    final dp = deviceProvider ?? _deviceProvider;
-    if (!isEnabled && dp != null) {
-      // Turn OFF all devices across all days for this routine
-      _turnOffAllDevicesHardware(dp);
-    } else if (isEnabled && dp != null) {
-      // Turn ON all enabled devices scheduled for today for this routine
-      _turnOnTodayDevicesHardware(dp);
-    }
-
     notifyListeners();
+
     try {
-      await _service.toggleRoutine(routine!.id, isEnabled, _activeRoutineId);
+      // 1. Save and toggle first to ensure backend has the latest configured devices
       await _service.saveRoutine(routine!, _activeRoutineId);
+      await _service.toggleRoutine(routine!.id, isEnabled, _activeRoutineId);
+      
+      final dp = deviceProvider ?? _deviceProvider;
+
+      if (isEnabled) {
+        // 2. Trigger the Quick Scene API directly on the backend!
+        // This avoids concurrent request race conditions that cause devices to "oof" (turn off)
+        final success = await _service.activateScene(routine!.id);
+        
+        if (success && dp != null) {
+           // Optimistically update the UI to show the new device states instantly
+           for (final ds in routine!.daySchedules.values) {
+              for (final entry in ds.entries) {
+                 if (entry.isEnabled) {
+                    final isTurnOn = entry.startAction == 'on';
+                    dp.setDevicePowerLocally(entry.deviceId, isTurnOn);
+                 }
+              }
+           }
+        } else if (!success && dp != null) {
+           // Fallback to local execution if backend API fails or is unavailable
+           await _executeRoutineHardware(dp);
+        }
+      } else if (dp != null) {
+        // Turn OFF locally since there's no deactivated scene endpoint
+        await _turnOffAllDevicesHardware(dp);
+      }
     } catch (e) {
       debugPrint('[RoutineProvider] Toggle error: $e');
     }
@@ -290,46 +309,58 @@ class RoutineProvider extends ChangeNotifier {
 
   Future<void> _syncSingleEntryHardware(
     ScheduleEntry entry,
-    bool turnOn,
-  ) async {
-    final dp = _deviceProvider;
+    bool turnOn, [
+    DeviceProvider? deviceProvider,
+  ]) async {
+    final dp = deviceProvider ?? _deviceProvider;
     if (dp == null) return;
     final device = _findOrCreateDevice(dp, entry);
-    if (device.status == DeviceStatus.online) {
-      final success = await dp.setDevicePower(device, turnOn);
-      if (success && turnOn && entry.deviceType == DeviceType.light) {
-        // Wait a tiny bit before sending dim command to let the device process the power command
-        await Future.delayed(const Duration(milliseconds: 300));
-        await dp.setDimLevel(device, entry.brightness.toDouble());
-      }
+    final success = await dp.setDevicePower(device, turnOn);
+    if (success && turnOn && entry.deviceType == DeviceType.light) {
+      // Wait a tiny bit before sending dim command to let the device process the power command
+      await Future.delayed(const Duration(milliseconds: 300));
+      await dp.setDimLevel(device, entry.brightness.toDouble());
     }
   }
 
-  void _turnOffAllDevicesHardware(DeviceProvider dp) {
+  Future<void> _turnOffAllDevicesHardware(DeviceProvider dp) async {
     if (routine == null) return;
     // Collect all unique device IDs across all days
     final seen = <String>{};
     for (final ds in routine!.daySchedules.values) {
       for (final entry in ds.entries) {
-        if (seen.add(entry.deviceId)) {
-          final device = _findOrCreateDevice(dp, entry);
-          if (device.status == DeviceStatus.online) {
-            dp.setDevicePower(device, false);
-          }
+        if (entry.isEnabled && seen.add(entry.deviceId)) {
+          await _syncSingleEntryHardware(entry, false, dp);
         }
       }
     }
   }
 
-  void _turnOnTodayDevicesHardware(DeviceProvider dp) {
+  Future<void> _executeRoutineHardware(DeviceProvider dp) async {
     if (routine == null) return;
+    
+    final seen = <String>{};
     final today = _todayCode();
-    final schedule = routine!.daySchedules[today];
-    if (schedule == null || schedule.isEmpty) return;
+    
+    // Helper to process entries sequentially to avoid API rate limits
+    Future<void> processEntries(Iterable<ScheduleEntry> entries) async {
+      for (final entry in entries) {
+        if (entry.isEnabled && seen.add(entry.deviceId)) {
+          final isTurnOn = entry.startAction == 'on';
+          await _syncSingleEntryHardware(entry, isTurnOn, dp);
+        }
+      }
+    }
 
-    for (final entry in schedule.entries) {
-      if (entry.isEnabled && entry.startAction == 'on') {
-        _syncSingleEntryHardware(entry, true);
+    // 1. Prefer today's schedule if available
+    if (routine!.daySchedules[today] != null) {
+      await processEntries(routine!.daySchedules[today]!.entries);
+    }
+
+    // 2. Fallback to other days for any devices not scheduled for today
+    for (final ds in routine!.daySchedules.values) {
+      if (ds.day != today) {
+        await processEntries(ds.entries);
       }
     }
   }
@@ -429,13 +460,13 @@ class RoutineProvider extends ChangeNotifier {
 
   void _executeTriggerOn(ScheduleEntry entry, DeviceProvider dp) {
     debugPrint('[Scheduler] ⏰ ON: ${entry.deviceName} at ${entry.onTime}');
-    _syncSingleEntryHardware(entry, true);
+    _syncSingleEntryHardware(entry, true, dp);
     notifyListeners();
   }
 
   void _executeTriggerOff(ScheduleEntry entry, DeviceProvider dp) {
     debugPrint('[Scheduler] ⏰ OFF: ${entry.deviceName} at ${entry.offTime}');
-    _syncSingleEntryHardware(entry, false);
+    _syncSingleEntryHardware(entry, false, dp);
     notifyListeners();
   }
 

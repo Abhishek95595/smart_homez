@@ -11,23 +11,35 @@ class AlexaIntegrationService {
   final ApiClient _api;
 
   /// Issue a short-lived, single-use SSO token for App-to-App Alexa account linking.
-  Future<String?> generateLinkToken() async {
+  Future<Map<String, dynamic>?> generateLinkToken({
+    String? redirectUri,
+    String? state,
+    String? scope,
+  }) async {
     try {
+      final Map<String, dynamic> body = <String, dynamic>{
+        if (redirectUri != null && redirectUri.isNotEmpty) 'redirectUri': redirectUri,
+        if (state != null && state.isNotEmpty) 'state': state,
+        if (scope != null && scope.isNotEmpty) 'scope': scope,
+      };
+
       final Response<dynamic> response = await _api.post(
         ApiEndpoints.alexaLinkToken,
+        data: body.isEmpty ? null : body,
       );
+
       if (response.data is Map<String, dynamic>) {
-        final Map<String, dynamic> data = Map<String, dynamic>.from(
-          response.data,
-        );
-        if (data['success'] == true && data['token'] != null) {
-          return data['token'].toString();
-        }
+        final Map<String, dynamic> data = Map<String, dynamic>.from(response.data);
+        data['success'] = true;
+        return data;
       }
-      return null;
+      return {'success': false, 'error': 'Invalid server response'};
     } catch (error) {
       debugPrint('[AlexaService] Link token error: $error');
-      return null;
+      final String msg = error.toString().contains('401')
+          ? '401 Unauthorized: Valid API JWT token required for Alexa Account Linking.'
+          : error.toString().replaceFirst('Exception: ', '').replaceFirst('ApiException: ', '');
+      return {'success': false, 'error': msg};
     }
   }
 
@@ -102,5 +114,71 @@ class AlexaIntegrationService {
       debugPrint('[AlexaService] Commands error: $error');
       return null;
     }
+  }
+
+  /// Convenience method to send an Alexa Smart Home v3 TurnOn/TurnOff PowerController directive.
+  Future<bool> executeAlexaPowerCommand({
+    required String endpointId,
+    required bool turnOn,
+  }) async {
+    final Map<String, dynamic> directive = {
+      'directive': {
+        'header': {
+          'namespace': 'Alexa.PowerController',
+          'name': turnOn ? 'TurnOn' : 'TurnOff',
+          'payloadVersion': '3',
+          'messageId': DateTime.now().millisecondsSinceEpoch.toString(),
+        },
+        'endpoint': {
+          'endpointId': endpointId,
+        },
+        'payload': <String, dynamic>{},
+      },
+    };
+
+    final result = await sendDirective(directive);
+    if (result != null) return true;
+
+    // Fallback to commands endpoint if directive returns null/error
+    final cmdResult = await sendCommands({
+      'endpointId': endpointId,
+      'command': turnOn ? 'TurnOn' : 'TurnOff',
+    });
+
+    return cmdResult != null;
+  }
+
+  /// Convenience method to send an Alexa Smart Home v3 SetBrightness directive.
+  Future<bool> executeAlexaBrightnessCommand({
+    required String endpointId,
+    required int brightnessLevel,
+  }) async {
+    final Map<String, dynamic> directive = {
+      'directive': {
+        'header': {
+          'namespace': 'Alexa.BrightnessController',
+          'name': 'SetBrightness',
+          'payloadVersion': '3',
+          'messageId': DateTime.now().millisecondsSinceEpoch.toString(),
+        },
+        'endpoint': {
+          'endpointId': endpointId,
+        },
+        'payload': {
+          'brightness': brightnessLevel.clamp(0, 100),
+        },
+      },
+    };
+
+    final result = await sendDirective(directive);
+    if (result != null) return true;
+
+    final cmdResult = await sendCommands({
+      'endpointId': endpointId,
+      'command': 'SetBrightness',
+      'value': brightnessLevel,
+    });
+
+    return cmdResult != null;
   }
 }

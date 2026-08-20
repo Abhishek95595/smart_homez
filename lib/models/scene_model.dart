@@ -9,11 +9,12 @@ class SceneActionModel {
   SceneActionModel({
     required this.deviceId,
     required this.command,
-    this.commandValue,
+    dynamic commandValue,
+    dynamic value,
     this.toggleOnActivate = false,
     this.sortOrder = 0,
     this.delaySeconds = 0,
-  });
+  }) : commandValue = commandValue ?? value;
 
   /// Backwards-compatible getter for legacy value field
   dynamic get value => commandValue;
@@ -38,11 +39,16 @@ class SceneActionModel {
   Map<String, dynamic> toJson() {
     return {
       'deviceId': deviceId,
+      'device_id': deviceId,
       'command': command,
-      'commandValue': ?commandValue?.toString(),
+      if (commandValue != null) 'commandValue': commandValue.toString(),
+      if (commandValue != null) 'value': commandValue,
       'toggleOnActivate': toggleOnActivate,
+      'toggle_on_activate': toggleOnActivate,
       'sortOrder': sortOrder,
+      'sort_order': sortOrder,
       'delaySeconds': delaySeconds,
+      'delay_seconds': delaySeconds,
     };
   }
 }
@@ -96,12 +102,16 @@ class SceneModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'tenantId': ?tenantId,
-      'clientId': ?clientId,
+      if (tenantId != null) 'tenantId': tenantId,
+      if (clientId != null) ...{
+        'clientId': clientId,
+        'client_id': clientId,
+      },
       'name': name,
-      'description': ?description,
-      'icon': ?icon,
+      if (description != null) 'description': description,
+      if (icon != null) 'icon': icon,
       'isFavorite': isFavorite,
+      'is_favorite': isFavorite,
       'actions': actions.map((a) => a.toJson()).toList(),
     };
   }
@@ -153,7 +163,7 @@ class SceneExecutionStatus {
       );
 
   Map<String, dynamic> toJson() => {
-        'scene_id': ?sceneId,
+        if (sceneId != null) 'scene_id': sceneId,
         'status': status,
         'current_step': currentStep,
         'total_steps': totalSteps,
