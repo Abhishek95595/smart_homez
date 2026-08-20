@@ -296,12 +296,16 @@ class _AlexaWifiDiscoveryModalState extends State<AlexaWifiDiscoveryModal>
                                   const SizedBox(height: 2),
                                   Row(
                                     children: [
-                                      Text(
-                                        '${device.room} • ${device.ipAddress}',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Color(0xFF64748B),
-                                          fontWeight: FontWeight.w500,
+                                      Expanded(
+                                        child: Text(
+                                          '${device.room} • ${device.ipAddress}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF64748B),
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 6),
