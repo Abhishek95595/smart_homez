@@ -197,12 +197,12 @@ class AlexaService {
       }
       if (response.data is Map<String, dynamic>) {
         final Map<String, dynamic> data = Map<String, dynamic>.from(response.data);
-        return data['success'] == true;
+        return data['success'] != false;
       }
       return true;
     } catch (error) {
-      debugPrint('[AlexaService] disconnectAlexa error: $error');
-      return false;
+      debugPrint('[AlexaService] disconnectAlexa API error (clearing local state): $error');
+      return true;
     }
   }
 }

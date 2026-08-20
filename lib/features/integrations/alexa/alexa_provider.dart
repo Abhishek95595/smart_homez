@@ -156,37 +156,34 @@ class AlexaProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final success = await _service.disconnectAlexa();
-      if (success) {
-        _status = AlexaStatus.notConnected();
-        _selectedDevice = null;
-        _state = AlexaConnectionState.notConnected;
-
-        if (realDevices != null && realDevices.isNotEmpty) {
-          _wifiDevices = realDevices.map((d) {
-            return AlexaWifiDevice(
-              id: d.deviceId,
-              name: d.name,
-              model: d.type.label,
-              room: d.roomName ?? d.zone,
-              ipAddress: '192.168.1.${100 + (d.deviceId.hashCode.abs() % 150)}',
-              wifiFrequency: '5 GHz',
-              signalStrength: d.status == DeviceStatus.online ? 4 : 2,
-            );
-          }).toList();
-        } else {
-          _wifiDevices = [];
-        }
-      }
-      _errorMessage = null;
-      _isLoading = false;
-      notifyListeners();
-      return success;
+      await _service.disconnectAlexa();
     } catch (e) {
-      _errorMessage = 'Disconnect failed: $e';
-      _isLoading = false;
-      notifyListeners();
-      return false;
+      debugPrint('[AlexaProvider] Disconnect API error: $e');
     }
+
+    _status = AlexaStatus.notConnected();
+    _selectedDevice = null;
+    _state = AlexaConnectionState.notConnected;
+
+    if (realDevices != null && realDevices.isNotEmpty) {
+      _wifiDevices = realDevices.map((d) {
+        return AlexaWifiDevice(
+          id: d.deviceId,
+          name: d.name,
+          model: d.type.label,
+          room: d.roomName ?? d.zone,
+          ipAddress: '192.168.1.${100 + (d.deviceId.hashCode.abs() % 150)}',
+          wifiFrequency: '5 GHz',
+          signalStrength: d.status == DeviceStatus.online ? 4 : 2,
+        );
+      }).toList();
+    } else {
+      _wifiDevices = [];
+    }
+
+    _errorMessage = null;
+    _isLoading = false;
+    notifyListeners();
+    return true;
   }
 }
