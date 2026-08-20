@@ -112,9 +112,6 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
     final String greeting = HasomiVoiceService.instance.generateGreeting(user?.name);
     _assistantGreeting = greeting.isNotEmpty ? greeting : 'Hi! How can I help you?';
 
-    // Speak dynamic greeting aloud: "Hi {name}, how can I help you?"
-    HasomiVoiceService.instance.speak(_assistantGreeting);
-
     if (!mounted) return;
     setState(() {
       _barState = HasomiVoiceBarState.listeningForCommand;
@@ -122,7 +119,15 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
       _statusText = _assistantGreeting;
     });
 
-    _startCommandListening();
+    // Speak dynamic greeting aloud and await completion before opening mic
+    await HasomiVoiceService.instance.speak(_assistantGreeting);
+
+    if (mounted && _barState == HasomiVoiceBarState.listeningForCommand) {
+      setState(() {
+        _statusText = 'Listening for your command...';
+      });
+      _startCommandListening();
+    }
   }
 
   /// Stops voice listening and resets to idle (turns OFF)
@@ -141,7 +146,7 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
     });
   }
 
-  /// Listens for user's command during a 7-second active listening window
+  /// Listens for user's command during an active listening window
   Future<void> _startCommandListening() async {
     if (!mounted || !_isSpeechAvailable || _isStartingListening) return;
 
@@ -153,7 +158,7 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
     _silenceTimer?.cancel();
     _commandTimeoutTimer?.cancel();
 
-    // 12-second max listening window timer (increased by 5s)
+    // 12-second max listening window timer
     _commandTimeoutTimer = Timer(const Duration(seconds: 12), () {
       if (mounted && _barState == HasomiVoiceBarState.listeningForCommand) {
         if (_spokenText.trim().isNotEmpty) {
@@ -203,7 +208,7 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
     }
   }
 
-  /// Handles timeout if no command is heard after 7 seconds
+  /// Handles timeout if no command is heard after 12 seconds
   Future<void> _onCommandTimeout() async {
     _silenceTimer?.cancel();
     _commandTimeoutTimer?.cancel();
@@ -224,7 +229,7 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
     });
   }
 
-  /// Processes command, calls existing device APIs, speaks result, and turns OFF
+  /// Processes command, calls existing device APIs, speaks result, and automatically listens again
   Future<void> _processCommand(String text) async {
     if (_barState == HasomiVoiceBarState.controlling || !mounted) return;
 
@@ -257,15 +262,18 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
       _statusText = result.spokenResponse;
     });
 
-    // Speak confirmation result aloud
+    // Speak confirmation result aloud and await sentence completion
     await HasomiVoiceService.instance.speak(result.spokenResponse);
 
-    // Fade out and turn OFF (reset to idle) after 8 seconds (increased by 5s)
-    _fadeTimer = Timer(const Duration(seconds: 8), () {
-      if (mounted) {
-        _stopAndResetToIdle();
-      }
-    });
+    // After completing sentence, automatically start listening for next command again!
+    if (mounted && _barState != HasomiVoiceBarState.idle) {
+      setState(() {
+        _barState = HasomiVoiceBarState.listeningForCommand;
+        _spokenText = '';
+        _statusText = 'Listening for your next command...';
+      });
+      _startCommandListening();
+    }
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../models/device.dart';
@@ -57,10 +59,32 @@ class HasomiVoiceService {
 
   FlutterTts? _tts;
   bool _ttsInitialized = false;
+  Completer<void>? _speakCompleter;
 
   Future<void> _initTts() async {
     try {
       _tts ??= FlutterTts();
+
+      _tts?.setCompletionHandler(() {
+        debugPrint('[HasomiVoiceService TTS Completion Handler Fired]');
+        if (_speakCompleter != null && !_speakCompleter!.isCompleted) {
+          _speakCompleter!.complete();
+        }
+      });
+
+      _tts?.setErrorHandler((msg) {
+        debugPrint('[HasomiVoiceService TTS Error Handler] $msg');
+        if (_speakCompleter != null && !_speakCompleter!.isCompleted) {
+          _speakCompleter!.complete();
+        }
+      });
+
+      _tts?.setCancelHandler(() {
+        debugPrint('[HasomiVoiceService TTS Cancel Handler]');
+        if (_speakCompleter != null && !_speakCompleter!.isCompleted) {
+          _speakCompleter!.complete();
+        }
+      });
 
       // Try setting Indian English voice locale ('en-IN')
       final dynamic isIndianAvailable = await _tts?.isLanguageAvailable("en-IN");
@@ -100,7 +124,7 @@ class HasomiVoiceService {
     }
   }
 
-  /// Speaks out loud using the device's Text-to-Speech engine.
+  /// Speaks out loud using the device's Text-to-Speech engine and awaits completion.
   Future<void> speak(String text) async {
     final String cleanText = text.trim();
     if (cleanText.isEmpty) return;
@@ -109,9 +133,27 @@ class HasomiVoiceService {
         await _initTts();
       }
       await _tts?.stop();
+      if (_speakCompleter != null && !_speakCompleter!.isCompleted) {
+        _speakCompleter!.complete();
+      }
+      _speakCompleter = Completer<void>();
+
       debugPrint('[HasomiVoiceService Speaking Aloud] "$cleanText"');
       final dynamic result = await _tts?.speak(cleanText);
       debugPrint('[HasomiVoiceService Speak Result] $result');
+
+      // Fallback timeout in case platform TTS doesn't trigger completion callback
+      final int wordCount = cleanText.split(RegExp(r'\s+')).length;
+      final int estimatedMs = math.max(2500, wordCount * 350 + 1500);
+
+      Future.delayed(Duration(milliseconds: estimatedMs), () {
+        if (_speakCompleter != null && !_speakCompleter!.isCompleted) {
+          debugPrint('[HasomiVoiceService TTS Fallback Timeout Fired]');
+          _speakCompleter!.complete();
+        }
+      });
+
+      await _speakCompleter!.future;
     } catch (e) {
       debugPrint('[HasomiVoiceService Speak Exception] $e');
     }

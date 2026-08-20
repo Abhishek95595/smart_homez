@@ -154,9 +154,9 @@ class _HasomiScreenState extends State<HasomiScreen>
     }
 
     // Speak dynamic greeting aloud: "Hi {name}, what can I help you with?"
-    HasomiVoiceService.instance.speak(_assistantGreeting);
+    await HasomiVoiceService.instance.speak(_assistantGreeting);
 
-    // Transition to listening for user's command
+    // Transition to listening for user's command after sentence completion
     if (!mounted) return;
     setState(() {
       _currentState = HasomiState.listeningForCommand;
@@ -236,15 +236,17 @@ class _HasomiScreenState extends State<HasomiScreen>
       _textController.clear();
     });
 
-    // Speak result confirmation out loud
+    // Speak result confirmation out loud and await sentence completion
     await HasomiVoiceService.instance.speak(result.spokenResponse);
 
-    // Automatically resume hands-free wake word listening after 4 seconds
-    _resetTimer = Timer(const Duration(seconds: 4), () {
-      if (mounted) {
-        _startWakeWordListening();
-      }
-    });
+    // Automatically hear / listen for user's next command after sentence completion!
+    if (mounted) {
+      setState(() {
+        _currentState = HasomiState.listeningForCommand;
+        _spokenText = '';
+      });
+      _startCommandListening();
+    }
   }
 
   @override
