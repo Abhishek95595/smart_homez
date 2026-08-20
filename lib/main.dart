@@ -14,6 +14,7 @@ import 'providers/property_provider.dart';
 import 'providers/routine_provider.dart';
 import 'providers/ticket_provider.dart';
 import 'providers/water_provider.dart';
+import 'features/integrations/alexa/alexa_provider.dart';
 import 'screens/landing/landing_screen.dart';
 import 'theme/app_theme.dart';
 
@@ -53,6 +54,7 @@ class SmartBuildingApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => EnergyProvider()),
         ChangeNotifierProvider(create: (_) => WaterProvider()),
         ChangeNotifierProvider(create: (_) => TicketProvider()),
+        ChangeNotifierProvider(create: (_) => AlexaProvider()..fetchStatus()),
       ],
       child: MaterialApp(
         title: 'Smart Homez',
