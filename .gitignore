@@ -24,6 +24,7 @@ android/local.properties
 windows/flutter/ephemeral/
 linux/flutter/ephemeral/
 *.zip
+<<<<<<< HEAD
 
 # Ruflo local secrets and runtime data
 .env
@@ -34,3 +35,5 @@ linux/flutter/ephemeral/
 .claude-flow/sessions/
 node_modules/
 
+=======
+>>>>>>> origin/Abhi

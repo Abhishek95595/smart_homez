@@ -12,4 +12,6 @@ Map<String, dynamic> _$ResolvedClientToJson(ResolvedClient instance) =>
       'name': instance.name,
       'email': instance.email,
       'phone': instance.phone,
+      'isNew': instance.isNew,
+      'notFound': instance.notFound,
     };

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/device.dart';
 import '../../models/property_hierarchy.dart';
+import '../../models/app_user.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/device_provider.dart';
 import '../../providers/energy_provider.dart';
 import '../../providers/property_provider.dart';
 import '../alerts/alerts_screen.dart';
@@ -26,6 +29,26 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _activeSceneIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _fetchEnergyData();
+    });
+  }
+
+  void _fetchEnergyData() {
+    final clientId = context.read<AuthProvider>().resolvedClientId;
+    final properties = context.read<PropertyProvider>().properties;
+    if (clientId != null && properties.isNotEmpty) {
+      context.read<EnergyProvider>().fetchDashboard(
+        clientId: clientId,
+        homeId: properties.first.id,
+      );
+    }
+  }
+
   String _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) return 'Good Morning,';
@@ -38,6 +61,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final auth = context.watch<AuthProvider>();
     final user = auth.currentUser;
     final propertyProvider = context.watch<PropertyProvider>();
+    final deviceProvider = context.watch<DeviceProvider>();
     final energyProvider = context.watch<EnergyProvider>();
     final userName = user?.name.split(' ').first ?? 'Ayesha';
 
@@ -188,6 +212,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _PropertiesAndEnergySection(
               properties: propertyProvider.properties,
               energyProvider: energyProvider,
+              deviceProvider: deviceProvider,
             ),
             const SizedBox(height: 20),
 
@@ -261,12 +286,12 @@ class _HeroGreetingBanner extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.white.withValues(alpha: 0.93),
-                      Colors.white.withValues(alpha: 0.76),
-                      Colors.white.withValues(alpha: 0.18),
+                      Colors.white.withValues(alpha: 0.88),
+                      Colors.white.withValues(alpha: 0.48),
+                      Colors.white.withValues(alpha: 0.05),
                       Colors.transparent,
                     ],
-                    stops: const [0.0, 0.34, 0.55, 0.72],
+                    stops: const [0.0, 0.28, 0.44, 0.54],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
@@ -275,13 +300,12 @@ class _HeroGreetingBanner extends StatelessWidget {
             ),
             Positioned(
               left: compact ? 20 : 24,
-              top: 22,
-              bottom: 22,
+              top: compact ? 20 : 24,
               child: SizedBox(
-                width: screenWidth * (compact ? 0.51 : 0.48),
+                width: screenWidth * (compact ? 0.52 : 0.48),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Text(
                       greeting,
@@ -295,7 +319,7 @@ class _HeroGreetingBanner extends StatelessWidget {
                         height: 1.08,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -319,17 +343,6 @@ class _HeroGreetingBanner extends StatelessWidget {
                           style: TextStyle(fontSize: compact ? 18 : 21),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 11),
-                    Text(
-                      "Let's make your home\nsmarter today.",
-                      maxLines: 2,
-                      style: TextStyle(
-                        fontSize: compact ? 13 : 15,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF64748B),
-                        height: 1.35,
-                      ),
                     ),
                   ],
                 ),
@@ -530,84 +543,193 @@ class _SceneCard extends StatelessWidget {
 class _PropertiesAndEnergySection extends StatelessWidget {
   final List<ManagedProperty> properties;
   final EnergyProvider energyProvider;
+  final DeviceProvider deviceProvider;
 
   const _PropertiesAndEnergySection({
     required this.properties,
     required this.energyProvider,
+    required this.deviceProvider,
   });
+
+  IconData _iconForProperty(ManagedProperty property) {
+    final type = property.propertyType.toLowerCase();
+    final category = property.category.toLowerCase();
+    if (type.contains('apartment') ||
+        type.contains('flat') ||
+        category.contains('apartment')) {
+      return Icons.apartment_rounded;
+    }
+    if (type.contains('villa') || category.contains('villa')) {
+      return Icons.villa_rounded;
+    }
+    if (type.contains('office') ||
+        category.contains('commercial') ||
+        category.contains('business')) {
+      return Icons.business_rounded;
+    }
+    return Icons.home_rounded;
+  }
+
+  String _statusForProperty({
+    required int floorCount,
+    required int deviceCount,
+    required int onlineCount,
+  }) {
+    if (deviceCount > 0) {
+      if (onlineCount > 0) {
+        return '$onlineCount Active • $deviceCount ${deviceCount == 1 ? "Device" : "Devices"}';
+      } else {
+        return '$deviceCount ${deviceCount == 1 ? "Device" : "Devices"}';
+      }
+    }
+    if (floorCount > 0) {
+      return 'Online • $floorCount ${floorCount == 1 ? "Floor" : "Floors"}';
+    }
+    return 'Active • Ready';
+  }
+
+  Widget _buildPropertyCard(
+    BuildContext context,
+    ManagedProperty prop,
+    PropertyProvider propertyProvider,
+    DeviceProvider deviceProvider,
+    AppUser? user,
+  ) {
+    final floors = propertyProvider.floorsFor(prop.id);
+    final devices = deviceProvider.visibleDevicesForProperty(
+      user,
+      prop.name,
+      propertyId: prop.id,
+    );
+    final onlineCount = devices
+        .where((d) => d.status == DeviceStatus.online)
+        .length;
+
+    final status = _statusForProperty(
+      floorCount: floors.length,
+      deviceCount: devices.length,
+      onlineCount: onlineCount,
+    );
+
+    return _PropertyCard(
+      name: prop.name,
+      status: status,
+      icon: _iconForProperty(prop),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FloorsScreen(propertyId: prop.id),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    // 2 Top Property Cards
-    final prop1Name = properties.isNotEmpty
-        ? properties[0].name
-        : 'Villa Grandeur';
-    final prop1Status = 'Active • 12 Devices';
+    final propertyProvider = context.watch<PropertyProvider>();
+    final deviceProvider = context.watch<DeviceProvider>();
+    final user = context.watch<AuthProvider>().currentUser;
 
-    final prop2Name = properties.length > 1
-        ? properties[1].name
-        : 'Skyline Penthouse';
-    final prop2Status = 'Online • 3 Floors';
+    Widget propertiesWidget;
+
+    if (properties.isEmpty) {
+      propertiesWidget = _AddPropertyFullCard(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const HomesScreen()),
+        ),
+      );
+    } else if (properties.length == 1) {
+      propertiesWidget = Row(
+        children: [
+          Expanded(
+            child: _buildPropertyCard(
+              context,
+              properties[0],
+              propertyProvider,
+              deviceProvider,
+              user,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _AddPropertyCard(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HomesScreen()),
+              ),
+            ),
+          ),
+        ],
+      );
+    } else if (properties.length == 2) {
+      propertiesWidget = Row(
+        children: [
+          Expanded(
+            child: _buildPropertyCard(
+              context,
+              properties[0],
+              propertyProvider,
+              deviceProvider,
+              user,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _buildPropertyCard(
+              context,
+              properties[1],
+              propertyProvider,
+              deviceProvider,
+              user,
+            ),
+          ),
+        ],
+      );
+    } else {
+      propertiesWidget = SizedBox(
+        height: 126,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.none,
+          itemCount: properties.length + 1,
+          separatorBuilder: (context, index) => const SizedBox(width: 14),
+          itemBuilder: (context, index) {
+            if (index == properties.length) {
+              return SizedBox(
+                width: 165,
+                child: _AddPropertyCard(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HomesScreen()),
+                  ),
+                ),
+              );
+            }
+            return SizedBox(
+              width: 165,
+              child: _buildPropertyCard(
+                context,
+                properties[index],
+                propertyProvider,
+                deviceProvider,
+                user,
+              ),
+            );
+          },
+        ),
+      );
+    }
 
     return Column(
       children: [
-        // Top row: 2 Property Cards side-by-side (clean with no turn on/off button)
-        Row(
-          children: [
-            Expanded(
-              child: _PropertyCard(
-                name: prop1Name,
-                status: prop1Status,
-                icon: Icons.villa_rounded,
-                onTap: () {
-                  if (properties.isNotEmpty) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            FloorsScreen(propertyId: properties[0].id),
-                      ),
-                    );
-                  } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomesScreen()),
-                    );
-                  }
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _PropertyCard(
-                name: prop2Name,
-                status: prop2Status,
-                icon: Icons.apartment_rounded,
-                onTap: () {
-                  if (properties.length > 1) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            FloorsScreen(propertyId: properties[1].id),
-                      ),
-                    );
-                  } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomesScreen()),
-                    );
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
+        propertiesWidget,
         const SizedBox(height: 12),
 
         // Overall Energy Matrix Card (Full Width)
         _OverallEnergyMatrixCard(
           energyProvider: energyProvider,
+          deviceProvider: deviceProvider,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const EnergyScreen()),
@@ -727,24 +849,232 @@ class _PropertyCard extends StatelessWidget {
   }
 }
 
+class _AddPropertyCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _AddPropertyCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 126,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFCFC),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: const Color(0xFFCCECE8), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(26),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFE6F7F5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.add_rounded,
+                        color: Color(0xFF00A38E),
+                        size: 24,
+                      ),
+                    ),
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF1F5F9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: Color(0xFF94A3B8),
+                        size: 11,
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Add Property',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      '+ Setup new home',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF00A38E),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AddPropertyFullCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _AddPropertyFullCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 90,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFCFC),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: const Color(0xFFCCECE8), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(26),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE6F7F5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.add_home_work_rounded,
+                    color: Color(0xFF00A38E),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Text(
+                        'Add Your First Property',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0F172A),
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      SizedBox(height: 3),
+                      Text(
+                        'Connect homes, floors & devices',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF1F5F9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Color(0xFF94A3B8),
+                    size: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _OverallEnergyMatrixCard extends StatelessWidget {
   final EnergyProvider energyProvider;
+  final DeviceProvider deviceProvider;
   final VoidCallback onTap;
 
   const _OverallEnergyMatrixCard({
     required this.energyProvider,
+    required this.deviceProvider,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final liveWatts = energyProvider.instantPowerWatts > 0
-        ? '${energyProvider.instantPowerWatts.toStringAsFixed(0)} W'
-        : '2,480 W';
+    final double rawLiveWatts = energyProvider.instantPowerWatts > 0
+        ? energyProvider.instantPowerWatts
+        : deviceProvider.activeLiveWatts;
 
-    final dailyKwh = energyProvider.totalKwh > 0
-        ? '${energyProvider.totalKwh.toStringAsFixed(1)} kWh'
-        : '18.4 kWh';
+    final String liveWatts = '${rawLiveWatts.toStringAsFixed(0)} W';
+
+    final double rawDailyKwh = energyProvider.totalKwh > 0
+        ? energyProvider.totalKwh
+        : deviceProvider.estimatedDailyKwh;
+
+    final String dailyKwh = '${rawDailyKwh.toStringAsFixed(1)} kWh';
+
+    final totalDevices = deviceProvider.totalCount;
+    final onlineDevices = deviceProvider.onlineCount;
+    final String statusText;
+    if (totalDevices == 0) {
+      statusText = '⚡ Connected';
+    } else {
+      final ratio = (onlineDevices / totalDevices * 100).round();
+      statusText = ratio >= 90 ? '⚡ $ratio% Optimal' : '⚡ $onlineDevices/$totalDevices Online';
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -967,8 +1297,8 @@ class _OverallEnergyMatrixCard extends StatelessWidget {
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
+                          children: [
+                            const Text(
                               'SYSTEM STATUS',
                               style: TextStyle(
                                 fontSize: 9.5,
@@ -977,12 +1307,12 @@ class _OverallEnergyMatrixCard extends StatelessWidget {
                                 letterSpacing: 0.3,
                               ),
                             ),
-                            SizedBox(height: 4),
+                            const SizedBox(height: 4),
                             Text(
-                              '⚡ 98% Optimal',
+                              statusText,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w900,
                                 color: Color(0xFF00A38E),

@@ -136,7 +136,11 @@ class _MainShellState extends State<MainShell> {
           final desktop = constraints.maxWidth >= 1100;
 
           return Scaffold(
-            drawer: desktop ? null : const AppNavigationDrawer(),
+            drawer: desktop
+                ? null
+                : AppNavigationDrawer(
+                    onDashboard: () => _onTabTapped(0),
+                  ),
             body: desktop
                 ? Row(
                     children: [
@@ -209,7 +213,6 @@ class _MainShellState extends State<MainShell> {
                           top: false,
                           child: Container(
                             height: 74,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Row(
                           children: List.generate(tabs.length, (idx) {
                             final tab = tabs[idx];

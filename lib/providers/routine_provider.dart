@@ -191,7 +191,7 @@ class RoutineProvider extends ChangeNotifier {
         _syncSingleEntryHardware(
           schedule.entries[idx],
           enabled && schedule.entries[idx].startAction == 'on',
-          _deviceProvider!,
+          _deviceProvider,
         );
       }
 
@@ -309,9 +309,11 @@ class RoutineProvider extends ChangeNotifier {
 
   Future<void> _syncSingleEntryHardware(
     ScheduleEntry entry,
-    bool turnOn,
-    DeviceProvider dp,
-  ) async {
+    bool turnOn, [
+    DeviceProvider? dpParam,
+  ]) async {
+    final dp = dpParam ?? _deviceProvider;
+    if (dp == null) return;
     final device = _findOrCreateDevice(dp, entry);
     final success = await dp.setDevicePower(device, turnOn);
     if (success && turnOn && entry.deviceType == DeviceType.light) {

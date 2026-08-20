@@ -116,7 +116,11 @@ class _PropertyResults extends StatelessWidget {
         final rooms = propertyProvider.rooms.where(
           (r) => floorIds.contains(r.floorId),
         );
-        final devices = deviceProvider.visibleDevicesForProperty(user, p.name);
+        final devices = deviceProvider.visibleDevicesForProperty(
+          user,
+          p.name,
+          propertyId: p.id,
+        );
 
         return PropertySummaryCard(
           property: p,
