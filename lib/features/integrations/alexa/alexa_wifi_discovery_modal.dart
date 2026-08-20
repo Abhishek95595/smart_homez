@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../providers/device_provider.dart';
 import 'alexa_provider.dart';
 import 'alexa_status_model.dart';
 
@@ -25,7 +26,8 @@ class _AlexaWifiDiscoveryModalState extends State<AlexaWifiDiscoveryModal>
     )..repeat(reverse: true);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AlexaProvider>().scanLocalWifiDevices();
+      final realDevices = context.read<DeviceProvider>().devices;
+      context.read<AlexaProvider>().scanLocalWifiDevices(realDevices: realDevices);
     });
   }
 
@@ -202,7 +204,10 @@ class _AlexaWifiDiscoveryModalState extends State<AlexaWifiDiscoveryModal>
                 if (!isScanning)
                   IconButton(
                     icon: const Icon(Icons.refresh_rounded, size: 18, color: Color(0xFF166534)),
-                    onPressed: () => alexaProvider.scanLocalWifiDevices(),
+                    onPressed: () {
+                      final realDevices = context.read<DeviceProvider>().devices;
+                      alexaProvider.scanLocalWifiDevices(realDevices: realDevices);
+                    },
                     tooltip: 'Rescan Wi-Fi',
                   ),
               ],

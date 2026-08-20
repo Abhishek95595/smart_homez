@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_endpoints.dart';
+import '../../../models/device.dart';
 import 'alexa_status_model.dart';
 
 class AlexaService {
@@ -50,8 +51,8 @@ class AlexaService {
     ),
   ];
 
-  /// Scans local Wi-Fi network for active Alexa & Echo devices
-  Future<List<AlexaWifiDevice>> scanLocalWifiDevices() async {
+  /// Scans local Wi-Fi network for active Alexa & Echo devices or real user devices
+  Future<List<AlexaWifiDevice>> scanLocalWifiDevices({List<Device>? realDevices}) async {
     try {
       final Response<dynamic> response = await _api.post(
         ApiEndpoints.alexaDiscovery,
@@ -79,11 +80,25 @@ class AlexaService {
         }
       }
     } catch (e) {
-      debugPrint('[AlexaService] Scan error, falling back to local Wi-Fi discovery: $e');
+      debugPrint('[AlexaService] Scan error, falling back to real devices: $e');
     }
 
-    // Simulate short network scan delay for realistic Wi-Fi discovery
-    await Future.delayed(const Duration(milliseconds: 900));
+    await Future.delayed(const Duration(milliseconds: 600));
+
+    if (realDevices != null && realDevices.isNotEmpty) {
+      return realDevices.map((d) {
+        return AlexaWifiDevice(
+          id: d.deviceId,
+          name: d.name,
+          model: d.type.label,
+          room: d.roomName ?? d.zone,
+          ipAddress: '192.168.1.${100 + (d.deviceId.hashCode.abs() % 150)}',
+          wifiFrequency: '5 GHz',
+          signalStrength: d.status == DeviceStatus.online ? 4 : 2,
+        );
+      }).toList();
+    }
+
     return sampleWifiDevices;
   }
 

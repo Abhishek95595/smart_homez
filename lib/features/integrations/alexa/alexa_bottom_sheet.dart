@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../../providers/device_provider.dart';
 import 'alexa_provider.dart';
 
 class AlexaBottomSheet extends StatefulWidget {
@@ -41,6 +42,7 @@ class _AlexaBottomSheetState extends State<AlexaBottomSheet> {
   Future<void> _handleDisconnect(BuildContext context, AlexaProvider alexaProvider) async {
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
+    final realDevices = context.read<DeviceProvider>().devices;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -75,7 +77,7 @@ class _AlexaBottomSheetState extends State<AlexaBottomSheet> {
     );
 
     if (confirmed == true && mounted) {
-      final success = await alexaProvider.disconnectAlexa();
+      final success = await alexaProvider.disconnectAlexa(realDevices: realDevices);
 
       if (!mounted) return;
       nav.pop();

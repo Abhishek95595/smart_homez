@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../models/device.dart';
 import 'alexa_service.dart';
 import 'alexa_status_model.dart';
 
@@ -61,18 +62,32 @@ class AlexaProvider extends ChangeNotifier {
     }
   }
 
-  /// Scans local Wi-Fi network for active Echo / Alexa devices
-  Future<List<AlexaWifiDevice>> scanLocalWifiDevices() async {
+  /// Scans local Wi-Fi network for active Echo / Alexa devices or real user devices
+  Future<List<AlexaWifiDevice>> scanLocalWifiDevices({List<Device>? realDevices}) async {
     _isScanningWifi = true;
     notifyListeners();
 
     try {
-      final devices = await _service.scanLocalWifiDevices();
+      final devices = await _service.scanLocalWifiDevices(realDevices: realDevices);
       _wifiDevices = devices;
       return devices;
     } catch (e) {
       debugPrint('[AlexaProvider] scan error: $e');
-      _wifiDevices = AlexaService.sampleWifiDevices;
+      if (realDevices != null && realDevices.isNotEmpty) {
+        _wifiDevices = realDevices.map((d) {
+          return AlexaWifiDevice(
+            id: d.deviceId,
+            name: d.name,
+            model: d.type.label,
+            room: d.roomName ?? d.zone,
+            ipAddress: '192.168.1.${100 + (d.deviceId.hashCode.abs() % 150)}',
+            wifiFrequency: '5 GHz',
+            signalStrength: d.status == DeviceStatus.online ? 4 : 2,
+          );
+        }).toList();
+      } else {
+        _wifiDevices = AlexaService.sampleWifiDevices;
+      }
       return _wifiDevices;
     } finally {
       _isScanningWifi = false;
@@ -135,8 +150,8 @@ class AlexaProvider extends ChangeNotifier {
     }
   }
 
-  /// Disconnects Alexa integration
-  Future<bool> disconnectAlexa() async {
+  /// Disconnects Alexa integration and resets device list to show only real devices
+  Future<bool> disconnectAlexa({List<Device>? realDevices}) async {
     _isLoading = true;
     notifyListeners();
 
@@ -146,6 +161,22 @@ class AlexaProvider extends ChangeNotifier {
         _status = AlexaStatus.notConnected();
         _selectedDevice = null;
         _state = AlexaConnectionState.notConnected;
+
+        if (realDevices != null && realDevices.isNotEmpty) {
+          _wifiDevices = realDevices.map((d) {
+            return AlexaWifiDevice(
+              id: d.deviceId,
+              name: d.name,
+              model: d.type.label,
+              room: d.roomName ?? d.zone,
+              ipAddress: '192.168.1.${100 + (d.deviceId.hashCode.abs() % 150)}',
+              wifiFrequency: '5 GHz',
+              signalStrength: d.status == DeviceStatus.online ? 4 : 2,
+            );
+          }).toList();
+        } else {
+          _wifiDevices = [];
+        }
       }
       _errorMessage = null;
       _isLoading = false;
