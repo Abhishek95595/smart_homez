@@ -20,6 +20,7 @@ import '../../services/alexa_integration_service.dart';
 import '../../widgets/hasomi_bottom_voice_bar.dart';
 import '../../features/integrations/alexa/alexa_provider.dart';
 import '../../features/integrations/alexa/alexa_bottom_sheet.dart';
+import '../../features/integrations/alexa/alexa_wifi_discovery_modal.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -1371,6 +1372,10 @@ class _SmartAssistantVoiceBanner extends StatelessWidget {
     final alexaProvider = context.watch<AlexaProvider>();
     final isConnected = alexaProvider.isConnected;
     final isConnecting = alexaProvider.isConnecting;
+    final selectedDevice = alexaProvider.selectedDevice;
+    final deviceLabel = selectedDevice != null
+        ? 'Alexa Connected - ${selectedDevice.name}'
+        : 'Alexa Connected';
 
     return Container(
       width: double.infinity,
@@ -1449,167 +1454,116 @@ class _SmartAssistantVoiceBanner extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Bottom Row: Two Voice Control Options [ HASOMI ] and [ Alexa ]
-          Row(
-            children: [
-              // Option 1: HASOMI Voice Assistant Button
-              Expanded(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: onTap,
+          // Bottom Row: Single Prominent Alexa Wi-Fi Device Connection Option
+          SizedBox(
+            width: double.infinity,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: isConnecting
+                    ? null
+                    : () {
+                        if (isConnected) {
+                          showModalBottomSheet(
+                            context: context,
+                            backgroundColor: Colors.transparent,
+                            isScrollControlled: true,
+                            builder: (_) => const AlexaBottomSheet(),
+                          );
+                        } else {
+                          showModalBottomSheet(
+                            context: context,
+                            backgroundColor: Colors.transparent,
+                            isScrollControlled: true,
+                            builder: (_) => const AlexaWifiDiscoveryModal(),
+                          );
+                        }
+                      },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isConnected
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFF00CAFF),
                     borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x10000000),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.mic_rounded,
-                            color: Color(0xFF00A38E),
-                            size: 17,
-                          ),
-                          SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              'HASOMI',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 10),
-
-              // Option 2: Amazon Alexa Integration Button
-              Expanded(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: isConnecting
-                        ? null
-                        : () {
-                            if (isConnected) {
-                              showModalBottomSheet(
-                                context: context,
-                                backgroundColor: Colors.transparent,
-                                isScrollControlled: true,
-                                builder: (_) => const AlexaBottomSheet(),
-                              );
-                            } else {
-                              alexaProvider.connectAlexa();
-                            }
-                          },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                      decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
                         color: isConnected
-                            ? const Color(0xFF0F172A)
-                            : const Color(0xFF00CAFF),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: isConnected
-                                ? const Color(0x300F172A)
-                                : const Color(0x3000CAFF),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                            ? const Color(0x300F172A)
+                            : const Color(0x3000CAFF),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (isConnecting) ...[
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
                           ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (isConnecting) ...[
-                            const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            const Flexible(
-                              child: Text(
-                                'Connecting...',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ] else if (isConnected) ...[
-                            const Icon(
-                              Icons.check_circle_rounded,
-                              color: Color(0xFF34D399),
-                              size: 16,
-                            ),
-                            const SizedBox(width: 6),
-                            const Flexible(
-                              child: Text(
-                                'Alexa Connected',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ] else ...[
-                            const Icon(
-                              Icons.graphic_eq_rounded,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Connecting to Alexa...',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ] else if (isConnected) ...[
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: Color(0xFF34D399),
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            deviceLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
                               color: Colors.white,
-                              size: 17,
                             ),
-                            const SizedBox(width: 6),
-                            const Flexible(
-                              child: Text(
-                                'Connect Alexa',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                              ),
+                          ),
+                        ),
+                      ] else ...[
+                        const Icon(
+                          Icons.wifi_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        const Flexible(
+                          child: Text(
+                            'Connect Alexa',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
                             ),
-                          ],
-                        ],
-                      ),
-                    ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         ],
       ),

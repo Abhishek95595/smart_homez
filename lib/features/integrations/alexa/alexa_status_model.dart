@@ -1,9 +1,30 @@
 enum AlexaConnectionState {
   notConnected,
+  scanning,
   connecting,
   connected,
   syncing,
   error,
+}
+
+class AlexaWifiDevice {
+  final String id;
+  final String name;
+  final String model;
+  final String room;
+  final String ipAddress;
+  final String wifiFrequency;
+  final int signalStrength;
+
+  const AlexaWifiDevice({
+    required this.id,
+    required this.name,
+    required this.model,
+    required this.room,
+    required this.ipAddress,
+    this.wifiFrequency = '5 GHz',
+    this.signalStrength = 4,
+  });
 }
 
 class AlexaStatus {
@@ -11,12 +32,16 @@ class AlexaStatus {
   final int deviceCount;
   final DateTime? lastSyncedAt;
   final String? errorMessage;
+  final String? selectedDeviceName;
+  final String? selectedDeviceIp;
 
   const AlexaStatus({
     required this.connected,
     this.deviceCount = 0,
     this.lastSyncedAt,
     this.errorMessage,
+    this.selectedDeviceName,
+    this.selectedDeviceIp,
   });
 
   factory AlexaStatus.fromJson(Map<String, dynamic> json) {
@@ -36,6 +61,8 @@ class AlexaStatus {
       deviceCount: devCountVal is num ? devCountVal.toInt() : 0,
       lastSyncedAt: parsedSync,
       errorMessage: json['errorMessage']?.toString(),
+      selectedDeviceName: json['selectedDeviceName']?.toString() ?? json['device_name']?.toString(),
+      selectedDeviceIp: json['selectedDeviceIp']?.toString() ?? json['device_ip']?.toString(),
     );
   }
 
@@ -46,12 +73,16 @@ class AlexaStatus {
     int? deviceCount,
     DateTime? lastSyncedAt,
     String? errorMessage,
+    String? selectedDeviceName,
+    String? selectedDeviceIp,
   }) {
     return AlexaStatus(
       connected: connected ?? this.connected,
       deviceCount: deviceCount ?? this.deviceCount,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
       errorMessage: errorMessage ?? this.errorMessage,
+      selectedDeviceName: selectedDeviceName ?? this.selectedDeviceName,
+      selectedDeviceIp: selectedDeviceIp ?? this.selectedDeviceIp,
     );
   }
 
@@ -60,5 +91,7 @@ class AlexaStatus {
         'deviceCount': deviceCount,
         'lastSyncedAt': lastSyncedAt?.toIso8601String(),
         if (errorMessage != null) 'errorMessage': errorMessage,
+        if (selectedDeviceName != null) 'selectedDeviceName': selectedDeviceName,
+        if (selectedDeviceIp != null) 'selectedDeviceIp': selectedDeviceIp,
       };
 }
