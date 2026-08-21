@@ -49,43 +49,29 @@ class AlexaService {
       'scope': scope ?? alexaScope,
     };
 
-    try {
-      final Response<dynamic> response = await _api.post(
-        ApiEndpoints.alexaLinkToken,
-        data: body,
-      );
+    final Response<dynamic> response = await _api.post(
+      ApiEndpoints.alexaLinkToken,
+      data: body,
+    );
 
-      debugPrint('[AlexaService] Status Code: ${response.statusCode}');
-      debugPrint('[AlexaService] Response Data: ${response.data}');
+    debugPrint('[AlexaService] Status Code: ${response.statusCode}');
+    debugPrint('[AlexaService] Response Data: ${response.data}');
 
-      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-        final AlexaLinkResponse linkResponse = AlexaLinkResponse.fromJson(
-          Map<String, dynamic>.from(response.data as Map),
-        );
-        if (linkResponse.authorizeUrl.trim().isNotEmpty) {
-          debugPrint('[AlexaService] authorizeUrl: ${linkResponse.authorizeUrl}');
-          return linkResponse;
-        }
-      }
-    } catch (e) {
-      debugPrint('[AlexaService] POST link-token API error: $e. Using OAuth fallback.');
+    if (response.statusCode != 200) {
+      throw Exception('Alexa connection API returned status ${response.statusCode}');
     }
 
-    // Direct Alexa OAuth fallback URL if API call returns 401 or endpoint is unauthenticated
-    final String targetRedirect = redirectUri ?? alexaRedirectUri;
-    final String fallbackUrl =
-        'https://www.amazon.com/ap/oa'
-        '?client_id=amzn1.application-oa2-client.smart_homez'
-        '&scope=${Uri.encodeComponent(scope ?? alexaScope)}'
-        '&response_type=code'
-        '&redirect_uri=${Uri.encodeComponent(targetRedirect)}'
-        '&state=${Uri.encodeComponent(currentState)}';
+    if (response.data is Map<String, dynamic>) {
+      final AlexaLinkResponse linkResponse = AlexaLinkResponse.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+      if (linkResponse.authorizeUrl.trim().isNotEmpty) {
+        debugPrint('[AlexaService] authorizeUrl: ${linkResponse.authorizeUrl}');
+        return linkResponse;
+      }
+    }
 
-    return AlexaLinkResponse(
-      ssoToken: currentState,
-      authorizeUrl: fallbackUrl,
-      expiresInSeconds: 3600,
-    );
+    throw Exception('Server did not return a valid Alexa authorization URL.');
   }
 
   /// Scans local network for active user hardware devices ONLY (no mock devices)

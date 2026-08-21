@@ -39,21 +39,13 @@ class AlexaIntegrationService {
       return {'success': false, 'error': 'Invalid server response'};
     } catch (error) {
       debugPrint('[AlexaService] Link token error: $error');
-      final String fallbackState = state ?? 'state_fallback';
-      final String fallbackUrl =
-          'https://www.amazon.com/ap/oa'
-          '?client_id=amzn1.application-oa2-client.smart_homez'
-          '&scope=${Uri.encodeComponent(scope ?? "alexa::skills:account_linking")}'
-          '&response_type=code'
-          '&redirect_uri=${Uri.encodeComponent(redirectUri ?? "https://tenant-api.saajsajja.in/api/integrations/alexa/callback")}'
-          '&state=${Uri.encodeComponent(fallbackState)}';
-      return {
-        'success': true,
-        'linkToken': fallbackState,
-        'authorizeUrl': fallbackUrl,
-        'state': fallbackState,
-        'expiresIn': 3600,
-      };
+      final String msg = error.toString().contains('401')
+          ? 'Session expired or Alexa connection server requires authentication.'
+          : error
+                .toString()
+                .replaceFirst('Exception: ', '')
+                .replaceFirst('ApiException: ', '');
+      return {'success': false, 'error': msg};
     }
   }
 
