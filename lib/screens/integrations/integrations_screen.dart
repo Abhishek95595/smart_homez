@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-
-import '../../theme/app_theme.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../models/device.dart';
+import '../../providers/device_provider.dart';
 import '../../services/alexa_integration_service.dart';
+import '../../theme/app_theme.dart';
 
 class IntegrationsScreen extends StatefulWidget {
   final int initialTab;
@@ -21,13 +24,36 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
     'Amazon Alexa': false,
     'Siri Shortcuts': true,
   };
-  final List<_WebhookConfig> _webhooks = [
-    const _WebhookConfig(
-      name: 'Safety operations',
-      endpoint: 'https://example.com/hooks/safety',
-      event: 'Critical alerts',
+
+  final List<_InviteUser> _invites = [
+    const _InviteUser(
+      id: 'inv_1',
+      name: 'Rahul Sharma',
+      phoneNumber: '+91 98765 43210',
+      accessLevel: 'Device Control (ON/OFF)',
+      grantedDeviceIds: ['dev_1', 'dev_2', 'dev_3'],
+      grantedDeviceNames: [
+        'Living Room Light',
+        'Smart Thermostat',
+        'Kitchen Fan',
+      ],
       active: true,
-      lastDelivery: '2 min ago · 200 OK',
+      invitedAt: 'Today at 11:30 AM',
+    ),
+    const _InviteUser(
+      id: 'inv_2',
+      name: 'Priya Verma',
+      phoneNumber: '+91 91234 56789',
+      accessLevel: 'Full Control',
+      grantedDeviceIds: ['dev_1', 'dev_2', 'dev_4', 'dev_5'],
+      grantedDeviceNames: [
+        'Living Room Light',
+        'Smart Thermostat',
+        'Main Door Lock',
+        'Balcony Light',
+      ],
+      active: true,
+      invitedAt: 'Yesterday',
     ),
   ];
 
@@ -51,14 +77,38 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
     super.dispose();
   }
 
-  Future<void> _addWebhook() async {
-    final draft = await showModalBottomSheet<_WebhookConfig>(
+  Future<void> _addInvite() async {
+    final draft = await showModalBottomSheet<_InviteUser>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => const _WebhookForm(),
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _InviteFormModal(),
     );
     if (draft == null || !mounted) return;
-    setState(() => _webhooks.add(draft));
+    setState(() => _invites.add(draft));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Invitation sent to ${draft.name} (${draft.phoneNumber})'),
+        backgroundColor: AppColors.success,
+      ),
+    );
+  }
+
+  Future<void> _editInvite(_InviteUser invite, int index) async {
+    final updated = await showModalBottomSheet<_InviteUser>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _InviteFormModal(initialUser: invite),
+    );
+    if (updated == null || !mounted) return;
+    setState(() => _invites[index] = updated);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Updated access permissions for ${updated.name}.'),
+        backgroundColor: AppColors.primary,
+      ),
+    );
   }
 
   Future<void> _linkAlexa() async {
@@ -216,22 +266,23 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
           indicatorColor: AppColors.primary,
           tabs: const [
             Tab(text: 'Voice assistants'),
-            Tab(text: 'Webhooks'),
+            Tab(text: 'Invite'),
           ],
         ),
       ),
       body: TabBarView(
         controller: _controller,
-        children: [_voiceTab(), _webhooksTab()],
+        children: [_voiceTab(), _inviteTab()],
       ),
       floatingActionButton: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
           if (_controller.index != 1) return const SizedBox.shrink();
           return FloatingActionButton.extended(
-            onPressed: _addWebhook,
-            icon: const Icon(Icons.add_link_rounded),
-            label: const Text('Add webhook'),
+            onPressed: _addInvite,
+            icon: const Icon(Icons.person_add_rounded),
+            label: const Text('Invite Person'),
+            backgroundColor: AppColors.primary,
           );
         },
       ),
@@ -288,55 +339,46 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
     );
   }
 
-  Widget _webhooksTab() {
+  Widget _inviteTab() {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
         const _IntegrationHero(
-          icon: Icons.webhook_rounded,
-          title: 'Send events to your systems',
+          icon: Icons.person_add_alt_1_rounded,
+          title: 'Invite People & Manage Device Access',
           message:
-              'Route safety alerts, device status and energy events to a '
-              'secure HTTPS endpoint.',
+              'Share control of your smart home devices with family, guests, or staff by phone number. Specify which devices they can manage (ON/OFF).',
         ),
         const SizedBox(height: 20),
-        if (_webhooks.isEmpty)
-          _EmptyWebhooks(onAdd: _addWebhook)
+        if (_invites.isEmpty)
+          _EmptyInvites(onInvite: _addInvite)
         else
-          ..._webhooks.asMap().entries.map(
+          ..._invites.asMap().entries.map(
             (entry) => Padding(
-              padding: const EdgeInsets.only(bottom: 11),
-              child: _WebhookCard(
-                config: entry.value,
-                onToggle: (value) {
+              padding: const EdgeInsets.only(bottom: 14),
+              child: _InviteUserCard(
+                invite: entry.value,
+                onToggleActive: (value) {
                   setState(
-                    () => _webhooks[entry.key] = entry.value.copyWith(
+                    () => _invites[entry.key] = entry.value.copyWith(
                       active: value,
                     ),
                   );
                 },
-                onTest: () {
-                  setState(
-                    () => _webhooks[entry.key] = entry.value.copyWith(
-                      lastDelivery: 'Just now · Test queued',
-                    ),
-                  );
+                onEdit: () => _editInvite(entry.value, entry.key),
+                onDelete: () {
+                  final removedName = entry.value.name;
+                  setState(() => _invites.removeAt(entry.key));
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Test prepared. Connect the backend to send it externally.',
-                      ),
-                    ),
+                    SnackBar(content: Text('Revoked invitation for $removedName.')),
                   );
                 },
-                onDelete: () => setState(() => _webhooks.removeAt(entry.key)),
               ),
             ),
           ),
         const _ProductionNote(
           text:
-              'For production, sign outgoing payloads and retry failed '
-              'deliveries from the backend—not directly from the mobile app.',
+              'Invited members receive an SMS link to log in. Device control permissions apply instantly to selected devices.',
         ),
       ],
     );
@@ -382,7 +424,7 @@ class _IntegrationHero extends StatelessWidget {
                   title,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 17,
+                    fontSize: 16.5,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -471,21 +513,49 @@ class _VoiceCard extends StatelessWidget {
   }
 }
 
-class _WebhookCard extends StatelessWidget {
-  final _WebhookConfig config;
-  final ValueChanged<bool> onToggle;
-  final VoidCallback onTest;
+class _InviteUserCard extends StatefulWidget {
+  final _InviteUser invite;
+  final ValueChanged<bool> onToggleActive;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  const _WebhookCard({
-    required this.config,
-    required this.onToggle,
-    required this.onTest,
+  const _InviteUserCard({
+    required this.invite,
+    required this.onToggleActive,
+    required this.onEdit,
     required this.onDelete,
   });
 
   @override
+  State<_InviteUserCard> createState() => _InviteUserCardState();
+}
+
+class _InviteUserCardState extends State<_InviteUserCard> {
+  late Map<String, bool> _devicePowerStates;
+
+  @override
+  void initState() {
+    super.initState();
+    _devicePowerStates = {
+      for (final devName in widget.invite.grantedDeviceNames) devName: true,
+    };
+  }
+
+  @override
+  void didUpdateWidget(covariant _InviteUserCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    for (final devName in widget.invite.grantedDeviceNames) {
+      _devicePowerStates.putIfAbsent(devName, () => true);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final invite = widget.invite;
+    final String initialLetter = invite.name.isNotEmpty
+        ? invite.name[0].toUpperCase()
+        : 'U';
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -494,16 +564,16 @@ class _WebhookCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEAF1FF),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.webhook_rounded,
-                    color: Color(0xFF3B82F6),
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: AppColors.primarySoft,
+                  child: Text(
+                    initialLetter,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.primaryDark,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -511,73 +581,259 @@ class _WebhookCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        config.name,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              invite.name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: invite.active
+                                  ? const Color(0xFFE7F8F5)
+                                  : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: invite.active
+                                    ? const Color(0xFFD3F2EC)
+                                    : const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            child: Text(
+                              invite.accessLevel,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: invite.active
+                                    ? const Color(0xFF007E72)
+                                    : const Color(0xFF64748B),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        config.event,
-                        style: const TextStyle(
-                          color: AppColors.textFaint,
-                          fontSize: 11.5,
-                        ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.phone_rounded,
+                            size: 13,
+                            color: AppColors.textFaint,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            invite.phoneNumber,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            '· ${invite.invitedAt}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textFaint,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                Switch(value: config.active, onChanged: onToggle),
+                Switch(
+                  value: invite.active,
+                  onChanged: widget.onToggleActive,
+                ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(11),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.surfaceElevated,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: AppColors.divider),
               ),
-              child: Text(
-                config.endpoint,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontFamily: 'monospace',
-                  fontSize: 11.5,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.tune_rounded,
+                            size: 15,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            'Allowed Device Controls (ON / OFF)',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primarySoft,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '${invite.grantedDeviceNames.length} Devices',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  if (!invite.active)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 4),
+                      child: Text(
+                        'User access disabled by admin.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.danger,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    )
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: invite.grantedDeviceNames.map((deviceName) {
+                        final bool isPoweredOn =
+                            _devicePowerStates[deviceName] ?? true;
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              _devicePowerStates[deviceName] = !isPoweredOn;
+                            });
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '${invite.name} toggled $deviceName ${!isPoweredOn ? "ON" : "OFF"}.',
+                                ),
+                                duration: const Duration(seconds: 1),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isPoweredOn
+                                  ? const Color(0xFFE7F8F5)
+                                  : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isPoweredOn
+                                    ? const Color(0xFF9EE4D8)
+                                    : const Color(0xFFCBD5E1),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isPoweredOn
+                                      ? Icons.power_settings_new_rounded
+                                      : Icons.power_off_rounded,
+                                  size: 14,
+                                  color: isPoweredOn
+                                      ? const Color(0xFF007E72)
+                                      : const Color(0xFF64748B),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  deviceName,
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: isPoweredOn
+                                        ? const Color(0xFF007E72)
+                                        : const Color(0xFF475569),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  isPoweredOn ? 'ON' : 'OFF',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    color: isPoweredOn
+                                        ? const Color(0xFF007E72)
+                                        : const Color(0xFF94A3B8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 10),
             Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                const Icon(
-                  Icons.check_circle_outline_rounded,
-                  size: 15,
-                  color: AppColors.success,
-                ),
-                const SizedBox(width: 5),
-                Expanded(
-                  child: Text(
-                    config.lastDelivery,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 11,
-                    ),
+                OutlinedButton.icon(
+                  onPressed: widget.onEdit,
+                  icon: const Icon(Icons.edit_outlined, size: 15),
+                  label: const Text('Edit Access', style: TextStyle(fontSize: 12)),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
                   ),
                 ),
-                TextButton(onPressed: onTest, child: const Text('Test')),
-                IconButton(
-                  tooltip: 'Delete webhook',
-                  onPressed: onDelete,
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: widget.onDelete,
                   icon: const Icon(
-                    Icons.delete_outline_rounded,
-                    color: AppColors.textFaint,
-                    size: 20,
+                    Icons.person_remove_outlined,
+                    size: 15,
+                    color: AppColors.danger,
+                  ),
+                  label: const Text(
+                    'Revoke',
+                    style: TextStyle(fontSize: 12, color: AppColors.danger),
+                  ),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
                   ),
                 ),
               ],
@@ -585,6 +841,418 @@ class _WebhookCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EmptyInvites extends StatelessWidget {
+  final VoidCallback onInvite;
+
+  const _EmptyInvites({required this.onInvite});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.person_add_disabled_rounded,
+              size: 38,
+              color: AppColors.textFaint,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'No invited members yet',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Invite family or staff members by phone number to manage your property devices.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: onInvite,
+              icon: const Icon(Icons.person_add_rounded),
+              label: const Text('Invite Person'),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InviteFormModal extends StatefulWidget {
+  final _InviteUser? initialUser;
+
+  const _InviteFormModal({this.initialUser});
+
+  @override
+  State<_InviteFormModal> createState() => _InviteFormModalState();
+}
+
+class _InviteFormModalState extends State<_InviteFormModal> {
+  final _key = GlobalKey<FormState>();
+  late final TextEditingController _nameController;
+  late final TextEditingController _phoneController;
+  late String _accessLevel;
+  late Set<String> _selectedDeviceNames;
+
+  final List<String> _availableDeviceNames = const [
+    'Living Room Light',
+    'Smart Thermostat',
+    'Kitchen Fan',
+    'Main Door Lock',
+    'Balcony Light',
+    'Master Bedroom Light',
+    'Water Purifier',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    final init = widget.initialUser;
+    _nameController = TextEditingController(text: init?.name ?? '');
+    _phoneController = TextEditingController(text: init?.phoneNumber ?? '');
+    _accessLevel = init?.accessLevel ?? 'Device Control (ON/OFF)';
+    _selectedDeviceNames = Set<String>.from(
+      init?.grantedDeviceNames ?? ['Living Room Light', 'Kitchen Fan'],
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    if (!_key.currentState!.validate()) return;
+
+    if (_selectedDeviceNames.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one device to grant access.'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
+    final String name = _nameController.text.trim();
+    final String phone = _phoneController.text.trim();
+    final List<String> devicesList = _selectedDeviceNames.toList();
+
+    Navigator.pop(
+      context,
+      _InviteUser(
+        id: widget.initialUser?.id ?? 'inv_${DateTime.now().millisecondsSinceEpoch}',
+        name: name,
+        phoneNumber: phone,
+        accessLevel: _accessLevel,
+        grantedDeviceIds: devicesList
+            .map((d) => 'dev_${d.toLowerCase().replaceAll(' ', '_')}')
+            .toList(),
+        grantedDeviceNames: devicesList,
+        active: widget.initialUser?.active ?? true,
+        invitedAt: widget.initialUser?.invitedAt ?? 'Just now',
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isEditing = widget.initialUser != null;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        16,
+        20,
+        MediaQuery.viewInsetsOf(context).bottom + 24,
+      ),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _key,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySoft,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.person_add_alt_1_rounded,
+                      color: AppColors.primaryDark,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isEditing ? 'Edit Access & Permissions' : 'Invite Person',
+                        style: const TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Add phone number and grant device ON/OFF controls',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+
+              // Full Name
+              TextFormField(
+                controller: _nameController,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Full Name',
+                  hintText: 'Rahul Sharma',
+                  prefixIcon: Icon(Icons.person_outline_rounded),
+                ),
+                validator: (value) =>
+                    (value?.trim().length ?? 0) < 2 ? 'Enter a valid name' : null,
+              ),
+              const SizedBox(height: 14),
+
+              // Phone Number
+              TextFormField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Phone Number',
+                  hintText: '+91 98765 43210',
+                  prefixIcon: Icon(Icons.phone_outlined),
+                ),
+                validator: (value) {
+                  final text = value?.trim() ?? '';
+                  if (text.length < 7) {
+                    return 'Enter a valid phone number with country code';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 14),
+
+              // Permission Level Dropdown
+              DropdownButtonFormField<String>(
+                value: _accessLevel,
+                decoration: const InputDecoration(
+                  labelText: 'Permission Role',
+                  prefixIcon: Icon(Icons.admin_panel_settings_outlined),
+                ),
+                items: const [
+                  'Device Control (ON/OFF)',
+                  'Full Control',
+                  'View Only',
+                ]
+                    .map(
+                      (level) => DropdownMenuItem(
+                        value: level,
+                        child: Text(level, style: const TextStyle(fontSize: 13)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) setState(() => _accessLevel = val);
+                },
+              ),
+              const SizedBox(height: 18),
+
+              // Device Access Checklist Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.devices_other_rounded,
+                        size: 17,
+                        color: AppColors.primary,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'Allowed Device Controls (ON/OFF)',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        if (_selectedDeviceNames.length ==
+                            _availableDeviceNames.length) {
+                          _selectedDeviceNames.clear();
+                        } else {
+                          _selectedDeviceNames = Set<String>.from(
+                            _availableDeviceNames,
+                          );
+                        }
+                      });
+                    },
+                    child: Text(
+                      _selectedDeviceNames.length == _availableDeviceNames.length
+                          ? 'Deselect All'
+                          : 'Select All',
+                      style: const TextStyle(fontSize: 11.5),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Devices Checkboxes
+              Container(
+                constraints: const BoxConstraints(maxHeight: 180),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.divider),
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: _availableDeviceNames.length,
+                  separatorBuilder: (ctx, i) =>
+                      const Divider(height: 1, color: AppColors.divider),
+                  itemBuilder: (ctx, index) {
+                    final devName = _availableDeviceNames[index];
+                    final isChecked = _selectedDeviceNames.contains(devName);
+                    return CheckboxListTile(
+                      dense: true,
+                      activeColor: AppColors.primary,
+                      title: Text(
+                        devName,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      subtitle: const Text(
+                        'Grant ON / OFF power control',
+                        style: TextStyle(fontSize: 10.5, color: AppColors.textFaint),
+                      ),
+                      value: isChecked,
+                      onChanged: (val) {
+                        setState(() {
+                          if (val == true) {
+                            _selectedDeviceNames.add(devName);
+                          } else {
+                            _selectedDeviceNames.remove(devName);
+                          }
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 22),
+
+              // Submit Button
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _save,
+                  icon: const Icon(Icons.send_rounded),
+                  label: Text(
+                    isEditing
+                        ? 'Save Updated Permissions'
+                        : 'Send Invitation & Grant Access',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InviteUser {
+  final String id;
+  final String name;
+  final String phoneNumber;
+  final String accessLevel;
+  final List<String> grantedDeviceIds;
+  final List<String> grantedDeviceNames;
+  final bool active;
+  final String invitedAt;
+
+  const _InviteUser({
+    required this.id,
+    required this.name,
+    required this.phoneNumber,
+    required this.accessLevel,
+    required this.grantedDeviceIds,
+    required this.grantedDeviceNames,
+    required this.active,
+    required this.invitedAt,
+  });
+
+  _InviteUser copyWith({
+    String? name,
+    String? phoneNumber,
+    String? accessLevel,
+    List<String>? grantedDeviceIds,
+    List<String>? grantedDeviceNames,
+    bool? active,
+  }) {
+    return _InviteUser(
+      id: id,
+      name: name ?? this.name,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      accessLevel: accessLevel ?? this.accessLevel,
+      grantedDeviceIds: grantedDeviceIds ?? this.grantedDeviceIds,
+      grantedDeviceNames: grantedDeviceNames ?? this.grantedDeviceNames,
+      active: active ?? this.active,
+      invitedAt: invitedAt,
     );
   }
 }
@@ -625,187 +1293,6 @@ class _ProductionNote extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _EmptyWebhooks extends StatelessWidget {
-  final VoidCallback onAdd;
-
-  const _EmptyWebhooks({required this.onAdd});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          children: [
-            const Icon(
-              Icons.link_off_rounded,
-              size: 38,
-              color: AppColors.textFaint,
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'No webhook endpoints',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 14),
-            FilledButton(onPressed: onAdd, child: const Text('Add endpoint')),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _WebhookForm extends StatefulWidget {
-  const _WebhookForm();
-
-  @override
-  State<_WebhookForm> createState() => _WebhookFormState();
-}
-
-class _WebhookFormState extends State<_WebhookForm> {
-  final _key = GlobalKey<FormState>();
-  final _name = TextEditingController();
-  final _endpoint = TextEditingController();
-  String _event = 'Critical alerts';
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _endpoint.dispose();
-    super.dispose();
-  }
-
-  void _save() {
-    if (!_key.currentState!.validate()) return;
-    Navigator.pop(
-      context,
-      _WebhookConfig(
-        name: _name.text.trim(),
-        endpoint: _endpoint.text.trim(),
-        event: _event,
-        active: true,
-        lastDelivery: 'Never delivered',
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        4,
-        20,
-        MediaQuery.viewInsetsOf(context).bottom + 24,
-      ),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _key,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Add webhook',
-                style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 18),
-              TextFormField(
-                controller: _name,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  hintText: 'Safety operations',
-                  prefixIcon: Icon(Icons.label_outline_rounded),
-                ),
-                validator: (value) =>
-                    (value?.trim().length ?? 0) < 2 ? 'Enter a name' : null,
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _endpoint,
-                keyboardType: TextInputType.url,
-                decoration: const InputDecoration(
-                  labelText: 'HTTPS endpoint',
-                  hintText: 'https://example.com/webhook',
-                  prefixIcon: Icon(Icons.link_rounded),
-                ),
-                validator: (value) {
-                  final uri = Uri.tryParse(value?.trim() ?? '');
-                  if (uri == null ||
-                      uri.scheme != 'https' ||
-                      uri.host.isEmpty) {
-                    return 'Enter a valid HTTPS URL';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 14),
-              DropdownButtonFormField<String>(
-                initialValue: _event,
-                decoration: const InputDecoration(
-                  labelText: 'Event',
-                  prefixIcon: Icon(Icons.notifications_outlined),
-                ),
-                items:
-                    const [
-                          'Critical alerts',
-                          'Device status',
-                          'Energy threshold',
-                          'All events',
-                        ]
-                        .map(
-                          (value) => DropdownMenuItem(
-                            value: value,
-                            child: Text(value),
-                          ),
-                        )
-                        .toList(),
-                onChanged: (value) => setState(() => _event = value ?? _event),
-              ),
-              const SizedBox(height: 22),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _save,
-                  icon: const Icon(Icons.check_rounded),
-                  label: const Text('Save webhook'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _WebhookConfig {
-  final String name;
-  final String endpoint;
-  final String event;
-  final bool active;
-  final String lastDelivery;
-
-  const _WebhookConfig({
-    required this.name,
-    required this.endpoint,
-    required this.event,
-    required this.active,
-    required this.lastDelivery,
-  });
-
-  _WebhookConfig copyWith({bool? active, String? lastDelivery}) {
-    return _WebhookConfig(
-      name: name,
-      endpoint: endpoint,
-      event: event,
-      active: active ?? this.active,
-      lastDelivery: lastDelivery ?? this.lastDelivery,
     );
   }
 }
