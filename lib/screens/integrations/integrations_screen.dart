@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -77,6 +78,65 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
     super.dispose();
   }
 
+  Future<void> _sendSmsInvite(
+    String phoneNumber,
+    String inviteeName,
+    List<String> devices,
+  ) async {
+    final String cleanPhone = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    final String devicesListStr = devices.isNotEmpty
+        ? devices.join(', ')
+        : 'Smart Homez Property Devices';
+
+    final String inviteUrl =
+        'https://tenant-api.saajsajja.in/invite?phone=${Uri.encodeComponent(cleanPhone)}';
+    final String message =
+        'Hi $inviteeName! You have been invited to Smart Homez to manage property devices ($devicesListStr). Open access link: $inviteUrl';
+
+    final Uri smsUri = Uri(
+      scheme: 'sms',
+      path: cleanPhone,
+      queryParameters: <String, String>{'body': message},
+    );
+
+    try {
+      if (await canLaunchUrl(smsUri)) {
+        await launchUrl(smsUri);
+      } else {
+        final Uri altSmsUri = Uri.parse(
+          'sms:$cleanPhone?body=${Uri.encodeComponent(message)}',
+        );
+        if (await canLaunchUrl(altSmsUri)) {
+          await launchUrl(altSmsUri, mode: LaunchMode.externalApplication);
+        } else {
+          await Clipboard.setData(ClipboardData(text: message));
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Copied SMS invite to clipboard for $cleanPhone. Send via Messages or WhatsApp.',
+              ),
+              backgroundColor: AppColors.primary,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('[Invite] Could not launch SMS composer: $e');
+      await Clipboard.setData(ClipboardData(text: message));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'SMS invite copied to clipboard ($cleanPhone). Paste in SMS app.',
+          ),
+          backgroundColor: AppColors.primary,
+        ),
+      );
+    }
+  }
+
   Future<void> _addInvite() async {
     final draft = await showModalBottomSheet<_InviteUser>(
       context: context,
@@ -88,9 +148,14 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
     setState(() => _invites.add(draft));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Invitation sent to ${draft.name} (${draft.phoneNumber})'),
+        content: Text('Opening SMS app for ${draft.name} (${draft.phoneNumber})...'),
         backgroundColor: AppColors.success,
       ),
+    );
+    await _sendSmsInvite(
+      draft.phoneNumber,
+      draft.name,
+      draft.grantedDeviceNames,
     );
   }
 
@@ -366,6 +431,11 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
                   );
                 },
                 onEdit: () => _editInvite(entry.value, entry.key),
+                onResendSms: () => _sendSmsInvite(
+                  entry.value.phoneNumber,
+                  entry.value.name,
+                  entry.value.grantedDeviceNames,
+                ),
                 onDelete: () {
                   final removedName = entry.value.name;
                   setState(() => _invites.removeAt(entry.key));
@@ -517,12 +587,14 @@ class _InviteUserCard extends StatefulWidget {
   final _InviteUser invite;
   final ValueChanged<bool> onToggleActive;
   final VoidCallback onEdit;
+  final VoidCallback onResendSms;
   final VoidCallback onDelete;
 
   const _InviteUserCard({
     required this.invite,
     required this.onToggleActive,
     required this.onEdit,
+    required this.onResendSms,
     required this.onDelete,
   });
 
@@ -812,25 +884,36 @@ class _InviteUserCardState extends State<_InviteUserCard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                OutlinedButton.icon(
-                  onPressed: widget.onEdit,
-                  icon: const Icon(Icons.edit_outlined, size: 15),
-                  label: const Text('Edit Access', style: TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(
+                ElevatedButton.icon(
+                  onPressed: widget.onResendSms,
+                  icon: const Icon(Icons.sms_rounded, size: 14),
+                  label: const Text('Send SMS', style: TextStyle(fontSize: 11.5)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                     visualDensity: VisualDensity.compact,
                   ),
                 ),
                 const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: widget.onEdit,
+                  icon: const Icon(Icons.edit_outlined, size: 14),
+                  label: const Text('Edit Access', style: TextStyle(fontSize: 11.5)),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+                const SizedBox(width: 6),
                 TextButton.icon(
                   onPressed: widget.onDelete,
                   icon: const Icon(
                     Icons.person_remove_outlined,
-                    size: 15,
+                    size: 14,
                     color: AppColors.danger,
                   ),
                   label: const Text(
                     'Revoke',
-                    style: TextStyle(fontSize: 12, color: AppColors.danger),
+                    style: TextStyle(fontSize: 11.5, color: AppColors.danger),
                   ),
                   style: TextButton.styleFrom(
                     visualDensity: VisualDensity.compact,
