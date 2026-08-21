@@ -172,7 +172,6 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                           children: [
                             // 1. Home
                             _SmartDrawerMenuCard(
-                              letter: 'H',
                               title: 'Home',
                               subtitle: 'Properties, Floors, Rooms & Devices',
                               isExpanded: _expandedKeys.contains('H'),
@@ -212,7 +211,6 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
 
                             // 2. Automations
                             _SmartDrawerMenuCard(
-                              letter: 'A',
                               title: 'Automations',
                               subtitle: 'Scenes & Automations',
                               isExpanded: _expandedKeys.contains('A'),
@@ -243,7 +241,6 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
 
                             // 3. Smart
                             _SmartDrawerMenuCard(
-                              letter: 'S',
                               title: 'Smart',
                               subtitle: 'Environment Monitoring',
                               isExpanded: _expandedKeys.contains('S'),
@@ -262,7 +259,6 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
 
                             // 4. Operations
                             _SmartDrawerMenuCard(
-                              letter: 'O',
                               title: 'Operations',
                               subtitle: 'Energy, Water, Fire & More',
                               isExpanded: _expandedKeys.contains('O'),
@@ -306,7 +302,6 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
 
                             // 5. Machines
                             _SmartDrawerMenuCard(
-                              letter: 'M',
                               title: 'Machines',
                               subtitle: 'All Connected Devices',
                               isExpanded: _expandedKeys.contains('M'),
@@ -325,7 +320,6 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
 
                             // 6. Intelligence
                             _SmartDrawerMenuCard(
-                              letter: 'I',
                               title: 'Intelligence',
                               subtitle: 'AI-Powered Insights',
                               isExpanded: _expandedKeys.contains('I'),
@@ -527,81 +521,30 @@ class _DrawerHeroHeader extends StatelessWidget {
             ),
 
             // Header Right Action Buttons: Home & Notification
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: onHomeTap,
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.home_rounded,
-                        color: Colors.white,
-                        size: 19,
-                      ),
+            // Header Right Action Button: Home
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: onHomeTap,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.22),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 1,
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: onAlertsTap,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.22),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.notifications_none_rounded,
-                            color: Colors.white,
-                            size: 19,
-                          ),
-                        ),
-                        if (alertCount > 0)
-                          Positioned(
-                            right: -2,
-                            top: -2,
-                            child: Container(
-                              width: 13,
-                              height: 13,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE5484D),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 1.5,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+                  child: const Icon(
+                    Icons.home_rounded,
+                    color: Colors.white,
+                    size: 19,
                   ),
                 ),
-              ],
+              ),
             ),
           ],
         ),
@@ -613,7 +556,7 @@ class _DrawerHeroHeader extends StatelessWidget {
 /// Identically proportioned, expandable HASOMI navigation card with
 /// Letter Tile | Divider | Icon | Title + Subtitle | Chevron.
 class _SmartDrawerMenuCard extends StatelessWidget {
-  final String letter;
+  final String? letter;
   final IconData? icon;
   final String title;
   final String subtitle;
@@ -622,7 +565,7 @@ class _SmartDrawerMenuCard extends StatelessWidget {
   final List<Widget> children;
 
   const _SmartDrawerMenuCard({
-    required this.letter,
+    this.letter,
     this.icon,
     required this.title,
     required this.subtitle,
@@ -662,25 +605,18 @@ class _SmartDrawerMenuCard extends StatelessWidget {
               child: InkWell(
                 onTap: onToggle,
                 child: Container(
-                  constraints: const BoxConstraints(minHeight: 88),
+                  constraints: const BoxConstraints(minHeight: 74),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
+                    horizontal: 16,
                     vertical: 12,
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // HASOMI Letter Tile (Mint square with bold teal letter)
-                      _DrawerLetterTile(letter: letter),
-
-                      // Vertical Divider
-                      const SizedBox(width: 10),
-                      Container(
-                        width: 1.2,
-                        height: 42,
-                        color: const Color(0xFFE1E8EA),
-                      ),
-                      const SizedBox(width: 10),
+                      if (letter != null) ...[
+                        _DrawerLetterTile(letter: letter!),
+                        const SizedBox(width: 10),
+                      ],
 
                       if (icon != null) ...[
                         Icon(icon, color: const Color(0xFF00A38E), size: 26),
