@@ -63,9 +63,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
             const _SectionHeading('Introduction'),
             const SizedBox(height: 12),
             const _BodyText(
-              'Welcome to Smart Homez, a smart-property monitoring and '
+              'Welcome to Hasomi, a smart-property monitoring and '
               'automation platform. This Privacy Policy explains how '
-              'information is handled when you use the Smart Homez mobile '
+              'information is handled when you use the Hasomi mobile '
               'application and connected services.',
             ),
             const SizedBox(height: 24),
@@ -85,7 +85,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               icon: Icons.query_stats_rounded,
               title: 'How We Use Your Information',
               bullets: [
-                'Operate, maintain and improve Smart Homez features.',
+                'Operate, maintain and improve Hasomi features.',
                 'Display property, device, energy and water insights relevant to your account.',
                 'Run device controls, routines and automations that you configure.',
                 'Deliver safety, device-status and system alerts.',
@@ -120,7 +120,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               bullets: [
                 'Keep your account and property information accurate through the available profile and management controls.',
                 'Disable automations, integrations or connected devices when you no longer want them active.',
-                'Contact your Smart Homez administrator or support team for account-access or privacy requests.',
+                'Contact your Hasomi administrator or support team for account-access or privacy requests.',
               ],
             ),
             const SizedBox(height: 28),
@@ -157,7 +157,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           ),
           content: const Text(
             'For privacy, account-access or data questions, contact the '
-            'Smart Homez administrator or support contact provided by your '
+            'Hasomi administrator or support contact provided by your '
             'organization.',
             style: TextStyle(color: AppColors.textSecondary, height: 1.5),
           ),
@@ -432,7 +432,7 @@ class _SupportCard extends StatelessWidget {
           const SizedBox(height: 8),
           const Text(
             'For questions about privacy, account access or data handling, '
-            'contact your Smart Homez administrator or support team.',
+            'contact your Hasomi administrator or support team.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.textSecondary,

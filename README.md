@@ -1,4 +1,4 @@
-# Smart Homez — Windows-ready Flutter project
+# Hasomi — Windows-ready Flutter project
 
 This copy is prepared to run on **Windows 10/11** with Android Studio or from a PowerShell terminal.
 

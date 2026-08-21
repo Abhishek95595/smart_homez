@@ -156,11 +156,11 @@ class _EnergyScreenState extends State<EnergyScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => const _BottomInfoSheet(
-        title: 'Ask Homez',
+        title: 'Ask Hasomi',
         icon: Icons.smart_toy_outlined,
         children: [
           Text(
-            'Homez can help you understand your current energy pattern and suggest practical automations.',
+            'Hasomi can help you understand your current energy pattern and suggest practical automations.',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 13,
@@ -275,7 +275,7 @@ class _EnergyScreenState extends State<EnergyScreen> {
                       const SizedBox(height: 14),
                       _SavingTip(onTap: _showTips),
                       const SizedBox(height: 14),
-                      _AskHomezBanner(onTap: _showAssistant),
+                      _AskHasomiBanner(onTap: _showAssistant),
                     ],
                   ],
                 ),
@@ -1738,9 +1738,9 @@ class _SavingTip extends StatelessWidget {
   }
 }
 
-class _AskHomezBanner extends StatelessWidget {
+class _AskHasomiBanner extends StatelessWidget {
   final VoidCallback onTap;
-  const _AskHomezBanner({required this.onTap});
+  const _AskHasomiBanner({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1770,7 +1770,7 @@ class _AskHomezBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Ask Homez',
+                  'Ask Hasomi',
                   style: TextStyle(
                     color: AppColors.primaryDark,
                     fontWeight: FontWeight.w900,

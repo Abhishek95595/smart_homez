@@ -57,7 +57,7 @@ class SmartBuildingApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AlexaProvider()),
       ],
       child: MaterialApp(
-        title: 'Smart Homez',
+        title: 'Hasomi',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: const LandingScreen(),

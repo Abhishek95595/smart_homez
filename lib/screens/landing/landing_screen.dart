@@ -221,7 +221,7 @@ class _Brand extends StatelessWidget {
         ),
         const SizedBox(width: 9),
         const Text(
-          'Smart Homez',
+          'Hasomi',
           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
         ),
       ],
@@ -978,7 +978,7 @@ class _MiddleCta extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'See Smart Homez in action',
+                  'See Hasomi in action',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
                 ),
                 SizedBox(height: 5),
@@ -1042,7 +1042,7 @@ class _ProductDemoSheetState extends State<_ProductDemoSheet> {
       icon: Icons.add_home_work_outlined,
       title: '1. Add any property',
       description:
-          'Choose Residential or Commercial. Smart Homez changes the form '
+          'Choose Residential or Commercial. Hasomi changes the form '
           'for houses, apartments, offices, retail spaces and warehouses.',
       points: [
         'Select the property category and type',
@@ -1111,7 +1111,7 @@ class _ProductDemoSheetState extends State<_ProductDemoSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'How Smart Homez works',
+                        'How Hasomi works',
                         style: TextStyle(
                           fontSize: 21,
                           fontWeight: FontWeight.w900,

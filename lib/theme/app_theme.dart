@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Shared design tokens for the light, premium Smart Homez interface.
+/// Shared design tokens for the light, premium Hasomi interface.
 ///
 /// The palette mirrors the supplied dashboard reference: white/off-white
 /// surfaces, teal/mint accents, dark navy text, large rounded cards and very

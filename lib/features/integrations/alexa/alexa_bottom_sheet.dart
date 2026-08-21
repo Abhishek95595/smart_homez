@@ -62,7 +62,7 @@ class AlexaBottomSheet extends StatelessWidget {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Connect your Smart Homez account with Alexa',
+                      'Connect your Hasomi account with Alexa',
                       style: TextStyle(
                         fontSize: 12.5,
                         color: Color(0xFF64748B),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:smart_homez/features/integrations/alexa/alexa_provider.dart';
 import 'package:smart_homez/providers/alert_provider.dart';
 import 'package:smart_homez/providers/auth_provider.dart';
 import 'package:smart_homez/providers/automation_provider.dart';
@@ -35,6 +36,7 @@ Widget _buildTestApp({required Widget child}) {
       ChangeNotifierProvider(create: (_) => EnergyProvider()),
       ChangeNotifierProvider(create: (_) => WaterProvider()),
       ChangeNotifierProvider(create: (_) => TicketProvider()),
+      ChangeNotifierProvider(create: (_) => AlexaProvider()),
     ],
     child: MaterialApp(home: child),
   );
@@ -70,7 +72,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify all 6 H-A-S-O-M-I section headers and badges are in the drawer
-      expect(find.text('Smart Homez'), findsOneWidget);
+      expect(find.text('Hasomi'), findsOneWidget);
       expect(find.text('Your Home. Smarter.'), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Automations'), findsWidgets);
@@ -108,7 +110,7 @@ void main() {
       await tester.drag(find.byType(Scrollable).first, const Offset(0, 600));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Smart Homez'));
+      await tester.tap(find.text('Hasomi'));
       await tester.pumpAndSettle();
 
       expect(dashboardCalled, isTrue);
@@ -138,10 +140,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify Brand Header is in the drawer
-      expect(find.text('Smart Homez'), findsOneWidget);
+      expect(find.text('Hasomi'), findsOneWidget);
 
       // Tap Brand Header
-      await tester.tap(find.text('Smart Homez'));
+      await tester.tap(find.text('Hasomi'));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 

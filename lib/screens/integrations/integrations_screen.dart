@@ -100,7 +100,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Authorize Smart Homez in the Alexa App or browser to control your lights, switches, and thermostats by voice.',
+                'Authorize Hasomi in the Alexa App or browser to control your lights, switches, and thermostats by voice.',
                 style: TextStyle(fontSize: 13, height: 1.5),
               ),
               const SizedBox(height: 14),
@@ -132,7 +132,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
                       style: TextStyle(fontSize: 11),
                     ),
                     Text(
-                      '3. Grant Smart Homez device permission',
+                      '3. Grant Hasomi device permission',
                       style: TextStyle(fontSize: 11),
                     ),
                   ],

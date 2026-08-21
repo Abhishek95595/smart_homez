@@ -73,7 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             if (value != 'Light') {
                               _showInfo(
                                 '$value theme selected',
-                                'The preference is set on this screen. The app currently ships with the Smart Homez light design system.',
+                                'The preference is set on this screen. The app currently ships with the Hasomi light design system.',
                               );
                             }
                           },
@@ -172,7 +172,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         subtitle: 'Manage local data and storage usage',
                         onTap: () => _showInfo(
                           'Data & Storage',
-                          'Smart Homez manages local cache and application data automatically. Your live home data remains controlled by the configured backend services.',
+                          'Hasomi manages local cache and application data automatically. Your live home data remains controlled by the configured backend services.',
                         ),
                       ),
                       _SettingRow(
@@ -226,11 +226,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       _SettingRow(
                         icon: Icons.info_outline_rounded,
-                        title: 'About Smart Homez',
+                        title: 'About Hasomi',
                         subtitle: 'App information and terms',
                         onTap: () => _showInfo(
-                          'About Smart Homez',
-                          'Smart Homez brings properties, connected devices, automations, energy, water and safety monitoring into one interface.',
+                          'About Hasomi',
+                          'Hasomi brings properties, connected devices, automations, energy, water and safety monitoring into one interface.',
                         ),
                         showDivider: false,
                       ),
@@ -256,7 +256,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         iconColor: AppColors.danger,
                         title: 'Log Out',
                         titleColor: AppColors.danger,
-                        subtitle: 'Sign out of this Smart Homez account',
+                        subtitle: 'Sign out of this Hasomi account',
                         trailing: const Icon(
                           Icons.chevron_right_rounded,
                           color: AppColors.danger,
@@ -468,7 +468,7 @@ class _SettingsHeader extends StatelessWidget {
               ),
               SizedBox(height: 2),
               Text(
-                'Customize your Smart Homez experience',
+                'Customize your Hasomi experience',
                 style: TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 12,
@@ -550,7 +550,7 @@ class _SettingsHeroCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Make Smart Homez',
+                  'Make Hasomi',
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 23,
@@ -923,7 +923,7 @@ class _HelpCard extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: onTap,
             icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
-            label: const Text('Chat with Homez'),
+            label: const Text('Chat with Hasomi'),
             style: OutlinedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: AppColors.primaryDark,

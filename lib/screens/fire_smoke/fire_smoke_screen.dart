@@ -1158,7 +1158,7 @@ class _AssistantStrip extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Ask Homez anything...',
+                  'Ask Hasomi anything...',
                   style: TextStyle(
                     color: AppColors.primaryDark,
                     fontWeight: FontWeight.w900,

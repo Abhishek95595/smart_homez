@@ -85,7 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         title: const Text(
-          'Smart Homez',
+          'Hasomi',
           style: TextStyle(
             color: Color(0xFF00A38E),
             fontSize: 24,

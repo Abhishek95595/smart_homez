@@ -33,7 +33,7 @@ void main() {
     await tester.pumpWidget(const SmartBuildingApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Smart Homez'), findsWidgets);
+    expect(find.text('Hasomi'), findsWidgets);
     expect(find.text('Get started free'), findsWidgets);
 
     final startButton = find.text('Start').evaluate().isNotEmpty
@@ -60,7 +60,7 @@ void main() {
     await tester.tap(demoButton.first);
     await tester.pumpAndSettle();
 
-    expect(find.text('How Smart Homez works'), findsOneWidget);
+    expect(find.text('How Hasomi works'), findsOneWidget);
     expect(find.text('1. Add any property'), findsOneWidget);
   });
 }

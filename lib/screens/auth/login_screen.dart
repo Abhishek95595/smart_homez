@@ -147,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Welcome to Homez',
+                  'Welcome to Hasomi',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.textPrimary,

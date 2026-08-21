@@ -504,7 +504,7 @@ class _DrawerHeroHeader extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Text(
-                              'Smart Homez',
+                              'Hasomi',
                               style: TextStyle(
                                 fontSize: 23,
                                 fontWeight: FontWeight.w900,

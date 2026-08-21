@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-Write-Host "=== Smart Homez Windows Launcher ===" -ForegroundColor Cyan
+Write-Host "=== Hasomi Windows Launcher ===" -ForegroundColor Cyan
 Write-Host ""
 
 flutter doctor
@@ -12,5 +12,5 @@ flutter pub get
 if ($LASTEXITCODE -ne 0) { throw "flutter pub get failed." }
 
 Write-Host ""
-Write-Host "Starting Smart Homez on Windows..." -ForegroundColor Green
+Write-Host "Starting Hasomi on Windows..." -ForegroundColor Green
 flutter run -d windows

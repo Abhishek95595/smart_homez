@@ -1384,7 +1384,7 @@ class _WaterAssistantStrip extends StatelessWidget {
                 ),
                 SizedBox(height: 3),
                 Text(
-                  'Ask Homez for tips or support.',
+                  'Ask Hasomi for tips or support.',
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 10,
@@ -1396,7 +1396,7 @@ class _WaterAssistantStrip extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: () {},
             icon: const Icon(Icons.chat_bubble_outline_rounded, size: 15),
-            label: const Text('Ask Homez'),
+            label: const Text('Ask Hasomi'),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               textStyle: const TextStyle(
