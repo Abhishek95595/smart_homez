@@ -173,7 +173,6 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                             // 1. Home
                             _SmartDrawerMenuCard(
                               letter: 'H',
-                              icon: Icons.home_outlined,
                               title: 'Home',
                               subtitle: 'Properties, Floors, Rooms & Devices',
                               isExpanded: _expandedKeys.contains('H'),
@@ -214,7 +213,6 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                             // 2. Automations
                             _SmartDrawerMenuCard(
                               letter: 'A',
-                              icon: Icons.precision_manufacturing_outlined,
                               title: 'Automations',
                               subtitle: 'Scenes & Automations',
                               isExpanded: _expandedKeys.contains('A'),
@@ -246,7 +244,6 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                             // 3. Smart
                             _SmartDrawerMenuCard(
                               letter: 'S',
-                              icon: Icons.energy_savings_leaf_outlined,
                               title: 'Smart',
                               subtitle: 'Environment Monitoring',
                               isExpanded: _expandedKeys.contains('S'),
@@ -266,7 +263,6 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                             // 4. Operations
                             _SmartDrawerMenuCard(
                               letter: 'O',
-                              icon: Icons.settings_suggest_outlined,
                               title: 'Operations',
                               subtitle: 'Energy, Water, Fire & More',
                               isExpanded: _expandedKeys.contains('O'),
@@ -311,7 +307,6 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                             // 5. Machines
                             _SmartDrawerMenuCard(
                               letter: 'M',
-                              icon: Icons.memory_rounded,
                               title: 'Machines',
                               subtitle: 'All Connected Devices',
                               isExpanded: _expandedKeys.contains('M'),
@@ -331,7 +326,6 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                             // 6. Intelligence
                             _SmartDrawerMenuCard(
                               letter: 'I',
-                              icon: Icons.psychology_outlined,
                               title: 'Intelligence',
                               subtitle: 'AI-Powered Insights',
                               isExpanded: _expandedKeys.contains('I'),
@@ -620,7 +614,7 @@ class _DrawerHeroHeader extends StatelessWidget {
 /// Letter Tile | Divider | Icon | Title + Subtitle | Chevron.
 class _SmartDrawerMenuCard extends StatelessWidget {
   final String letter;
-  final IconData icon;
+  final IconData? icon;
   final String title;
   final String subtitle;
   final bool isExpanded;
@@ -629,7 +623,7 @@ class _SmartDrawerMenuCard extends StatelessWidget {
 
   const _SmartDrawerMenuCard({
     required this.letter,
-    required this.icon,
+    this.icon,
     required this.title,
     required this.subtitle,
     required this.isExpanded,
@@ -680,17 +674,18 @@ class _SmartDrawerMenuCard extends StatelessWidget {
                       _DrawerLetterTile(letter: letter),
 
                       // Vertical Divider
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Container(
                         width: 1.2,
                         height: 42,
                         color: const Color(0xFFE1E8EA),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
 
-                      // Functional Category Icon (Teal outline)
-                      Icon(icon, color: const Color(0xFF00A38E), size: 28),
-                      const SizedBox(width: 12),
+                      if (icon != null) ...[
+                        Icon(icon, color: const Color(0xFF00A38E), size: 26),
+                        const SizedBox(width: 10),
+                      ],
 
                       // Title and Subtitle Block
                       Expanded(
