@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../models/app_user.dart';
 import '../models/auth_response.dart';
@@ -19,7 +18,6 @@ class AuthProvider extends ChangeNotifier {
 
   final AuthService _authService;
   final ClientService _clientService;
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   AppUser? _currentUser;
   String? _resolvedClientUuid;
@@ -172,11 +170,6 @@ class AuthProvider extends ChangeNotifier {
       }
 
       _apiToken = jwtToken;
-      await Future.wait([
-        _storage.write(key: 'platform_user_jwt', value: jwtToken),
-        _storage.write(key: 'api_service_jwt', value: jwtToken),
-        _storage.write(key: 'jwt_token', value: jwtToken),
-      ]);
 
       // ========================================================
       // PHASE 2: RESOLVE CUSTOMER CLIENT

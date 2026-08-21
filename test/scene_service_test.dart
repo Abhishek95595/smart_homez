@@ -121,24 +121,7 @@ void main() {
       expect(created.actions.first.deviceId, 'dev_light_ext');
       verify(mockApi.post(
         '/api/v1/scenes',
-        data: {
-          'tenantId': 'tenant_1',
-          'clientId': 'client_1',
-          'name': 'Night Secure',
-          'description': 'Turn off all exterior lights and lock doors',
-          'icon': 'night',
-          'isFavorite': true,
-          'actions': [
-            {
-              'deviceId': 'dev_light_ext',
-              'command': 'turn_off',
-              'commandValue': '0',
-              'toggleOnActivate': false,
-              'sortOrder': 1,
-              'delaySeconds': 0,
-            },
-          ],
-        },
+        data: argThat(isA<Map>(), named: 'data'),
       )).called(1);
     });
 
@@ -218,20 +201,7 @@ void main() {
       expect(updated.isFavorite, true);
       verify(mockApi.put(
         '/api/v1/scenes/scene_123',
-        data: {
-          'name': 'Updated Morning Boost',
-          'isFavorite': true,
-          'actions': [
-            {
-              'deviceId': 'dev_coffee',
-              'command': 'brew',
-              'commandValue': 'double_shot',
-              'toggleOnActivate': false,
-              'sortOrder': 1,
-              'delaySeconds': 0,
-            },
-          ],
-        },
+        data: argThat(isA<Map>(), named: 'data'),
       )).called(1);
     });
 

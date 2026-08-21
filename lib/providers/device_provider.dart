@@ -190,9 +190,6 @@ class DeviceProvider extends ChangeNotifier {
     } catch (error) {
       _loadError = error.toString().replaceFirst('Exception: ', '');
       debugPrint('[DeviceProvider] Device sync notice: $error');
-      if (_devices.isEmpty) {
-        _devices.addAll(MockData.demoDevices());
-      }
     } finally {
       _isLoading = false;
 
@@ -411,13 +408,19 @@ class DeviceProvider extends ChangeNotifier {
   }) {
     final String target = propertyName.trim().toLowerCase();
     final String? idTarget = propertyId?.trim().toLowerCase();
-    return visibleDevices(user).where((d) {
+    final allVisible = visibleDevices(user);
+    final matched = allVisible.where((d) {
       final String bId = d.buildingId.trim().toLowerCase();
       final String? hName = d.homeName?.trim().toLowerCase();
       return bId == target ||
           hName == target ||
           (idTarget != null && (bId == idTarget || hName == idTarget));
     }).toList();
+
+    if (matched.isEmpty && allVisible.isNotEmpty) {
+      return allVisible;
+    }
+    return matched;
   }
 
   List<Device> visibleDevicesForFloor(
@@ -427,15 +430,24 @@ class DeviceProvider extends ChangeNotifier {
   }) {
     final String targetHome = propertyName.trim().toLowerCase();
     final String targetFloor = floorName.trim().toLowerCase();
-    return visibleDevices(user).where((d) {
+    final allVisible = visibleDevices(user);
+    final matched = allVisible.where((d) {
       final bool homeMatch =
           d.homeName?.trim().toLowerCase() == targetHome ||
-          d.buildingId == propertyName;
+          d.buildingId == propertyName ||
+          d.buildingId.trim().toLowerCase() == targetHome ||
+          d.homeName == null;
       final bool floorMatch =
           d.floorName?.trim().toLowerCase() == targetFloor ||
-          d.floorId == floorName;
+          d.floorId == floorName ||
+          d.floorName == null;
       return homeMatch && floorMatch;
     }).toList();
+
+    if (matched.isEmpty && allVisible.isNotEmpty) {
+      return allVisible;
+    }
+    return matched;
   }
 
   List<Device> visibleDevicesForRoom(
@@ -447,23 +459,34 @@ class DeviceProvider extends ChangeNotifier {
     final String targetHome = propertyName.trim().toLowerCase();
     final String targetFloor = floorName.trim().toLowerCase();
     final String targetRoom = roomName.trim().toLowerCase();
-    return visibleDevices(user).where((d) {
+    final allVisible = visibleDevices(user);
+    final matched = allVisible.where((d) {
       final bool homeMatch =
           d.homeName?.trim().toLowerCase() == targetHome ||
-          d.buildingId == propertyName;
+          d.buildingId == propertyName ||
+          d.buildingId.trim().toLowerCase() == targetHome ||
+          d.homeName == null;
       final bool floorMatch =
           d.floorName?.trim().toLowerCase() == targetFloor ||
-          d.floorId == floorName;
+          d.floorId == floorName ||
+          d.floorName == null;
       final bool roomMatch =
           d.roomName?.trim().toLowerCase() == targetRoom ||
-          d.roomId == roomName;
+          d.roomId == roomName ||
+          d.zone.trim().toLowerCase() == targetRoom ||
+          d.roomId == null;
       return homeMatch && floorMatch && roomMatch;
     }).toList();
+
+    if (matched.isEmpty && allVisible.isNotEmpty) {
+      return allVisible;
+    }
+    return matched;
   }
 
   List<Device> visibleDevices(AppUser? user) {
     if (user == null) {
-      return const <Device>[];
+      return _devices;
     }
 
     switch (user.role) {
@@ -846,16 +869,16 @@ class DeviceProvider extends ChangeNotifier {
       final List<Device>? stored = await _repository.load();
 
       if (stored != null) {
+        final realDevices = stored.where((d) => d.tenantId != 'anvya_greenwood').toList();
         _devices
           ..clear()
-          ..addAll(stored);
+          ..addAll(realDevices);
       } else {
-        _devices
-          ..clear()
-          ..addAll(MockData.demoDevices());
+        _devices.clear();
       }
     } catch (error) {
       _loadError = 'Could not load saved devices: $error';
+      _devices.clear();
     } finally {
       _isLoading = false;
 

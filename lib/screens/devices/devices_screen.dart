@@ -140,7 +140,7 @@ class DevicesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final deviceProvider = context.watch<DeviceProvider>();
     final user = context.watch<AuthProvider>().currentUser;
-    final visibleDevices =
+    final rawVisibleDevices =
         (propertyName != null && floorName != null && roomName != null)
         ? deviceProvider.visibleDevicesForRoom(
             user,
@@ -166,6 +166,7 @@ class DevicesScreen extends StatelessWidget {
               .visibleDevices(user)
               .where((device) => device.roomId == roomId)
               .toList();
+    final visibleDevices = rawVisibleDevices;
     final propertyProvider = context.watch<PropertyProvider>();
     final floor = floorId == null ? null : propertyProvider.floorById(floorId!);
     final property = propertyId == null
