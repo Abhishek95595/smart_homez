@@ -72,7 +72,11 @@ class AuthService {
         data: {'email': email.trim(), 'password': password},
       );
 
-      debugPrint('[LOGIN RAW RESPONSE] ${response.data}');
+      debugPrint(
+        '[LOGIN] success=${response.data?['success']} '
+        'clientId=${response.data?['clientId']} '
+        'userType=${response.data?['userType']}',
+      );
 
       final AuthResponse auth = AuthResponse.fromJson(response.data);
 

@@ -96,19 +96,26 @@ void main() {
       final intent = service.parseCommand(input, testDevices);
       expect(intent.action, equals(HasomiAction.turnOn));
 
-      final exactMatches = testDevices.where((d) => input.toLowerCase().contains(d.name.toLowerCase())).toList();
+      final exactMatches = testDevices
+          .where((d) => input.toLowerCase().contains(d.name.toLowerCase()))
+          .toList();
       expect(exactMatches.length, equals(1));
       expect(exactMatches.first.name, equals('Bedroom Light'));
     });
 
-    test('calling Abhishek Dimable Light turn on targets ONLY Abhishek Dimable Light', () {
-      const input = 'Abhishek Dimable Light turn on';
-      final intent = service.parseCommand(input, testDevices);
-      expect(intent.action, equals(HasomiAction.turnOn));
+    test(
+      'calling Abhishek Dimable Light turn on targets ONLY Abhishek Dimable Light',
+      () {
+        const input = 'Abhishek Dimable Light turn on';
+        final intent = service.parseCommand(input, testDevices);
+        expect(intent.action, equals(HasomiAction.turnOn));
 
-      final exactMatches = testDevices.where((d) => input.toLowerCase().contains(d.name.toLowerCase())).toList();
-      expect(exactMatches.length, equals(1));
-      expect(exactMatches.first.name, equals('Abhishek Dimable Light'));
-    });
+        final exactMatches = testDevices
+            .where((d) => input.toLowerCase().contains(d.name.toLowerCase()))
+            .toList();
+        expect(exactMatches.length, equals(1));
+        expect(exactMatches.first.name, equals('Abhishek Dimable Light'));
+      },
+    );
   });
 }

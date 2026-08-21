@@ -195,8 +195,8 @@ class DeviceDetailScreen extends StatelessWidget {
                             device.type == DeviceType.fan
                                 ? Icons.cyclone_rounded
                                 : device.type == DeviceType.ac
-                                    ? Icons.thermostat_rounded
-                                    : Icons.lightbulb_outline_rounded,
+                                ? Icons.thermostat_rounded
+                                : Icons.lightbulb_outline_rounded,
                             color: AppColors.primary,
                           ),
                           const SizedBox(width: 16),

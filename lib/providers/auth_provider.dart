@@ -466,11 +466,10 @@ class AuthProvider extends ChangeNotifier {
       // Phone Auth, which keeps the desktop build independent of mobile
       // Firebase phone-auth capabilities.
       if (defaultTargetPlatform == TargetPlatform.windows) {
-        final response = await _authService.verifyOtp(
-          phone: phone,
-          otp: otp,
-        );
-        if (!response.success || response.token == null || response.token!.isEmpty) {
+        final response = await _authService.verifyOtp(phone: phone, otp: otp);
+        if (!response.success ||
+            response.token == null ||
+            response.token!.isEmpty) {
           _fail(response.error ?? 'OTP verification failed');
           return;
         }

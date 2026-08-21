@@ -49,9 +49,9 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
   }
 
   Future<void> _addAutomation() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const CreateAutomationScreen()),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const CreateAutomationScreen()));
   }
 
   Future<void> _editAutomation(AutomationModel rule) async {
@@ -75,12 +75,17 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF64748B)),
+            ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.danger,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Delete'),
@@ -107,9 +112,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
 
   void _showAutomationDetails(AutomationModel rule) {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => AutomationDetailsScreen(rule: rule),
-      ),
+      MaterialPageRoute(builder: (_) => AutomationDetailsScreen(rule: rule)),
     );
   }
 
@@ -300,7 +303,10 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+                  border: Border.all(
+                    color: const Color(0xFFE2E8F0),
+                    width: 1.2,
+                  ),
                   boxShadow: const [
                     BoxShadow(
                       color: Color(0x06000000),
@@ -340,7 +346,11 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
                     ),
                     if (_searchQuery.isNotEmpty)
                       IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF94A3B8)),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          size: 18,
+                          color: Color(0xFF94A3B8),
+                        ),
                         onPressed: () => _searchController.clear(),
                       ),
                     IconButton(
@@ -365,19 +375,24 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
                   _FilterPill(
                     label: 'All',
                     isSelected: _selectedFilter == _AutomationFilter.all,
-                    onTap: () => setState(() => _selectedFilter = _AutomationFilter.all),
+                    onTap: () =>
+                        setState(() => _selectedFilter = _AutomationFilter.all),
                   ),
                   const SizedBox(width: 10),
                   _FilterPill(
                     label: 'Active',
                     isSelected: _selectedFilter == _AutomationFilter.active,
-                    onTap: () => setState(() => _selectedFilter = _AutomationFilter.active),
+                    onTap: () => setState(
+                      () => _selectedFilter = _AutomationFilter.active,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   _FilterPill(
                     label: 'Disabled',
                     isSelected: _selectedFilter == _AutomationFilter.disabled,
-                    onTap: () => setState(() => _selectedFilter = _AutomationFilter.disabled),
+                    onTap: () => setState(
+                      () => _selectedFilter = _AutomationFilter.disabled,
+                    ),
                   ),
                 ],
               ),
@@ -434,7 +449,9 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
                 )
               else if (filteredRules.isEmpty)
                 _EmptyAutomationsState(
-                  hasFilter: _selectedFilter != _AutomationFilter.all || _searchQuery.isNotEmpty,
+                  hasFilter:
+                      _selectedFilter != _AutomationFilter.all ||
+                      _searchQuery.isNotEmpty,
                   onReset: () {
                     setState(() {
                       _selectedFilter = _AutomationFilter.all;
@@ -451,10 +468,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
                     deviceCount: _getDeviceCount(rule),
                     actionSummary: _getActionSummary(rule),
                     onToggle: (val) {
-                      provider.toggleRule(
-                        automationId: rule.id,
-                        isActive: val,
-                      );
+                      provider.toggleRule(automationId: rule.id, isActive: val);
                     },
                     onEdit: () => _editAutomation(rule),
                     onDelete: () => _confirmDelete(rule),
@@ -503,24 +517,42 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
             ),
             const SizedBox(height: 16),
             ListTile(
-              leading: const Icon(Icons.all_inclusive_rounded, color: Color(0xFF00897B)),
-              title: const Text('Show All Automations', style: TextStyle(fontWeight: FontWeight.w700)),
+              leading: const Icon(
+                Icons.all_inclusive_rounded,
+                color: Color(0xFF00897B),
+              ),
+              title: const Text(
+                'Show All Automations',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
               onTap: () {
                 setState(() => _selectedFilter = _AutomationFilter.all);
                 Navigator.pop(ctx);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF16A34A)),
-              title: const Text('Show Active Only', style: TextStyle(fontWeight: FontWeight.w700)),
+              leading: const Icon(
+                Icons.check_circle_outline_rounded,
+                color: Color(0xFF16A34A),
+              ),
+              title: const Text(
+                'Show Active Only',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
               onTap: () {
                 setState(() => _selectedFilter = _AutomationFilter.active);
                 Navigator.pop(ctx);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.pause_circle_outline_rounded, color: Color(0xFF64748B)),
-              title: const Text('Show Disabled Only', style: TextStyle(fontWeight: FontWeight.w700)),
+              leading: const Icon(
+                Icons.pause_circle_outline_rounded,
+                color: Color(0xFF64748B),
+              ),
+              title: const Text(
+                'Show Disabled Only',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
               onTap: () {
                 setState(() => _selectedFilter = _AutomationFilter.disabled);
                 Navigator.pop(ctx);
@@ -559,7 +591,9 @@ class _FilterPill extends StatelessWidget {
           color: isSelected ? const Color(0xFF00897B) : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: isSelected ? const Color(0xFF00897B) : const Color(0xFFE2E8F0),
+            color: isSelected
+                ? const Color(0xFF00897B)
+                : const Color(0xFFE2E8F0),
             width: 1.2,
           ),
           boxShadow: isSelected
@@ -636,235 +670,271 @@ class _AutomationCard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Left Themed Icon Avatar Container
-            Container(
-              width: 58,
-              height: 58,
-              decoration: BoxDecoration(
-                color: theme.backgroundColor,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              alignment: Alignment.center,
-              child: theme.iconWidget,
-            ),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left Themed Icon Avatar Container
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: theme.backgroundColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  alignment: Alignment.center,
+                  child: theme.iconWidget,
+                ),
 
-            const SizedBox(width: 14),
+                const SizedBox(width: 14),
 
-            // Middle & Right Content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top Title & Status Row
-                  Row(
+                // Middle & Right Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          rule.name,
-                          style: const TextStyle(
-                            fontSize: 16.5,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A),
-                            letterSpacing: -0.2,
+                      // Top Title & Status Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              rule.name,
+                              style: const TextStyle(
+                                fontSize: 16.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF0F172A),
+                                letterSpacing: -0.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      // Status Badge Pill
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.5, vertical: 3.5),
-                        decoration: BoxDecoration(
-                          color: rule.isActive
-                              ? const Color(0xFFE8F8F5)
-                              : const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          rule.isActive ? 'Active' : 'Disabled',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: rule.isActive
-                                ? const Color(0xFF16A34A)
-                                : const Color(0xFF64748B),
+                          const SizedBox(width: 6),
+                          // Status Badge Pill
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8.5,
+                              vertical: 3.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: rule.isActive
+                                  ? const Color(0xFFE8F8F5)
+                                  : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              rule.isActive ? 'Active' : 'Disabled',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: rule.isActive
+                                    ? const Color(0xFF16A34A)
+                                    : const Color(0xFF64748B),
+                              ),
+                            ),
                           ),
-                        ),
+                          // 3-Dots Menu
+                          PopupMenuButton<String>(
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(
+                              Icons.more_vert_rounded,
+                              color: Color(0xFF64748B),
+                              size: 20,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            onSelected: (val) {
+                              if (val == 'view') onView();
+                              if (val == 'edit') onEdit();
+                              if (val == 'delete') onDelete();
+                            },
+                            itemBuilder: (_) => [
+                              const PopupMenuItem(
+                                value: 'view',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.info_outline_rounded,
+                                      size: 18,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'View Details',
+                                      style: TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.edit_outlined,
+                                      size: 18,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Edit',
+                                      style: TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.delete_outline_rounded,
+                                      size: 18,
+                                      color: Color(0xFFEF4444),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Delete',
+                                      style: TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFFEF4444),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      // 3-Dots Menu
-                      PopupMenuButton<String>(
-                        padding: EdgeInsets.zero,
-                        icon: const Icon(
-                          Icons.more_vert_rounded,
-                          color: Color(0xFF64748B),
-                          size: 20,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        onSelected: (val) {
-                          if (val == 'view') onView();
-                          if (val == 'edit') onEdit();
-                          if (val == 'delete') onDelete();
-                        },
-                        itemBuilder: (_) => [
-                          const PopupMenuItem(
-                            value: 'view',
-                            child: Row(
+
+                      const SizedBox(height: 4),
+
+                      // Metadata & Toggle Row
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(Icons.info_outline_rounded, size: 18, color: Color(0xFF64748B)),
-                                SizedBox(width: 8),
-                                Text('View Details', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
+                                // Time / Trigger Row
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.access_time_rounded,
+                                      size: 14.5,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      'Every day · $triggerTime',
+                                      style: const TextStyle(
+                                        fontSize: 12.5,
+                                        color: Color(0xFF64748B),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 3),
+                                // Devices Count Row
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.view_in_ar_rounded,
+                                      size: 14.5,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      '$deviceCount devices',
+                                      style: const TextStyle(
+                                        fontSize: 12.5,
+                                        color: Color(0xFF64748B),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
-                                SizedBox(width: 8),
-                                Text('Edit', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFEF4444)),
-                                SizedBox(width: 8),
-                                Text('Delete', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFFEF4444))),
-                              ],
+
+                          // Custom Sleek Switch
+                          GestureDetector(
+                            onTap: () => onToggle(!rule.isActive),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 220),
+                              curve: Curves.easeInOut,
+                              width: 48,
+                              height: 28,
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                color: rule.isActive
+                                    ? const Color(0xFF00897B)
+                                    : const Color(0xFFCBD5E1),
+                              ),
+                              alignment: rule.isActive
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                              child: Container(
+                                width: 22,
+                                height: 22,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Color(0x24000000),
+                                      blurRadius: 4,
+                                      offset: Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
 
-                  const SizedBox(height: 4),
+                      const SizedBox(height: 8),
 
-                  // Metadata & Toggle Row
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Time / Trigger Row
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.access_time_rounded,
-                                  size: 14.5,
-                                  color: Color(0xFF64748B),
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  'Every day · $triggerTime',
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    color: Color(0xFF64748B),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 3),
-                            // Devices Count Row
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.view_in_ar_rounded,
-                                  size: 14.5,
-                                  color: Color(0xFF64748B),
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  '$deviceCount devices',
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    color: Color(0xFF64748B),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                      // Bottom Action Summary Row
+                      Text(
+                        actionSummary,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                          height: 1.35,
+                          fontWeight: FontWeight.w500,
                         ),
-                      ),
-
-                      // Custom Sleek Switch
-                      GestureDetector(
-                        onTap: () => onToggle(!rule.isActive),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 220),
-                          curve: Curves.easeInOut,
-                          width: 48,
-                          height: 28,
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            color: rule.isActive
-                                ? const Color(0xFF00897B)
-                                : const Color(0xFFCBD5E1),
-                          ),
-                          alignment: rule.isActive
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: Container(
-                            width: 22,
-                            height: 22,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Color(0x24000000),
-                                  blurRadius: 4,
-                                  offset: Offset(0, 1),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 8),
-
-                  // Bottom Action Summary Row
-                  Text(
-                    actionSummary,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF64748B),
-                      height: 1.35,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
-    ),
-  ),
-);
-}
+    );
+  }
 
   static _VisualTheme _getVisualTheme(String name) {
     final lower = name.toLowerCase();
-    if (lower.contains('morning') || lower.contains('sunrise') || lower.contains('wakeup')) {
+    if (lower.contains('morning') ||
+        lower.contains('sunrise') ||
+        lower.contains('wakeup')) {
       return _VisualTheme(
         backgroundColor: const Color(0xFFFFF7ED),
         iconWidget: const Icon(
@@ -874,7 +944,10 @@ class _AutomationCard extends StatelessWidget {
         ),
       );
     }
-    if (lower.contains('movie') || lower.contains('cinema') || lower.contains('tv') || lower.contains('theatre')) {
+    if (lower.contains('movie') ||
+        lower.contains('cinema') ||
+        lower.contains('tv') ||
+        lower.contains('theatre')) {
       return _VisualTheme(
         backgroundColor: const Color(0xFFF3E8FF),
         iconWidget: const Icon(
@@ -884,7 +957,9 @@ class _AutomationCard extends StatelessWidget {
         ),
       );
     }
-    if (lower.contains('night') || lower.contains('sleep') || lower.contains('bedtime')) {
+    if (lower.contains('night') ||
+        lower.contains('sleep') ||
+        lower.contains('bedtime')) {
       return _VisualTheme(
         backgroundColor: const Color(0xFFE0E7FF),
         iconWidget: const Icon(
@@ -894,7 +969,9 @@ class _AutomationCard extends StatelessWidget {
         ),
       );
     }
-    if (lower.contains('away') || lower.contains('leave') || lower.contains('out')) {
+    if (lower.contains('away') ||
+        lower.contains('leave') ||
+        lower.contains('out')) {
       return _VisualTheme(
         backgroundColor: const Color(0xFFF1F5F9),
         iconWidget: const Icon(
@@ -904,7 +981,9 @@ class _AutomationCard extends StatelessWidget {
         ),
       );
     }
-    if (lower.contains('party') || lower.contains('celebrate') || lower.contains('music')) {
+    if (lower.contains('party') ||
+        lower.contains('celebrate') ||
+        lower.contains('music')) {
       return _VisualTheme(
         backgroundColor: const Color(0xFFFCE7F3),
         iconWidget: const Icon(
@@ -929,10 +1008,7 @@ class _VisualTheme {
   final Color backgroundColor;
   final Widget iconWidget;
 
-  const _VisualTheme({
-    required this.backgroundColor,
-    required this.iconWidget,
-  });
+  const _VisualTheme({required this.backgroundColor, required this.iconWidget});
 }
 
 // ══════════════════════════════════════════════
@@ -976,7 +1052,9 @@ class _EmptyAutomationsState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            hasFilter ? 'No automations match your filter' : 'No automations yet',
+            hasFilter
+                ? 'No automations match your filter'
+                : 'No automations yet',
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
@@ -989,14 +1067,20 @@ class _EmptyAutomationsState extends StatelessWidget {
                 ? 'Try clearing your search query or selecting "All".'
                 : 'Create routines to automatically manage your lights, climate, and security.',
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF64748B),
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: 18),
           if (hasFilter)
             OutlinedButton(
               onPressed: onReset,
               style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
               child: const Text('Reset Filters'),
             )
@@ -1007,7 +1091,9 @@ class _EmptyAutomationsState extends StatelessWidget {
               label: const Text('Create Your First Automation'),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF00897B),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
         ],
@@ -1015,4 +1101,3 @@ class _EmptyAutomationsState extends StatelessWidget {
     );
   }
 }
-

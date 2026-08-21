@@ -44,8 +44,10 @@ class DeviceModel {
         ? Map<String, dynamic>.from(json['state'] as Map)
         : <String, dynamic>{};
 
-    final String statusStr =
-        (json['status'] ?? '').toString().trim().toLowerCase();
+    final String statusStr = (json['status'] ?? '')
+        .toString()
+        .trim()
+        .toLowerCase();
 
     final bool isOnlineStatus =
         statusStr == 'online' ||
@@ -55,7 +57,8 @@ class DeviceModel {
         (json['is_online'] == null && json['isOnline'] == null);
 
     // Extract power state from dedicated fields without confusing 'status: online'
-    dynamic rawPower = json['is_on'] ??
+    dynamic rawPower =
+        json['is_on'] ??
         json['isOn'] ??
         state['is_on'] ??
         state['isOn'] ??

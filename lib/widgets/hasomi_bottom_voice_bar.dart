@@ -23,11 +23,7 @@ class HasomiBottomVoiceBar extends StatefulWidget {
   final bool isActive;
   final VoidCallback? onClose;
 
-  const HasomiBottomVoiceBar({
-    super.key,
-    this.isActive = true,
-    this.onClose,
-  });
+  const HasomiBottomVoiceBar({super.key, this.isActive = true, this.onClose});
 
   @override
   State<HasomiBottomVoiceBar> createState() => HasomiBottomVoiceBarState();
@@ -76,7 +72,9 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
           }
         },
         onError: (errorNotification) {
-          debugPrint('[Hasomi VoiceBar STT Error] ${errorNotification.errorMsg}');
+          debugPrint(
+            '[Hasomi VoiceBar STT Error] ${errorNotification.errorMsg}',
+          );
           _isStartingListening = false;
         },
       );
@@ -86,7 +84,9 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
 
       final auth = context.read<AuthProvider>();
       final user = auth.currentUser;
-      _assistantGreeting = HasomiVoiceService.instance.generateGreeting(user?.name);
+      _assistantGreeting = HasomiVoiceService.instance.generateGreeting(
+        user?.name,
+      );
     } catch (e) {
       debugPrint('[Hasomi VoiceBar Init Error] $e');
     }
@@ -109,8 +109,12 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
 
     final auth = context.read<AuthProvider>();
     final user = auth.currentUser;
-    final String greeting = HasomiVoiceService.instance.generateGreeting(user?.name);
-    _assistantGreeting = greeting.isNotEmpty ? greeting : 'Hi! How can I help you?';
+    final String greeting = HasomiVoiceService.instance.generateGreeting(
+      user?.name,
+    );
+    _assistantGreeting = greeting.isNotEmpty
+        ? greeting
+        : 'Hi! How can I help you?';
 
     if (!mounted) return;
     setState(() {
@@ -220,7 +224,9 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
       _statusText = 'No command heard. Tap microphone button to try again.';
     });
 
-    await HasomiVoiceService.instance.speak("No command heard. Please tap the microphone button to try again.");
+    await HasomiVoiceService.instance.speak(
+      "No command heard. Please tap the microphone button to try again.",
+    );
 
     _fadeTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) {
@@ -305,7 +311,10 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
               duration: const Duration(milliseconds: 300),
               opacity: _barState == HasomiVoiceBarState.idle ? 0.0 : 1.0,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 4,
+                ),
                 margin: const EdgeInsets.only(bottom: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFF0F172A).withValues(alpha: 0.9),
@@ -386,10 +395,7 @@ class _VoiceLinePainter extends CustomPainter {
   final double animationValue;
   final HasomiVoiceBarState state;
 
-  _VoiceLinePainter({
-    required this.animationValue,
-    required this.state,
-  });
+  _VoiceLinePainter({required this.animationValue, required this.state});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -471,7 +477,8 @@ class _VoiceLinePainter extends CustomPainter {
       final double normalizedX = x / width;
       final double envelope = math.sin(normalizedX * math.pi);
 
-      final double y = midY +
+      final double y =
+          midY +
           math.sin(normalizedX * math.pi * 6 + phase) * amplitude * envelope;
       path.lineTo(x, y);
     }

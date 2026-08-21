@@ -12,7 +12,8 @@ class AutomationDetailsScreen extends StatefulWidget {
   const AutomationDetailsScreen({super.key, required this.rule});
 
   @override
-  State<AutomationDetailsScreen> createState() => _AutomationDetailsScreenState();
+  State<AutomationDetailsScreen> createState() =>
+      _AutomationDetailsScreenState();
 }
 
 class _DetailActionItem {
@@ -39,9 +40,12 @@ class _AutomationDetailsScreenState extends State<AutomationDetailsScreen> {
   }
 
   String _getSubtitle(String name) {
-    if (_currentRule.description != null && _currentRule.description!.trim().isNotEmpty) {
+    if (_currentRule.description != null &&
+        _currentRule.description!.trim().isNotEmpty) {
       final desc = _currentRule.description!.trim();
-      if (!desc.contains('Light') && !desc.contains('Fan') && !desc.contains('ON')) {
+      if (!desc.contains('Light') &&
+          !desc.contains('Fan') &&
+          !desc.contains('ON')) {
         return desc;
       }
     }
@@ -209,12 +213,17 @@ class _AutomationDetailsScreenState extends State<AutomationDetailsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF64748B)),
+            ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.danger,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Delete'),
@@ -303,9 +312,19 @@ class _AutomationDetailsScreenState extends State<AutomationDetailsScreen> {
                         value: 'edit',
                         child: Row(
                           children: [
-                            Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
+                            Icon(
+                              Icons.edit_outlined,
+                              size: 18,
+                              color: Color(0xFF64748B),
+                            ),
                             SizedBox(width: 8),
-                            Text('Edit', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
+                            Text(
+                              'Edit',
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -313,7 +332,11 @@ class _AutomationDetailsScreenState extends State<AutomationDetailsScreen> {
                         value: 'delete',
                         child: Row(
                           children: [
-                            Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFEF4444)),
+                            Icon(
+                              Icons.delete_outline_rounded,
+                              size: 18,
+                              color: Color(0xFFEF4444),
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'Delete',
@@ -504,7 +527,9 @@ class _AutomationDetailsScreenState extends State<AutomationDetailsScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFFF1F5F9)),
+                              border: Border.all(
+                                color: const Color(0xFFF1F5F9),
+                              ),
                             ),
                             child: Row(
                               children: [
@@ -730,7 +755,9 @@ class _AutomationDetailsScreenState extends State<AutomationDetailsScreen> {
 
   static _HeroTheme _getHeroVisualTheme(String name) {
     final lower = name.toLowerCase();
-    if (lower.contains('morning') || lower.contains('sunrise') || lower.contains('wakeup')) {
+    if (lower.contains('morning') ||
+        lower.contains('sunrise') ||
+        lower.contains('wakeup')) {
       return _HeroTheme(
         backgroundColor: const Color(0xFFFFF7ED),
         iconWidget: const Icon(
@@ -740,7 +767,9 @@ class _AutomationDetailsScreenState extends State<AutomationDetailsScreen> {
         ),
       );
     }
-    if (lower.contains('movie') || lower.contains('cinema') || lower.contains('tv')) {
+    if (lower.contains('movie') ||
+        lower.contains('cinema') ||
+        lower.contains('tv')) {
       return _HeroTheme(
         backgroundColor: const Color(0xFFF3E8FF),
         iconWidget: const Icon(
@@ -775,10 +804,7 @@ class _HeroTheme {
   final Color backgroundColor;
   final Widget iconWidget;
 
-  const _HeroTheme({
-    required this.backgroundColor,
-    required this.iconWidget,
-  });
+  const _HeroTheme({required this.backgroundColor, required this.iconWidget});
 }
 
 class _DetailsCard extends StatelessWidget {
@@ -822,11 +848,7 @@ class _DetailsIconBox extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       alignment: Alignment.center,
-      child: Icon(
-        icon,
-        color: const Color(0xFF00897B),
-        size: 20,
-      ),
+      child: Icon(icon, color: const Color(0xFF00897B), size: 20),
     );
   }
 }

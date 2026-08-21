@@ -9,11 +9,12 @@ class SceneActionModel {
   SceneActionModel({
     required this.deviceId,
     required this.command,
-    this.commandValue,
+    dynamic commandValue,
+    dynamic value,
     this.toggleOnActivate = false,
     this.sortOrder = 0,
     this.delaySeconds = 0,
-  });
+  }) : commandValue = commandValue ?? value;
 
   /// Backwards-compatible getter for legacy value field
   dynamic get value => commandValue;
@@ -105,6 +106,7 @@ class SceneModel {
       if (description != null) 'description': description,
       if (icon != null) 'icon': icon,
       'isFavorite': isFavorite,
+      'is_favorite': isFavorite,
       'actions': actions.map((a) => a.toJson()).toList(),
     };
   }
@@ -147,15 +149,16 @@ class SceneExecutionStatus {
   }
 
   factory SceneExecutionStatus.idle({String? sceneId}) => SceneExecutionStatus(
-        sceneId: sceneId,
-        status: 'idle',
-        currentStep: 0,
-        totalSteps: 0,
-        percentage: 0.0,
-        isIdle: true,
-      );
+    sceneId: sceneId,
+    status: 'idle',
+    currentStep: 0,
+    totalSteps: 0,
+    percentage: 0.0,
+    isIdle: true,
+  );
 
   Map<String, dynamic> toJson() => {
+<<<<<<< HEAD
         if (sceneId != null) 'scene_id': sceneId,
         'status': status,
         'current_step': currentStep,
@@ -163,4 +166,13 @@ class SceneExecutionStatus {
         'percentage': percentage,
         'is_idle': isIdle,
       };
+=======
+    if (sceneId != null) 'scene_id': sceneId,
+    'status': status,
+    'current_step': currentStep,
+    'total_steps': totalSteps,
+    'percentage': percentage,
+    'is_idle': isIdle,
+  };
+>>>>>>> origin/Abhi
 }

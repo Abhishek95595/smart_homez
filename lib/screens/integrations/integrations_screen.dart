@@ -76,7 +76,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
     if (result != null && result['success'] == true) {
       final String? token = result['token']?.toString();
       final String? authorizeUrl = result['authorizeUrl']?.toString();
-      final String linkUrl = authorizeUrl ??
+      final String linkUrl =
+          authorizeUrl ??
           (token != null
               ? 'https://alexa.amazon.com/api/skill/link/smart_homez?token=$token'
               : 'https://alexa.amazon.com');
@@ -122,9 +123,18 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
                       ),
                     ),
                     SizedBox(height: 6),
-                    Text('1. Tap "Open Alexa Authorization"', style: TextStyle(fontSize: 11)),
-                    Text('2. Log in with your Amazon Account', style: TextStyle(fontSize: 11)),
-                    Text('3. Grant Smart Homez device permission', style: TextStyle(fontSize: 11)),
+                    Text(
+                      '1. Tap "Open Alexa Authorization"',
+                      style: TextStyle(fontSize: 11),
+                    ),
+                    Text(
+                      '2. Log in with your Amazon Account',
+                      style: TextStyle(fontSize: 11),
+                    ),
+                    Text(
+                      '3. Grant Smart Homez device permission',
+                      style: TextStyle(fontSize: 11),
+                    ),
                   ],
                 ),
               ),
@@ -156,7 +166,9 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
             setState(() => _voiceConnections['Amazon Alexa'] = true);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Alexa App / authorization page launched successfully.'),
+                content: Text(
+                  'Alexa App / authorization page launched successfully.',
+                ),
                 backgroundColor: AppColors.success,
               ),
             );
@@ -170,15 +182,16 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
         } catch (e) {
           if (!mounted) return;
           setState(() => _voiceConnections['Amazon Alexa'] = true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Alexa link initiated ($e).')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Alexa link initiated ($e).')));
         }
       } else {
         setState(() => _voiceConnections['Amazon Alexa'] = false);
       }
     } else {
-      final String errorMsg = result?['error']?.toString() ??
+      final String errorMsg =
+          result?['error']?.toString() ??
           'Failed to generate Alexa link token. Check server connection.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -248,7 +261,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
                   _linkAlexa();
                   return;
                 }
-                
+
                 setState(() => _voiceConnections[entry.key] = value);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -805,8 +818,9 @@ class _AlexaCommandTestCard extends StatefulWidget {
 }
 
 class _AlexaCommandTestCardState extends State<_AlexaCommandTestCard> {
-  final TextEditingController _endpointIdController =
-      TextEditingController(text: 'device_living_room_light');
+  final TextEditingController _endpointIdController = TextEditingController(
+    text: 'device_living_room_light',
+  );
   bool _isTesting = false;
   String? _lastLog;
 
@@ -847,7 +861,8 @@ class _AlexaCommandTestCardState extends State<_AlexaCommandTestCard> {
 
     setState(() {
       _isTesting = true;
-      _lastLog = 'Sending Alexa ${turnOn ? "TurnOn" : "TurnOff"} directive to $epId...';
+      _lastLog =
+          'Sending Alexa ${turnOn ? "TurnOn" : "TurnOff"} directive to $epId...';
     });
 
     final service = AlexaIntegrationService();
@@ -865,10 +880,7 @@ class _AlexaCommandTestCardState extends State<_AlexaCommandTestCard> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_lastLog!),
-        backgroundColor: AppColors.success,
-      ),
+      SnackBar(content: Text(_lastLog!), backgroundColor: AppColors.success),
     );
   }
 
@@ -886,7 +898,11 @@ class _AlexaCommandTestCardState extends State<_AlexaCommandTestCard> {
         children: [
           const Row(
             children: [
-              Icon(Icons.spatial_audio_rounded, color: AppColors.primary, size: 20),
+              Icon(
+                Icons.spatial_audio_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
               SizedBox(width: 8),
               Text(
                 'Alexa Directive & Command Tester',
@@ -907,7 +923,9 @@ class _AlexaCommandTestCardState extends State<_AlexaCommandTestCard> {
               labelText: 'Target Endpoint / Device ID',
               labelStyle: const TextStyle(fontSize: 11),
               isDense: true,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -918,7 +936,10 @@ class _AlexaCommandTestCardState extends State<_AlexaCommandTestCard> {
               ElevatedButton.icon(
                 onPressed: _isTesting ? null : () => _testPowerCommand(true),
                 icon: const Icon(Icons.power_settings_new_rounded, size: 16),
-                label: const Text('Alexa TurnOn', style: TextStyle(fontSize: 11)),
+                label: const Text(
+                  'Alexa TurnOn',
+                  style: TextStyle(fontSize: 11),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.success,
                   foregroundColor: Colors.white,
@@ -927,12 +948,18 @@ class _AlexaCommandTestCardState extends State<_AlexaCommandTestCard> {
               OutlinedButton.icon(
                 onPressed: _isTesting ? null : () => _testPowerCommand(false),
                 icon: const Icon(Icons.power_off_rounded, size: 16),
-                label: const Text('Alexa TurnOff', style: TextStyle(fontSize: 11)),
+                label: const Text(
+                  'Alexa TurnOff',
+                  style: TextStyle(fontSize: 11),
+                ),
               ),
               OutlinedButton.icon(
                 onPressed: _isTesting ? null : _testDiscovery,
                 icon: const Icon(Icons.travel_explore_rounded, size: 16),
-                label: const Text('Discover Devices', style: TextStyle(fontSize: 11)),
+                label: const Text(
+                  'Discover Devices',
+                  style: TextStyle(fontSize: 11),
+                ),
               ),
             ],
           ),
@@ -947,7 +974,10 @@ class _AlexaCommandTestCardState extends State<_AlexaCommandTestCard> {
               ),
               child: Text(
                 _lastLog!,
-                style: const TextStyle(fontSize: 10, color: AppColors.primaryDark),
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.primaryDark,
+                ),
               ),
             ),
           ],

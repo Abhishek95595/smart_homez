@@ -89,9 +89,18 @@ class AutomationProvider extends ChangeNotifier {
           ),
         ],
         actions: [
-          AutomationActionModel(command: 'turn_on', commandValue: 'Bedroom Light ON'),
-          AutomationActionModel(command: 'set_speed', commandValue: 'Fan Speed 2'),
-          AutomationActionModel(command: 'set_brightness', commandValue: 'Living Room Light 70%'),
+          AutomationActionModel(
+            command: 'turn_on',
+            commandValue: 'Bedroom Light ON',
+          ),
+          AutomationActionModel(
+            command: 'set_speed',
+            commandValue: 'Fan Speed 2',
+          ),
+          AutomationActionModel(
+            command: 'set_brightness',
+            commandValue: 'Living Room Light 70%',
+          ),
         ],
       ),
       const AutomationModel(
@@ -107,10 +116,19 @@ class AutomationProvider extends ChangeNotifier {
           ),
         ],
         actions: [
-          AutomationActionModel(command: 'set_brightness', commandValue: 'Living Room Light 20%'),
+          AutomationActionModel(
+            command: 'set_brightness',
+            commandValue: 'Living Room Light 20%',
+          ),
           AutomationActionModel(command: 'turn_on', commandValue: 'TV ON'),
-          AutomationActionModel(command: 'close', commandValue: 'Curtains Close'),
-          AutomationActionModel(command: 'set_volume', commandValue: 'Soundbar ON'),
+          AutomationActionModel(
+            command: 'close',
+            commandValue: 'Curtains Close',
+          ),
+          AutomationActionModel(
+            command: 'set_volume',
+            commandValue: 'Soundbar ON',
+          ),
         ],
       ),
       const AutomationModel(
@@ -126,7 +144,10 @@ class AutomationProvider extends ChangeNotifier {
           ),
         ],
         actions: [
-          AutomationActionModel(command: 'turn_off', commandValue: 'All Lights OFF'),
+          AutomationActionModel(
+            command: 'turn_off',
+            commandValue: 'All Lights OFF',
+          ),
           AutomationActionModel(command: 'turn_off', commandValue: 'Fan OFF'),
           AutomationActionModel(command: 'lock', commandValue: 'Door Lock ON'),
         ],
@@ -176,7 +197,9 @@ class AutomationProvider extends ChangeNotifier {
       await _service.createAutomation(request);
       return true;
     } catch (error) {
-      debugPrint('[AutomationProvider] Create API error (saved locally): $error');
+      debugPrint(
+        '[AutomationProvider] Create API error (saved locally): $error',
+      );
       return true;
     }
   }

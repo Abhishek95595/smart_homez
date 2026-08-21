@@ -21,7 +21,7 @@ class ProfileScreen extends StatelessWidget {
       body: user == null
           ? const Center(child: Text('No profile is currently available.'))
           : ListView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
               children: [
                 _ProfileHeader(user: user),
                 const SizedBox(height: 24),

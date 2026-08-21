@@ -88,15 +88,29 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
         elevation: 0,
         centerTitle: true,
         leading: Builder(
-          builder: (context) => IconButton(
-            tooltip: 'Menu',
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            icon: const Icon(
-              Icons.menu_rounded,
-              size: 28,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          builder: (context) {
+            final canPop = Navigator.canPop(context);
+            if (canPop) {
+              return IconButton(
+                tooltip: 'Back',
+                onPressed: () => Navigator.maybePop(context),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  size: 21,
+                  color: AppColors.textPrimary,
+                ),
+              );
+            }
+            return IconButton(
+              tooltip: 'Menu',
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              icon: const Icon(
+                Icons.menu_rounded,
+                size: 28,
+                color: AppColors.textPrimary,
+              ),
+            );
+          },
         ),
         title: const Column(
           mainAxisSize: MainAxisSize.min,
@@ -122,6 +136,17 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           ],
         ),
         actions: [
+          Builder(
+            builder: (context) => IconButton(
+              tooltip: 'Menu',
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              icon: const Icon(
+                Icons.menu_rounded,
+                size: 26,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
           Stack(
             clipBehavior: Clip.none,
             children: [
