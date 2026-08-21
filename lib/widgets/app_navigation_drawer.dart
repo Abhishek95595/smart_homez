@@ -92,8 +92,8 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
     final alerts = context.watch<AlertProvider>();
 
     final double drawerWidth = widget.permanent
-        ? 320.0
-        : (MediaQuery.sizeOf(context).width * 0.90).clamp(310.0, 420.0);
+        ? 270.0
+        : (MediaQuery.sizeOf(context).width * 0.72).clamp(260.0, 290.0);
 
     final content = Stack(
       children: [
