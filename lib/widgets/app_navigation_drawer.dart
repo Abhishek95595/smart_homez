@@ -172,6 +172,7 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                           children: [
                             // 1. Home
                             _SmartDrawerMenuCard(
+                              letter: 'H',
                               title: 'Home',
                               subtitle: 'Properties, Floors, Rooms & Devices',
                               isExpanded: _expandedKeys.contains('H'),
@@ -211,6 +212,7 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
 
                             // 2. Automations
                             _SmartDrawerMenuCard(
+                              letter: 'A',
                               title: 'Automations',
                               subtitle: 'Scenes & Automations',
                               isExpanded: _expandedKeys.contains('A'),
@@ -241,6 +243,7 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
 
                             // 3. Smart
                             _SmartDrawerMenuCard(
+                              letter: 'S',
                               title: 'Smart',
                               subtitle: 'Environment Monitoring',
                               isExpanded: _expandedKeys.contains('S'),
@@ -259,6 +262,7 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
 
                             // 4. Operations
                             _SmartDrawerMenuCard(
+                              letter: 'O',
                               title: 'Operations',
                               subtitle: 'Energy, Water, Fire & More',
                               isExpanded: _expandedKeys.contains('O'),
@@ -302,6 +306,7 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
 
                             // 5. Machines
                             _SmartDrawerMenuCard(
+                              letter: 'M',
                               title: 'Machines',
                               subtitle: 'All Connected Devices',
                               isExpanded: _expandedKeys.contains('M'),
@@ -320,6 +325,7 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
 
                             // 6. Intelligence
                             _SmartDrawerMenuCard(
+                              letter: 'I',
                               title: 'Intelligence',
                               subtitle: 'AI-Powered Insights',
                               isExpanded: _expandedKeys.contains('I'),
@@ -605,10 +611,10 @@ class _SmartDrawerMenuCard extends StatelessWidget {
               child: InkWell(
                 onTap: onToggle,
                 child: Container(
-                  constraints: const BoxConstraints(minHeight: 74),
+                  constraints: const BoxConstraints(minHeight: 66),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                    horizontal: 12,
+                    vertical: 10,
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -704,18 +710,18 @@ class _DrawerLetterTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 58,
-      height: 58,
+      width: 44,
+      height: 44,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: const Color(0xFFE7F8F5),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFD3F2EC), width: 1),
       ),
       child: Text(
         letter,
         style: const TextStyle(
-          fontSize: 24,
+          fontSize: 20,
           fontWeight: FontWeight.w800,
           color: Color(0xFF007E72),
           height: 1,

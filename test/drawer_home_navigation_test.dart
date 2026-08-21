@@ -69,7 +69,7 @@ void main() {
       scaffoldState.openDrawer();
       await tester.pumpAndSettle();
 
-      // Verify section headers are in the drawer
+      // Verify section headers and H A S O M I tiles are in the drawer
       expect(find.text('Smart Homez'), findsOneWidget);
       expect(find.text('Your Home. Smarter.'), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
@@ -79,8 +79,15 @@ void main() {
       expect(find.text('Machines'), findsOneWidget);
       expect(find.text('Intelligence'), findsOneWidget);
 
-      // Initially closed: tap Home to expand
-      await tester.tap(find.text('Home'));
+      expect(find.text('H'), findsOneWidget);
+      expect(find.text('A'), findsOneWidget);
+      expect(find.text('S'), findsOneWidget);
+      expect(find.text('O'), findsOneWidget);
+      expect(find.text('M'), findsOneWidget);
+      expect(find.text('I'), findsOneWidget);
+
+      // Initially closed: tap Home tile to expand
+      await tester.tap(find.text('H'));
       await tester.pumpAndSettle();
 
       // Now Home child items are visible
