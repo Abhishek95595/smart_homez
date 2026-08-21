@@ -1293,8 +1293,8 @@ class _GenZDeviceCard extends StatelessWidget {
                           device.type == DeviceType.fan
                               ? Icons.cyclone_rounded
                               : device.type == DeviceType.ac
-                                  ? Icons.thermostat_rounded
-                                  : Icons.lightbulb_outline_rounded,
+                              ? Icons.thermostat_rounded
+                              : Icons.lightbulb_outline_rounded,
                           size: 16,
                           color: theme.iconGradient.first,
                         ),

@@ -230,27 +230,27 @@ class RoutineProvider extends ChangeNotifier {
       // 1. Save and toggle first to ensure backend has the latest configured devices
       await _service.saveRoutine(routine!, _activeRoutineId);
       await _service.toggleRoutine(routine!.id, isEnabled, _activeRoutineId);
-      
+
       final dp = deviceProvider ?? _deviceProvider;
 
       if (isEnabled) {
         // 2. Trigger the Quick Scene API directly on the backend!
         // This avoids concurrent request race conditions that cause devices to "oof" (turn off)
         final success = await _service.activateScene(routine!.id);
-        
+
         if (success && dp != null) {
-           // Optimistically update the UI to show the new device states instantly
-           for (final ds in routine!.daySchedules.values) {
-              for (final entry in ds.entries) {
-                 if (entry.isEnabled) {
-                    final isTurnOn = entry.startAction == 'on';
-                    dp.setDevicePowerLocally(entry.deviceId, isTurnOn);
-                 }
+          // Optimistically update the UI to show the new device states instantly
+          for (final ds in routine!.daySchedules.values) {
+            for (final entry in ds.entries) {
+              if (entry.isEnabled) {
+                final isTurnOn = entry.startAction == 'on';
+                dp.setDevicePowerLocally(entry.deviceId, isTurnOn);
               }
-           }
+            }
+          }
         } else if (!success && dp != null) {
-           // Fallback to local execution if backend API fails or is unavailable
-           await _executeRoutineHardware(dp);
+          // Fallback to local execution if backend API fails or is unavailable
+          await _executeRoutineHardware(dp);
         }
       } else if (dp != null) {
         // Turn OFF locally since there's no deactivated scene endpoint
@@ -338,10 +338,10 @@ class RoutineProvider extends ChangeNotifier {
 
   Future<void> _executeRoutineHardware(DeviceProvider dp) async {
     if (routine == null) return;
-    
+
     final seen = <String>{};
     final today = _todayCode();
-    
+
     // Helper to process entries sequentially to avoid API rate limits
     Future<void> processEntries(Iterable<ScheduleEntry> entries) async {
       for (final entry in entries) {

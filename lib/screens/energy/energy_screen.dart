@@ -296,14 +296,23 @@ class _EnergyHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canPop = Navigator.canPop(context);
     return Builder(
       builder: (scaffoldContext) => Padding(
         padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
         child: Row(
           children: [
+            if (canPop)
+              IconButton(
+                tooltip: 'Back',
+                onPressed: () => Navigator.maybePop(context),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 21),
+                color: AppColors.textPrimary,
+              ),
             IconButton(
+              tooltip: 'Menu',
               onPressed: () => Scaffold.of(scaffoldContext).openDrawer(),
-              icon: const Icon(Icons.menu_rounded, size: 29),
+              icon: const Icon(Icons.menu_rounded, size: 28),
               color: AppColors.textPrimary,
             ),
             const Spacer(),
@@ -1107,10 +1116,7 @@ class _ConsumptionCard extends StatelessWidget {
     final interval = (labels.length / 6).ceil().clamp(1, 999);
 
     final pillWidget = Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 7,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1174,8 +1180,12 @@ class _ConsumptionCard extends StatelessWidget {
                         _periodText(p),
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight: p == period ? FontWeight.w800 : FontWeight.w500,
-                          color: p == period ? AppColors.primary : const Color(0xFF0F172A),
+                          fontWeight: p == period
+                              ? FontWeight.w800
+                              : FontWeight.w500,
+                          color: p == period
+                              ? AppColors.primary
+                              : const Color(0xFF0F172A),
                         ),
                       ),
                     );

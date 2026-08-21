@@ -35,7 +35,15 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
   String _selectedTrigger = 'Time';
   TimeOfDay _selectedTime = const TimeOfDay(hour: 7, minute: 0);
 
-  final List<String> _allDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  final List<String> _allDays = [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ];
   late final Set<String> _selectedDays;
 
   final List<_AutomationActionItem> _actions = [];
@@ -254,7 +262,9 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
       return;
     }
 
-    final actionSummaries = _actions.map((a) => '${a.deviceName} ${a.stateDisplay}').join(', ');
+    final actionSummaries = _actions
+        .map((a) => '${a.deviceName} ${a.stateDisplay}')
+        .join(', ');
     final hourFormatted = _selectedTime.hour.toString().padLeft(2, '0');
     final minuteFormatted = _selectedTime.minute.toString().padLeft(2, '0');
     final timeString = '$hourFormatted:$minuteFormatted';
@@ -361,9 +371,7 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
                       children: [
                         Row(
                           children: const [
-                            _IconContainer(
-                              icon: Icons.local_offer_outlined,
-                            ),
+                            _IconContainer(icon: Icons.local_offer_outlined),
                             SizedBox(width: 12),
                             Text(
                               'Automation Name',
@@ -397,7 +405,9 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
                                 color: Color(0xFF94A3B8),
                                 fontSize: 14.5,
                               ),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 14),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
                               border: InputBorder.none,
                               isDense: true,
                             ),
@@ -413,9 +423,7 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
                   _SectionCard(
                     child: Row(
                       children: [
-                        const _IconContainer(
-                          icon: Icons.shield_outlined,
-                        ),
+                        const _IconContainer(icon: Icons.shield_outlined),
                         const SizedBox(width: 12),
                         const Expanded(
                           child: Text(
@@ -471,9 +479,7 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
                     onTap: _showTriggerSelector,
                     child: Row(
                       children: [
-                        const _IconContainer(
-                          icon: Icons.play_arrow_outlined,
-                        ),
+                        const _IconContainer(icon: Icons.play_arrow_outlined),
                         const SizedBox(width: 12),
                         const Expanded(
                           child: Text(
@@ -510,9 +516,7 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
                     onTap: _pickTime,
                     child: Row(
                       children: [
-                        const _IconContainer(
-                          icon: Icons.access_time_rounded,
-                        ),
+                        const _IconContainer(icon: Icons.access_time_rounded),
                         const SizedBox(width: 12),
                         const Expanded(
                           child: Text(
@@ -551,9 +555,7 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
                       children: [
                         Row(
                           children: const [
-                            _IconContainer(
-                              icon: Icons.calendar_today_outlined,
-                            ),
+                            _IconContainer(icon: Icons.calendar_today_outlined),
                             SizedBox(width: 12),
                             Text(
                               'Repeat Days',
@@ -629,9 +631,7 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
                       children: [
                         Row(
                           children: const [
-                            _IconContainer(
-                              icon: Icons.bolt_rounded,
-                            ),
+                            _IconContainer(icon: Icons.bolt_rounded),
                             SizedBox(width: 12),
                             Text(
                               'Actions',
@@ -658,7 +658,9 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
                             decoration: BoxDecoration(
                               color: const Color(0xFFFFFFFF),
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFFF1F5F9)),
+                              border: Border.all(
+                                color: const Color(0xFFF1F5F9),
+                              ),
                             ),
                             child: Row(
                               children: [
@@ -851,11 +853,7 @@ class _IconContainer extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       alignment: Alignment.center,
-      child: Icon(
-        icon,
-        color: const Color(0xFF00897B),
-        size: 22,
-      ),
+      child: Icon(icon, color: const Color(0xFF00897B), size: 22),
     );
   }
 }
@@ -1050,7 +1048,9 @@ class _AddActionModalState extends State<_AddActionModal> {
             ),
             const SizedBox(height: 18),
             Text(
-              widget.initialItem != null ? 'Edit Device Action' : 'Add Device Action',
+              widget.initialItem != null
+                  ? 'Edit Device Action'
+                  : 'Add Device Action',
               style: const TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.w900,
@@ -1079,7 +1079,8 @@ class _AddActionModalState extends State<_AddActionModal> {
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     isExpanded: true,
-                    value: devices.any((d) => d.name == _deviceNameController.text)
+                    value:
+                        devices.any((d) => d.name == _deviceNameController.text)
                         ? _deviceNameController.text
                         : devices.first.name,
                     items: devices.map((d) {
@@ -1098,7 +1099,8 @@ class _AddActionModalState extends State<_AddActionModal> {
                       if (val != null) {
                         setState(() {
                           _deviceNameController.text = val;
-                          _selectedType = _CreateAutomationScreenState._deduceType(val);
+                          _selectedType =
+                              _CreateAutomationScreenState._deduceType(val);
                         });
                       }
                     },
@@ -1131,33 +1133,38 @@ class _AddActionModalState extends State<_AddActionModal> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: [
-                'ON',
-                'OFF',
-                'Speed 1',
-                'Speed 2',
-                'Speed 3',
-                '50%',
-                '70%',
-                '100%',
-                'Close',
-                'Open',
-                'Lock',
-              ].map((state) {
-                final isSelected = _selectedState == state;
-                return ChoiceChip(
-                  label: Text(state),
-                  selected: isSelected,
-                  selectedColor: const Color(0xFF00897B),
-                  labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : const Color(0xFF475569),
-                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                  ),
-                  onSelected: (selected) {
-                    if (selected) setState(() => _selectedState = state);
-                  },
-                );
-              }).toList(),
+              children:
+                  [
+                    'ON',
+                    'OFF',
+                    'Speed 1',
+                    'Speed 2',
+                    'Speed 3',
+                    '50%',
+                    '70%',
+                    '100%',
+                    'Close',
+                    'Open',
+                    'Lock',
+                  ].map((state) {
+                    final isSelected = _selectedState == state;
+                    return ChoiceChip(
+                      label: Text(state),
+                      selected: isSelected,
+                      selectedColor: const Color(0xFF00897B),
+                      labelStyle: TextStyle(
+                        color: isSelected
+                            ? Colors.white
+                            : const Color(0xFF475569),
+                        fontWeight: isSelected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                      ),
+                      onSelected: (selected) {
+                        if (selected) setState(() => _selectedState = state);
+                      },
+                    );
+                  }).toList(),
             ),
             const SizedBox(height: 22),
             SizedBox(

@@ -67,7 +67,8 @@ class _HasomiScreenState extends State<HasomiScreen>
         onStatus: (status) {
           debugPrint('[Hasomi STT Status] $status');
           if ((status == 'done' || status == 'notListening') && mounted) {
-            if (_currentState == HasomiState.listeningForCommand && _spokenText.trim().isNotEmpty) {
+            if (_currentState == HasomiState.listeningForCommand &&
+                _spokenText.trim().isNotEmpty) {
               _processCommand(_spokenText);
             } else if (_currentState == HasomiState.listeningForWakeWord) {
               // Restart wake word listener continuously if still in wake word mode
@@ -88,7 +89,9 @@ class _HasomiScreenState extends State<HasomiScreen>
 
       final auth = context.read<AuthProvider>();
       final user = auth.currentUser;
-      _assistantGreeting = HasomiVoiceService.instance.generateGreeting(user?.name);
+      _assistantGreeting = HasomiVoiceService.instance.generateGreeting(
+        user?.name,
+      );
 
       if (available) {
         _startWakeWordListening();
@@ -145,7 +148,9 @@ class _HasomiScreenState extends State<HasomiScreen>
       _currentState = HasomiState.wakeWordDetected;
     });
 
-    final String cleanCommand = HasomiVoiceService.instance.stripWakeWord(fullText);
+    final String cleanCommand = HasomiVoiceService.instance.stripWakeWord(
+      fullText,
+    );
 
     // If the user spoke "Hey HASOMI" AND their command together in one phrase (e.g. "Hey HASOMI turn on bedroom light")
     if (cleanCommand.isNotEmpty) {
@@ -270,7 +275,11 @@ class _HasomiScreenState extends State<HasomiScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Row(
@@ -321,18 +330,31 @@ class _HasomiScreenState extends State<HasomiScreen>
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
-                                colors: _currentState == HasomiState.listeningForCommand
-                                    ? const [Color(0xFF10B981), Color(0xFF059669)]
-                                    : const [Color(0xFF00E5FF), Color(0xFF3B82F6)],
+                                colors:
+                                    _currentState ==
+                                        HasomiState.listeningForCommand
+                                    ? const [
+                                        Color(0xFF10B981),
+                                        Color(0xFF059669),
+                                      ]
+                                    : const [
+                                        Color(0xFF00E5FF),
+                                        Color(0xFF3B82F6),
+                                      ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: (_currentState == HasomiState.listeningForCommand
-                                          ? const Color(0xFF10B981)
-                                          : const Color(0xFF00E5FF))
-                                      .withValues(alpha: isWaveActive ? 0.6 : 0.25),
+                                  color:
+                                      (_currentState ==
+                                                  HasomiState
+                                                      .listeningForCommand
+                                              ? const Color(0xFF10B981)
+                                              : const Color(0xFF00E5FF))
+                                          .withValues(
+                                            alpha: isWaveActive ? 0.6 : 0.25,
+                                          ),
                                   blurRadius: isWaveActive ? 35 : 20,
                                   spreadRadius: isWaveActive ? 6 : 2,
                                 ),
@@ -382,7 +404,8 @@ class _HasomiScreenState extends State<HasomiScreen>
                           color: const Color(0xFF1E293B),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: _currentState == HasomiState.listeningForCommand
+                            color:
+                                _currentState == HasomiState.listeningForCommand
                                 ? const Color(0xFF10B981)
                                 : const Color(0xFF334155),
                           ),
@@ -393,21 +416,27 @@ class _HasomiScreenState extends State<HasomiScreen>
                             Row(
                               children: [
                                 Icon(
-                                  _currentState == HasomiState.listeningForCommand
+                                  _currentState ==
+                                          HasomiState.listeningForCommand
                                       ? Icons.record_voice_over_rounded
                                       : Icons.mic_rounded,
-                                  color: _currentState == HasomiState.listeningForCommand
+                                  color:
+                                      _currentState ==
+                                          HasomiState.listeningForCommand
                                       ? const Color(0xFF10B981)
                                       : AppColors.primary,
                                   size: 18,
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  _currentState == HasomiState.listeningForCommand
+                                  _currentState ==
+                                          HasomiState.listeningForCommand
                                       ? 'Listening for command...'
                                       : 'Listening for "Hey HASOMI"...',
                                   style: TextStyle(
-                                    color: _currentState == HasomiState.listeningForCommand
+                                    color:
+                                        _currentState ==
+                                            HasomiState.listeningForCommand
                                         ? const Color(0xFF34D399)
                                         : const Color(0xFF94A3B8),
                                     fontSize: 12,
@@ -419,9 +448,10 @@ class _HasomiScreenState extends State<HasomiScreen>
                             const SizedBox(height: 8),
                             Text(
                               _spokenText.isEmpty
-                                  ? (_currentState == HasomiState.listeningForCommand
-                                      ? 'Say a command (e.g. "Switch off light and fan in living room")...'
-                                      : 'Say "Hey HASOMI" hands-free...')
+                                  ? (_currentState ==
+                                            HasomiState.listeningForCommand
+                                        ? 'Say a command (e.g. "Switch off light and fan in living room")...'
+                                        : 'Say "Hey HASOMI" hands-free...')
                                   : '"$_spokenText"',
                               style: const TextStyle(
                                 color: Colors.white,
@@ -468,7 +498,8 @@ class _HasomiScreenState extends State<HasomiScreen>
                     ],
 
                     // Device Execution Results Card
-                    if (_lastResult != null && _currentState == HasomiState.displayResult) ...[
+                    if (_lastResult != null &&
+                        _currentState == HasomiState.displayResult) ...[
                       const SizedBox(height: 20),
                       _buildExecutionResultCard(_lastResult!),
                     ],
@@ -496,11 +527,16 @@ class _HasomiScreenState extends State<HasomiScreen>
                           onTap: () => _processCommand(sample),
                           borderRadius: BorderRadius.circular(12),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFF1E293B),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFF334155)),
+                              border: Border.all(
+                                color: const Color(0xFF334155),
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -545,14 +581,24 @@ class _HasomiScreenState extends State<HasomiScreen>
                       Expanded(
                         child: TextField(
                           controller: _textController,
-                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                          ),
                           decoration: InputDecoration(
-                            hintText: 'Type voice command or say "Hey HASOMI"...',
-                            hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                            hintText:
+                                'Type voice command or say "Hey HASOMI"...',
+                            hintStyle: const TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 12,
+                            ),
                             isDense: true,
                             filled: true,
                             fillColor: const Color(0xFF0F172A),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
                               borderSide: BorderSide.none,
@@ -594,14 +640,18 @@ class _HasomiScreenState extends State<HasomiScreen>
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: _currentState == HasomiState.listeningForCommand
                             ? const Color(0xFF10B981).withValues(alpha: 0.2)
                             : const Color(0xFF0F172A),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: _currentState == HasomiState.listeningForCommand
+                          color:
+                              _currentState == HasomiState.listeningForCommand
                               ? const Color(0xFF10B981)
                               : AppColors.primary,
                         ),
@@ -613,7 +663,8 @@ class _HasomiScreenState extends State<HasomiScreen>
                             _currentState == HasomiState.listeningForCommand
                                 ? Icons.mic_rounded
                                 : Icons.graphic_eq_rounded,
-                            color: _currentState == HasomiState.listeningForCommand
+                            color:
+                                _currentState == HasomiState.listeningForCommand
                                 ? const Color(0xFF34D399)
                                 : AppColors.primary,
                             size: 18,
@@ -624,7 +675,9 @@ class _HasomiScreenState extends State<HasomiScreen>
                                 ? 'Listening to command... Tap to reset'
                                 : 'Hands-Free Wake Word Active: Say "Hey HASOMI"',
                             style: TextStyle(
-                              color: _currentState == HasomiState.listeningForCommand
+                              color:
+                                  _currentState ==
+                                      HasomiState.listeningForCommand
                                   ? const Color(0xFF34D399)
                                   : const Color(0xFFCBD5E1),
                               fontSize: 11,
@@ -728,13 +781,20 @@ class _HasomiScreenState extends State<HasomiScreen>
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: (isSuccess ? const Color(0xFF10B981) : const Color(0xFFEF4444))
-                      .withValues(alpha: 0.15),
+                  color:
+                      (isSuccess
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFEF4444))
+                          .withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isSuccess ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
-                  color: isSuccess ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                  isSuccess
+                      ? Icons.check_circle_rounded
+                      : Icons.warning_amber_rounded,
+                  color: isSuccess
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFFEF4444),
                   size: 20,
                 ),
               ),
@@ -787,8 +847,12 @@ class _HasomiScreenState extends State<HasomiScreen>
                 child: Row(
                   children: [
                     Icon(
-                      act.success ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                      color: act.success ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      act.success
+                          ? Icons.check_circle_rounded
+                          : Icons.cancel_rounded,
+                      color: act.success
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
                       size: 16,
                     ),
                     const SizedBox(width: 8),
@@ -802,16 +866,24 @@ class _HasomiScreenState extends State<HasomiScreen>
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: (act.success ? const Color(0xFF10B981) : const Color(0xFFEF4444))
-                            .withValues(alpha: 0.2),
+                        color:
+                            (act.success
+                                    ? const Color(0xFF10B981)
+                                    : const Color(0xFFEF4444))
+                                .withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         act.success ? act.actionName.toUpperCase() : 'FAILED',
                         style: TextStyle(
-                          color: act.success ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                          color: act.success
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFEF4444),
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                         ),
@@ -830,7 +902,11 @@ class _HasomiScreenState extends State<HasomiScreen>
                 padding: const EdgeInsets.only(top: 4),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline_rounded, color: Color(0xFFF59E0B), size: 15),
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      color: Color(0xFFF59E0B),
+                      size: 15,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(

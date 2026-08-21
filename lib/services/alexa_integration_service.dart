@@ -18,7 +18,8 @@ class AlexaIntegrationService {
   }) async {
     try {
       final Map<String, dynamic> body = <String, dynamic>{
-        if (redirectUri != null && redirectUri.isNotEmpty) 'redirectUri': redirectUri,
+        if (redirectUri != null && redirectUri.isNotEmpty)
+          'redirectUri': redirectUri,
         if (state != null && state.isNotEmpty) 'state': state,
         if (scope != null && scope.isNotEmpty) 'scope': scope,
       };
@@ -29,7 +30,9 @@ class AlexaIntegrationService {
       );
 
       if (response.data is Map<String, dynamic>) {
-        final Map<String, dynamic> data = Map<String, dynamic>.from(response.data);
+        final Map<String, dynamic> data = Map<String, dynamic>.from(
+          response.data,
+        );
         data['success'] = true;
         return data;
       }
@@ -38,7 +41,10 @@ class AlexaIntegrationService {
       debugPrint('[AlexaService] Link token error: $error');
       final String msg = error.toString().contains('401')
           ? '401 Unauthorized: Valid API JWT token required for Alexa Account Linking.'
-          : error.toString().replaceFirst('Exception: ', '').replaceFirst('ApiException: ', '');
+          : error
+                .toString()
+                .replaceFirst('Exception: ', '')
+                .replaceFirst('ApiException: ', '');
       return {'success': false, 'error': msg};
     }
   }
@@ -129,9 +135,7 @@ class AlexaIntegrationService {
           'payloadVersion': '3',
           'messageId': DateTime.now().millisecondsSinceEpoch.toString(),
         },
-        'endpoint': {
-          'endpointId': endpointId,
-        },
+        'endpoint': {'endpointId': endpointId},
         'payload': <String, dynamic>{},
       },
     };
@@ -161,12 +165,8 @@ class AlexaIntegrationService {
           'payloadVersion': '3',
           'messageId': DateTime.now().millisecondsSinceEpoch.toString(),
         },
-        'endpoint': {
-          'endpointId': endpointId,
-        },
-        'payload': {
-          'brightness': brightnessLevel.clamp(0, 100),
-        },
+        'endpoint': {'endpointId': endpointId},
+        'payload': {'brightness': brightnessLevel.clamp(0, 100)},
       },
     };
 

@@ -433,11 +433,23 @@ class _SettingsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canPop = Navigator.canPop(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 2),
       child: Row(
         children: [
+          if (canPop)
+            IconButton(
+              tooltip: 'Back',
+              onPressed: () => Navigator.maybePop(context),
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 21,
+                color: AppColors.textPrimary,
+              ),
+            ),
           IconButton(
+            tooltip: 'Menu',
             onPressed: onMenu,
             icon: const Icon(Icons.menu_rounded, size: 28),
             color: AppColors.textPrimary,

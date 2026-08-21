@@ -110,13 +110,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             onPressed: () {
-              final barState = context.findAncestorStateOfType<HasomiBottomVoiceBarState>();
+              final barState = context
+                  .findAncestorStateOfType<HasomiBottomVoiceBarState>();
               if (barState != null) {
                 barState.triggerVoiceListening();
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Tap HASOMI mic at the bottom of the screen...'),
+                    content: Text(
+                      'Tap HASOMI mic at the bottom of the screen...',
+                    ),
                     duration: Duration(seconds: 2),
                   ),
                 );
@@ -159,7 +162,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: SafeArea(
         top: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 22),
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 90),
           children: [
             // 1. Robot Room Hero Banner
             _HeroGreetingBanner(greeting: _getGreeting(), userName: userName),
@@ -617,9 +620,7 @@ class _PropertiesAndEnergySection extends StatelessWidget {
       icon: _iconForProperty(prop),
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => FloorsScreen(propertyId: prop.id),
-        ),
+        MaterialPageRoute(builder: (_) => FloorsScreen(propertyId: prop.id)),
       ),
     );
   }
@@ -1073,7 +1074,9 @@ class _OverallEnergyMatrixCard extends StatelessWidget {
       statusText = '⚡ Connected';
     } else {
       final ratio = (onlineDevices / totalDevices * 100).round();
-      statusText = ratio >= 90 ? '⚡ $ratio% Optimal' : '⚡ $onlineDevices/$totalDevices Online';
+      statusText = ratio >= 90
+          ? '⚡ $ratio% Optimal'
+          : '⚡ $onlineDevices/$totalDevices Online';
     }
 
     return Container(
@@ -1126,15 +1129,17 @@ class _OverallEnergyMatrixCard extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: const [
-                                Text(
-                                  'Overall Energy Matrix',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF0F172A),
-                                    letterSpacing: -0.2,
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Overall Energy Matrix',
+                                    style: TextStyle(
+                                      fontSize: 16.5,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF0F172A),
+                                      letterSpacing: -0.2,
+                                    ),
                                   ),
                                 ),
                                 SizedBox(height: 2),
@@ -1308,14 +1313,16 @@ class _OverallEnergyMatrixCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              statusText,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF00A38E),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                statusText,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF00A38E),
+                                ),
                               ),
                             ),
                           ],
@@ -1521,17 +1528,19 @@ class _VoiceAssistantModalState extends State<_VoiceAssistantModal> {
         _hasSpeech = false;
       }
     }
-    
+
     if (!_hasSpeech) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Speech recognition is not available on this device. Try fully restarting the app (Shift+R) if you just added the plugin.'),
+          content: Text(
+            'Speech recognition is not available on this device. Try fully restarting the app (Shift+R) if you just added the plugin.',
+          ),
         ),
       );
       return;
     }
-    
+
     if (!_isListening) {
       try {
         bool available = await _speech.initialize();
@@ -1557,12 +1566,14 @@ class _VoiceAssistantModalState extends State<_VoiceAssistantModal> {
 
   Future<void> _executeCommand(String commandText) async {
     // Strip emojis if they clicked a chip
-    final cleanCommand = commandText.replaceAll(RegExp(r'[⚡❄️🎬""]'), '').trim();
-    
+    final cleanCommand = commandText
+        .replaceAll(RegExp(r'[⚡❄️🎬""]'), '')
+        .trim();
+
     if (mounted && Navigator.canPop(context)) {
       Navigator.pop(context);
     }
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1627,7 +1638,9 @@ class _VoiceAssistantModalState extends State<_VoiceAssistantModal> {
           ),
           const SizedBox(height: 16),
           Text(
-            _isListening ? 'Listening...' : 'Tap mic to speak to ${widget.userName}',
+            _isListening
+                ? 'Listening...'
+                : 'Tap mic to speak to ${widget.userName}',
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
@@ -1641,7 +1654,9 @@ class _VoiceAssistantModalState extends State<_VoiceAssistantModal> {
             style: TextStyle(
               fontSize: _isListening ? 16 : 12.5,
               fontWeight: _isListening ? FontWeight.w700 : FontWeight.w600,
-              color: _isListening ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+              color: _isListening
+                  ? const Color(0xFF0F172A)
+                  : const Color(0xFF64748B),
             ),
           ),
           const SizedBox(height: 16),

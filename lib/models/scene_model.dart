@@ -39,16 +39,11 @@ class SceneActionModel {
   Map<String, dynamic> toJson() {
     return {
       'deviceId': deviceId,
-      'device_id': deviceId,
       'command': command,
       if (commandValue != null) 'commandValue': commandValue.toString(),
-      if (commandValue != null) 'value': commandValue,
       'toggleOnActivate': toggleOnActivate,
-      'toggle_on_activate': toggleOnActivate,
       'sortOrder': sortOrder,
-      'sort_order': sortOrder,
       'delaySeconds': delaySeconds,
-      'delay_seconds': delaySeconds,
     };
   }
 }
@@ -103,10 +98,7 @@ class SceneModel {
     return {
       'id': id,
       if (tenantId != null) 'tenantId': tenantId,
-      if (clientId != null) ...{
-        'clientId': clientId,
-        'client_id': clientId,
-      },
+      if (clientId != null) ...{'clientId': clientId, 'client_id': clientId},
       'name': name,
       if (description != null) 'description': description,
       if (icon != null) 'icon': icon,
@@ -154,20 +146,20 @@ class SceneExecutionStatus {
   }
 
   factory SceneExecutionStatus.idle({String? sceneId}) => SceneExecutionStatus(
-        sceneId: sceneId,
-        status: 'idle',
-        currentStep: 0,
-        totalSteps: 0,
-        percentage: 0.0,
-        isIdle: true,
-      );
+    sceneId: sceneId,
+    status: 'idle',
+    currentStep: 0,
+    totalSteps: 0,
+    percentage: 0.0,
+    isIdle: true,
+  );
 
   Map<String, dynamic> toJson() => {
-        if (sceneId != null) 'scene_id': sceneId,
-        'status': status,
-        'current_step': currentStep,
-        'total_steps': totalSteps,
-        'percentage': percentage,
-        'is_idle': isIdle,
-      };
+    if (sceneId != null) 'scene_id': sceneId,
+    'status': status,
+    'current_step': currentStep,
+    'total_steps': totalSteps,
+    'percentage': percentage,
+    'is_idle': isIdle,
+  };
 }

@@ -63,7 +63,9 @@ class HasomiVoiceService {
       _tts ??= FlutterTts();
 
       // Try setting Indian English voice locale ('en-IN')
-      final dynamic isIndianAvailable = await _tts?.isLanguageAvailable("en-IN");
+      final dynamic isIndianAvailable = await _tts?.isLanguageAvailable(
+        "en-IN",
+      );
       if (isIndianAvailable == true || isIndianAvailable == 1) {
         await _tts?.setLanguage("en-IN");
       } else {
@@ -76,11 +78,23 @@ class HasomiVoiceService {
         if (voices is List) {
           for (final voice in voices) {
             if (voice is Map) {
-              final String locale = (voice['locale'] ?? '').toString().toLowerCase();
-              final String name = (voice['name'] ?? '').toString().toLowerCase();
-              if (locale.contains('en-in') || locale.contains('en_in') || name.contains('india') || name.contains('en-in')) {
-                await _tts?.setVoice({"name": voice['name'], "locale": voice['locale']});
-                debugPrint('[HasomiVoiceService Selected Indian Voice] ${voice['name']} (${voice['locale']})');
+              final String locale = (voice['locale'] ?? '')
+                  .toString()
+                  .toLowerCase();
+              final String name = (voice['name'] ?? '')
+                  .toString()
+                  .toLowerCase();
+              if (locale.contains('en-in') ||
+                  locale.contains('en_in') ||
+                  name.contains('india') ||
+                  name.contains('en-in')) {
+                await _tts?.setVoice({
+                  "name": voice['name'],
+                  "locale": voice['locale'],
+                });
+                debugPrint(
+                  '[HasomiVoiceService Selected Indian Voice] ${voice['name']} (${voice['locale']})',
+                );
                 break;
               }
             }
@@ -293,7 +307,8 @@ class HasomiVoiceService {
     final List<Device> matchedDevices = [];
 
     // Check if command is asking for ALL devices explicitly (e.g. "turn off all lights")
-    final bool isAllCommand = lowerInput.contains('all lights') ||
+    final bool isAllCommand =
+        lowerInput.contains('all lights') ||
         lowerInput.contains('all fans') ||
         lowerInput.contains('all devices') ||
         lowerInput.contains('all the lights');
@@ -326,9 +341,12 @@ class HasomiVoiceService {
                 final String dTypeStr = d.type.name.toLowerCase();
                 return dName.contains(devType) ||
                     dTypeStr.contains(devType) ||
-                    (devType == 'light' && (dTypeStr == 'light' || dName.contains('light'))) ||
-                    (devType == 'fan' && (dTypeStr == 'fan' || dName.contains('fan'))) ||
-                    (devType == 'ac' && (dTypeStr == 'ac' || dName.contains('ac')));
+                    (devType == 'light' &&
+                        (dTypeStr == 'light' || dName.contains('light'))) ||
+                    (devType == 'fan' &&
+                        (dTypeStr == 'fan' || dName.contains('fan'))) ||
+                    (devType == 'ac' &&
+                        (dTypeStr == 'ac' || dName.contains('ac')));
               }).toList();
 
               if (typeMatches.isEmpty) {
@@ -351,8 +369,10 @@ class HasomiVoiceService {
             final String dTypeStr = d.type.name.toLowerCase();
             return dName.contains(devType) ||
                 dTypeStr.contains(devType) ||
-                (devType == 'light' && (dTypeStr == 'light' || dName.contains('light'))) ||
-                (devType == 'fan' && (dTypeStr == 'fan' || dName.contains('fan'))) ||
+                (devType == 'light' &&
+                    (dTypeStr == 'light' || dName.contains('light'))) ||
+                (devType == 'fan' &&
+                    (dTypeStr == 'fan' || dName.contains('fan'))) ||
                 (devType == 'ac' && (dTypeStr == 'ac' || dName.contains('ac')));
           }).toList();
 
@@ -366,8 +386,18 @@ class HasomiVoiceService {
         }
       } else {
         // Specific device requested but not found
-        final String requestedName = text.replaceAll(RegExp(r'(turn|switch|on|off|please|the|hasomi|hey)', caseSensitive: false), '').trim();
-        notFoundMessages.add("I couldn't find a device named '$requestedName'.");
+        final String requestedName = text
+            .replaceAll(
+              RegExp(
+                r'(turn|switch|on|off|please|the|hasomi|hey)',
+                caseSensitive: false,
+              ),
+              '',
+            )
+            .trim();
+        notFoundMessages.add(
+          "I couldn't find a device named '$requestedName'.",
+        );
       }
     }
 
@@ -392,7 +422,10 @@ class HasomiVoiceService {
     // Execute API requests via DeviceProvider for each matched device
     for (final device in uniqueMatchedDevices) {
       try {
-        final bool success = await deviceProvider.setDevicePower(device, turnOn);
+        final bool success = await deviceProvider.setDevicePower(
+          device,
+          turnOn,
+        );
         actionResults.add(
           HasomiDeviceActionResult(
             device: device,
@@ -445,23 +478,36 @@ class HasomiVoiceService {
       return "No matching devices found.";
     }
 
-    final List<HasomiDeviceActionResult> succeeded =
-        actionResults.where((r) => r.success).toList();
-    final List<HasomiDeviceActionResult> failed =
-        actionResults.where((r) => !r.success).toList();
+    final List<HasomiDeviceActionResult> succeeded = actionResults
+        .where((r) => r.success)
+        .toList();
+    final List<HasomiDeviceActionResult> failed = actionResults
+        .where((r) => !r.success)
+        .toList();
 
     // 1. All Succeeded
     if (failed.isEmpty) {
-      final List<String> devNames = succeeded.map((r) => r.device.name).toSet().toList();
+      final List<String> devNames = succeeded
+          .map((r) => r.device.name)
+          .toSet()
+          .toList();
       final String deviceListStr = _formatNameList(devNames);
-      final String prefix = targetRooms.isNotEmpty ? 'Your ${targetRooms.first}' : 'Your';
+      final String prefix = targetRooms.isNotEmpty
+          ? 'Your ${targetRooms.first}'
+          : 'Your';
       return "$prefix $deviceListStr ${devNames.length > 1 ? 'are' : 'is'} $actionStr.";
     }
 
     // 2. Partial Failure
     if (succeeded.isNotEmpty && failed.isNotEmpty) {
-      final List<String> succDevs = succeeded.map((r) => r.device.name).toSet().toList();
-      final List<String> failDevs = failed.map((r) => r.device.name).toSet().toList();
+      final List<String> succDevs = succeeded
+          .map((r) => r.device.name)
+          .toSet()
+          .toList();
+      final List<String> failDevs = failed
+          .map((r) => r.device.name)
+          .toSet()
+          .toList();
 
       final String succStr = _formatNameList(succDevs);
       final String failStr = _formatNameList(failDevs);
@@ -470,7 +516,10 @@ class HasomiVoiceService {
     }
 
     // 3. All Failed
-    final List<String> failDevs = failed.map((r) => r.device.name).toSet().toList();
+    final List<String> failDevs = failed
+        .map((r) => r.device.name)
+        .toSet()
+        .toList();
     final String failStr = _formatNameList(failDevs);
     return "I couldn't turn $actionStr the $failStr. Please try again.";
   }
@@ -486,8 +535,25 @@ class HasomiVoiceService {
     final String lowerInput = text.trim().toLowerCase();
 
     final Set<String> stopWords = {
-      'turn', 'switch', 'on', 'off', 'please', 'the', 'of', 'in', 'and',
-      'can', 'you', 'my', 'all', 'a', 'an', 'to', 'set', 'hasomi', 'hey'
+      'turn',
+      'switch',
+      'on',
+      'off',
+      'please',
+      'the',
+      'of',
+      'in',
+      'and',
+      'can',
+      'you',
+      'my',
+      'all',
+      'a',
+      'an',
+      'to',
+      'set',
+      'hasomi',
+      'hey',
     };
 
     final List<String> queryTokens = lowerInput
@@ -519,7 +585,7 @@ class HasomiVoiceService {
           } else if (qToken.contains(dToken) || dToken.contains(qToken)) {
             score += 5;
           } else if ((qToken == 'dimable' && dToken == 'dimmable') ||
-                     (qToken == 'dimmable' && dToken == 'dimable')) {
+              (qToken == 'dimmable' && dToken == 'dimable')) {
             score += 10;
           }
         }
