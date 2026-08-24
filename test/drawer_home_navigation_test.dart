@@ -71,13 +71,8 @@ void main() {
       scaffoldState.openDrawer();
       await tester.pumpAndSettle();
 
-<<<<<<< HEAD
       // Verify all 6 H-A-S-O-M-I section headers and badges are in the drawer
       expect(find.text('Hasomi'), findsOneWidget);
-=======
-      // Verify section headers and H A S O M I tiles are in the drawer
-      expect(find.text('Smart Homez'), findsOneWidget);
->>>>>>> origin/Aditya
       expect(find.text('Your Home. Smarter.'), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Automations'), findsWidgets);
