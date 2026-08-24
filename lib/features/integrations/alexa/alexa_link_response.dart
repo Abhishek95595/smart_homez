@@ -17,15 +17,20 @@ class AlexaLinkResponse {
       map = Map<String, dynamic>.from(json['result'] as Map);
     }
 
-    final dynamic expiresVal = map['expiresInSeconds'] ?? map['expires_in_seconds'] ?? map['expiresIn'];
+    final dynamic expiresVal =
+        map['expiresInSeconds'] ??
+        map['expires_in_seconds'] ??
+        map['expiresIn'];
 
-    final String ssoToken = map['ssoToken']?.toString() ??
+    final String ssoToken =
+        map['ssoToken']?.toString() ??
         map['sso_token']?.toString() ??
         map['token']?.toString() ??
         map['linkToken']?.toString() ??
         '';
 
-    String authUrl = map['authorizeUrl']?.toString() ??
+    String authUrl =
+        map['authorizeUrl']?.toString() ??
         map['authorizationUrl']?.toString() ??
         map['authorization_url']?.toString() ??
         map['authUrl']?.toString() ??
@@ -34,9 +39,11 @@ class AlexaLinkResponse {
         '';
 
     if (authUrl.isEmpty && ssoToken.isNotEmpty) {
-      authUrl = 'https://alexa.amazon.com/oauth/authorize?client_id=smart_homez&token=$ssoToken';
+      authUrl =
+          'https://alexa.amazon.com/oauth/authorize?client_id=smart_homez&token=$ssoToken';
     } else if (authUrl.isEmpty) {
-      authUrl = 'https://alexa.amazon.com/oauth/authorize?client_id=smart_homez';
+      authUrl =
+          'https://alexa.amazon.com/oauth/authorize?client_id=smart_homez';
     }
 
     return AlexaLinkResponse(

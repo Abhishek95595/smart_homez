@@ -186,21 +186,29 @@ class ManagedFloor {
 
 class ManagedRoom {
   final String id;
-  final String floorId;
+  final String? floorId;
+  final String? propertyId;
   final String name;
   final String type;
 
   const ManagedRoom({
     required this.id,
-    required this.floorId,
+    this.floorId,
+    this.propertyId,
     required this.name,
     required this.type,
   });
 
-  ManagedRoom copyWith({String? name, String? type}) {
+  ManagedRoom copyWith({
+    String? name,
+    String? type,
+    String? floorId,
+    String? propertyId,
+  }) {
     return ManagedRoom(
       id: id,
-      floorId: floorId,
+      floorId: floorId ?? this.floorId,
+      propertyId: propertyId ?? this.propertyId,
       name: name ?? this.name,
       type: type ?? this.type,
     );
@@ -209,6 +217,7 @@ class ManagedRoom {
   Map<String, dynamic> toJson() => {
     'id': id,
     'floorId': floorId,
+    if (propertyId != null) 'propertyId': propertyId,
     'name': name,
     'type': type,
   };
@@ -216,7 +225,8 @@ class ManagedRoom {
   factory ManagedRoom.fromJson(Map<String, dynamic> json) {
     return ManagedRoom(
       id: json['id'] as String,
-      floorId: json['floorId'] as String,
+      floorId: json['floorId'] as String?,
+      propertyId: json['propertyId'] as String?,
       name: json['name'] as String,
       type: json['type'] as String? ?? 'Other',
     );

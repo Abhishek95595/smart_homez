@@ -38,16 +38,17 @@ class _RoomsScreenState extends State<RoomsScreen> {
     }
   }
 
-  Future<void> _add(BuildContext context, ManagedFloor floor) async {
+  Future<void> _add(BuildContext context, {ManagedFloor? floor}) async {
     final provider = context.read<PropertyProvider>();
     final result = await showRoomForm(
       context,
-      nameExists: (name) => provider.roomNameExists(floor.id, name),
+      nameExists: (name) =>
+          provider.roomNameExists(floor?.id, name, propertyId: widget.homeId),
     );
     if (result == null || !context.mounted) return;
     await provider.addRoom(
-      homeId: widget.homeId ?? '',
-      floorId: floor.id,
+      homeId: widget.homeId ?? floor?.propertyId ?? '',
+      floorId: floor?.id,
       name: result.name,
       type: result.type,
     );
@@ -58,14 +59,23 @@ class _RoomsScreenState extends State<RoomsScreen> {
     final result = await showRoomForm(
       context,
       room: room,
-      nameExists: (name) =>
-          provider.roomNameExists(room.floorId, name, excludingId: room.id),
+      nameExists: (name) => provider.roomNameExists(
+        room.floorId,
+        name,
+        propertyId: widget.homeId,
+        excludingId: room.id,
+      ),
     );
     if (result == null || !context.mounted) return;
     final resolvedName = result.name.trim().isEmpty
         ? room.name
         : result.name.trim();
-    await provider.updateRoom(room, name: resolvedName, type: result.type);
+    await provider.updateRoom(
+      room,
+      name: resolvedName,
+      type: result.type,
+      homeId: widget.homeId,
+    );
     if (!context.mounted) return;
     await context.read<DeviceProvider>().renameRoom(room.id, resolvedName);
   }
@@ -79,7 +89,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
     if (approved && context.mounted) {
       final propertyProvider = context.read<PropertyProvider>();
       final deviceProvider = context.read<DeviceProvider>();
-      await propertyProvider.deleteRoom(room.id);
+      await propertyProvider.deleteRoom(room.id, homeId: widget.homeId);
       await deviceProvider.deleteDevicesForRoom(room.id);
     }
   }
@@ -89,23 +99,40 @@ class _RoomsScreenState extends State<RoomsScreen> {
     final provider = context.watch<PropertyProvider>();
     final floors = provider.floors;
 
+    final isFlat = widget.floorId == null && widget.homeId != null;
     final currentFloorId =
-        widget.floorId ?? (floors.isNotEmpty ? floors.first.id : '');
-    final currentFloor = provider.floorById(currentFloorId);
-    final rooms = provider.roomsFor(currentFloorId);
+        widget.floorId ??
+        (isFlat ? null : (floors.isNotEmpty ? floors.first.id : null));
+    final currentFloor = currentFloorId != null
+        ? provider.floorById(currentFloorId)
+        : null;
+    final rooms = isFlat
+        ? provider.roomsForHome(widget.homeId!)
+        : (currentFloorId != null
+              ? provider.roomsFor(currentFloorId)
+              : <ManagedRoom>[]);
+
+    final property = widget.homeId != null
+        ? provider.propertyById(widget.homeId!)
+        : (currentFloor != null
+              ? provider.propertyById(currentFloor.propertyId)
+              : null);
+    final resolvedHomeName = widget.homeName ?? property?.name;
+
+    final String titleText = currentFloor?.name ?? resolvedHomeName ?? 'Rooms';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(currentFloor?.name ?? 'Rooms'),
+        title: Text(titleText),
         actions: [
-          if (currentFloorId.isNotEmpty)
+          if (currentFloor != null)
             IconButton(
               tooltip: 'View all floors',
               onPressed: () => Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      FloorsScreen(propertyId: currentFloor?.propertyId),
+                      FloorsScreen(propertyId: currentFloor.propertyId),
                 ),
               ),
               icon: const Icon(Icons.layers_outlined),
@@ -120,10 +147,10 @@ class _RoomsScreenState extends State<RoomsScreen> {
           ),
         ],
       ),
-      floatingActionButton: currentFloor == null
+      floatingActionButton: (currentFloor == null && !isFlat)
           ? null
           : FloatingActionButton.extended(
-              onPressed: () => _add(context, currentFloor),
+              onPressed: () => _add(context, floor: currentFloor),
               icon: const Icon(Icons.add_rounded),
               label: const Text('Add Room'),
             ),
@@ -131,25 +158,25 @@ class _RoomsScreenState extends State<RoomsScreen> {
         top: false,
         child: provider.isLoading
             ? const AppLoadingState(message: 'Loading rooms…')
-            : currentFloorId.isEmpty
+            : (currentFloor == null && !isFlat && floors.isEmpty)
             ? const AppStateCard.empty(
                 title: 'No floors found',
                 message: 'Add a floor first to manage its rooms.',
               )
             : _RoomResults(
                 rooms: rooms,
-                homeName: widget.homeName,
+                homeName: resolvedHomeName,
                 floorName: currentFloor?.name,
                 onOpen: (r) => Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => DevicesScreen(
                       title: r.name,
-                      propertyId: currentFloor?.propertyId,
+                      propertyId: property?.id,
                       floorId: r.floorId,
                       roomId: r.id,
                       roomName: r.name,
-                      propertyName: widget.homeName,
+                      propertyName: resolvedHomeName,
                       floorName: currentFloor?.name,
                     ),
                   ),

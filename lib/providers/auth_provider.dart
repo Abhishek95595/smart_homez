@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../core/network/api_exception.dart';
 import '../models/app_user.dart';
 import '../models/auth_response.dart';
 import '../models/resolved_client.dart';
@@ -114,9 +115,15 @@ class AuthProvider extends ChangeNotifier {
         final bool isDemoUser =
             cleanIdentifier.toLowerCase() == 'admin@smarthomez.com';
         final bool isAccountNotFound =
-            errStr.contains('account not found') || errStr.contains('404');
+            (apiError is ApiException && apiError.statusCode == 404) ||
+            errStr.contains('account not found') ||
+            errStr.contains('resource not found') ||
+            errStr.contains('not found') ||
+            errStr.contains('404');
         final bool isRateLimited =
-            errStr.contains('429') || errStr.contains('too many requests');
+            (apiError is ApiException && apiError.statusCode == 429) ||
+            errStr.contains('429') ||
+            errStr.contains('too many requests');
 
         if (isDemoUser ||
             (isEmailLogin && (isAccountNotFound || isRateLimited))) {
@@ -635,6 +642,13 @@ class AuthProvider extends ChangeNotifier {
     }
 
     _isLoading = value;
+    notifyListeners();
+  }
+
+  @visibleForTesting
+  void setUserForTesting(AppUser? user, {String? clientId}) {
+    _currentUser = user;
+    _resolvedClientUuid = clientId ?? 'test_client_id';
     notifyListeners();
   }
 }

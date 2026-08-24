@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/user_role.dart';
 import '../../models/vendor_account_model.dart';
 import '../../models/vendor_node_model.dart';
 import '../../providers/auth_provider.dart';
@@ -273,6 +274,23 @@ class _VendorNodesScreenState extends State<VendorNodesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    if (!auth.role.canAdminister) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Vendor Nodes')),
+        body: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Text(
+              'Access Restricted: Administrator permissions are required to access Vendor Nodes.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Vendor Nodes'),

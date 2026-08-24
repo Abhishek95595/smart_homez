@@ -84,4 +84,10 @@ extension UserRoleX on UserRole {
 
   /// Whether this role can access the Admin Console (property/user overview).
   bool get canAccessAdminConsole => canAdminister;
+
+  /// Whether this role can access Tenant Administration.
+  bool get canAccessTenantAdmin => canAdminister;
+
+  /// Whether this role can access Platform Administration.
+  bool get canAccessPlatformAdmin => this == UserRole.superAdmin;
 }

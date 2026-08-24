@@ -8,7 +8,8 @@ class AlexaWifiDiscoveryModal extends StatefulWidget {
   const AlexaWifiDiscoveryModal({super.key});
 
   @override
-  State<AlexaWifiDiscoveryModal> createState() => _AlexaWifiDiscoveryModalState();
+  State<AlexaWifiDiscoveryModal> createState() =>
+      _AlexaWifiDiscoveryModalState();
 }
 
 class _AlexaWifiDiscoveryModalState extends State<AlexaWifiDiscoveryModal> {
@@ -17,7 +18,9 @@ class _AlexaWifiDiscoveryModalState extends State<AlexaWifiDiscoveryModal> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final realDevices = context.read<DeviceProvider>().devices;
-      context.read<AlexaProvider>().scanLocalWifiDevices(realDevices: realDevices);
+      context.read<AlexaProvider>().scanLocalWifiDevices(
+        realDevices: realDevices,
+      );
     });
   }
 
@@ -125,7 +128,10 @@ class _AlexaWifiDiscoveryModalState extends State<AlexaWifiDiscoveryModal> {
               itemBuilder: (context, index) {
                 final device = devices[index];
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(14),
@@ -182,7 +188,9 @@ class _AlexaWifiDiscoveryModalState extends State<AlexaWifiDiscoveryModal> {
                     },
               icon: const Icon(Icons.link_rounded, size: 20),
               label: Text(
-                alexaProvider.isConnecting ? 'Connecting...' : 'Connect Alexa via Link-Token API',
+                alexaProvider.isConnecting
+                    ? 'Connecting...'
+                    : 'Connect Alexa via Link-Token API',
                 style: const TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 14,

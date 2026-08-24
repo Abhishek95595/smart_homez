@@ -10,6 +10,7 @@ import '../../widgets/app_state_widgets.dart';
 import '../../widgets/property_summary_card.dart';
 import '../devices/device_history_screen.dart';
 import 'floors_screen.dart';
+import 'rooms_screen.dart';
 import 'management_dialogs.dart';
 
 class HomesScreen extends StatefulWidget {
@@ -55,7 +56,19 @@ class _HomesScreenState extends State<HomesScreen> {
     final propertyProvider = context.watch<PropertyProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Properties & Homes')),
+      appBar: AppBar(
+        title: const Text('Properties & Homes'),
+        actions: [
+          IconButton(
+            tooltip: 'One-Click Home Setup',
+            icon: const Icon(
+              Icons.auto_fix_high_rounded,
+              color: Color(0xFF00A38E),
+            ),
+            onPressed: () => Navigator.pushNamed(context, '/homes/setup'),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _add(context),
         icon: const Icon(Icons.add_home_work_rounded),
@@ -73,12 +86,25 @@ class _HomesScreenState extends State<HomesScreen> {
             )
           : _PropertyResults(
               properties: propertyProvider.properties,
-              onOpen: (p) => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => FloorsScreen(propertyId: p.id),
-                ),
-              ),
+              onOpen: (p) {
+                final floors = propertyProvider.floorsFor(p.id);
+                if (floors.isEmpty) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          RoomsScreen(homeId: p.id, homeName: p.name),
+                    ),
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => FloorsScreen(propertyId: p.id),
+                    ),
+                  );
+                }
+              },
             ),
     );
   }
@@ -112,10 +138,7 @@ class _PropertyResults extends StatelessWidget {
       itemBuilder: (context, index) {
         final p = properties[index];
         final floors = propertyProvider.floorsFor(p.id);
-        final floorIds = floors.map((f) => f.id).toSet();
-        final rooms = propertyProvider.rooms.where(
-          (r) => floorIds.contains(r.floorId),
-        );
+        final rooms = propertyProvider.roomsForHome(p.id);
         final devices = deviceProvider.visibleDevicesForProperty(
           user,
           p.name,

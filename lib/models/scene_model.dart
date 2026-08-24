@@ -158,11 +158,11 @@ class SceneExecutionStatus {
   );
 
   Map<String, dynamic> toJson() => {
-        if (sceneId != null) 'scene_id': sceneId,
-        'status': status,
-        'current_step': currentStep,
-        'total_steps': totalSteps,
-        'percentage': percentage,
-        'is_idle': isIdle,
-      };
+    if (sceneId != null) 'scene_id': sceneId,
+    'status': status,
+    'current_step': currentStep,
+    'total_steps': totalSteps,
+    'percentage': percentage,
+    'is_idle': isIdle,
+  };
 }

@@ -116,241 +116,232 @@ class _MainShellState extends State<MainShell> {
   }
 
   @override
-Widget build(BuildContext context) {
-  final criticalCount = context.watch<AlertProvider>().criticalActiveCount;
-  final auth = context.watch<AuthProvider>();
-  final role = auth.role;
+  Widget build(BuildContext context) {
+    final criticalCount = context.watch<AlertProvider>().criticalActiveCount;
+    final auth = context.watch<AuthProvider>();
+    final role = auth.role;
 
-  // Fix 3: MOVED setClientId out of build() and into login logic/initState callback
-  // context.read<PropertyProvider>().setClientId(auth.resolvedClientId);
+    // Fix 3: MOVED setClientId out of build() and into login logic/initState callback
+    // context.read<PropertyProvider>().setClientId(auth.resolvedClientId);
 
-  final tabs = _tabsFor(role);
-  final safeIndex = _index < tabs.length ? _index : 0;
+    final tabs = _tabsFor(role);
+    final safeIndex = _index < tabs.length ? _index : 0;
 
-  return PopScope(
-    canPop: false,
-    onPopInvokedWithResult: (didPop, result) async {
-      if (didPop) return;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
 
-      final NavigatorState? navigator =
-          _navigatorKeys[safeIndex].currentState;
+        final NavigatorState? navigator =
+            _navigatorKeys[safeIndex].currentState;
 
-      // If the current tab has a page in its navigation stack,
-      // go back to that previous page.
-      if (navigator != null && navigator.canPop()) {
-        navigator.pop();
-        return;
-      }
+        // If the current tab has a page in its navigation stack,
+        // go back to that previous page.
+        if (navigator != null && navigator.canPop()) {
+          navigator.pop();
+          return;
+        }
 
-      // If there is no previous page, exit/minimize the Android app.
-      // Do NOT redirect to Home.
-      SystemNavigator.pop();
-    },
-    child: LayoutBuilder(
-      builder: (context, constraints) {
-        final desktop = constraints.maxWidth >= 1100;
+        // If there is no previous page, exit/minimize the Android app.
+        // Do NOT redirect to Home.
+        SystemNavigator.pop();
+      },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final desktop = constraints.maxWidth >= 1100;
 
-        return Scaffold(
-          drawer: desktop
-              ? null
-              : AppNavigationDrawer(
-                  onDashboard: () => _onTabTapped(0),
-                ),
-          body: desktop
-              ? Row(
-                  children: [
-                    AppNavigationDrawer(
-                      permanent: true,
-                      onDashboard: () => _onTabTapped(0),
-                    ),
-                    Expanded(
-                      child: IndexedStack(
-                        index: safeIndex,
-                        children: tabs
-                            .map((t) => _TabNavigator(tab: t))
-                            .toList(),
+          return Scaffold(
+            drawer: desktop
+                ? null
+                : AppNavigationDrawer(onDashboard: () => _onTabTapped(0)),
+            body: desktop
+                ? Row(
+                    children: [
+                      AppNavigationDrawer(
+                        permanent: true,
+                        onDashboard: () => _onTabTapped(0),
                       ),
-                    ),
-                  ],
-                )
-              : IndexedStack(
-                  index: safeIndex,
-                  children: tabs
-                      .map((t) => _TabNavigator(tab: t))
-                      .toList(),
-                ),
-
-          floatingActionButton: FloatingActionButton.extended(
-            heroTag: 'hasomi_voice_fab',
-            onPressed: () {
-              _voiceBarKey.currentState?.triggerVoiceListening();
-            },
-            backgroundColor: const Color(0xFF0F172A),
-            elevation: 4,
-            icon: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF00E5FF),
-                    Color(0xFF3B82F6),
-                  ],
-                ),
-              ),
-              child: const Icon(
-                Icons.mic_rounded,
-                color: Colors.white,
-                size: 16,
-              ),
-            ),
-            label: const Text(
-              'HASOMI',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-
-          bottomNavigationBar: desktop
-              ? null
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    HasomiBottomVoiceBar(key: _voiceBarKey),
-                    Container(
-                      decoration: const BoxDecoration(
-                        color: AppColors.surface,
-                        border: Border(
-                          top: BorderSide(
-                            color: AppColors.divider,
-                            width: 1,
-                          ),
+                      Expanded(
+                        child: IndexedStack(
+                          index: safeIndex,
+                          children: tabs
+                              .map((t) => _TabNavigator(tab: t))
+                              .toList(),
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0x06000000),
-                            blurRadius: 16,
-                            offset: Offset(0, -4),
-                          ),
-                        ],
                       ),
-                      child: SafeArea(
-                        top: false,
-                        child: Container(
-                          height: 74,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                          ),
-                          child: Row(
-                            children: List.generate(tabs.length, (idx) {
-                              final tab = tabs[idx];
-                              final isSelected = safeIndex == idx;
+                    ],
+                  )
+                : IndexedStack(
+                    index: safeIndex,
+                    children: tabs.map((t) => _TabNavigator(tab: t)).toList(),
+                  ),
 
-                              return Expanded(
-                                child: InkWell(
-                                  onTap: () => _onTabTapped(idx),
-                                  splashColor: AppColors.primarySoft,
-                                  highlightColor: Colors.transparent,
-                                  child: Column(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.center,
-                                    children: [
-                                      AnimatedContainer(
-                                        duration: const Duration(
-                                          milliseconds: 180,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 14,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: isSelected
-                                              ? AppColors.primarySoft
-                                              : Colors.transparent,
-                                          borderRadius:
-                                              BorderRadius.circular(16),
-                                        ),
-                                        child: Stack(
-                                          clipBehavior: Clip.none,
-                                          children: [
-                                            Icon(
-                                              tab.icon,
-                                              color: isSelected
-                                                  ? AppColors.primaryDark
-                                                  : AppColors.textSecondary,
-                                              size: 24,
+            floatingActionButton: FloatingActionButton.extended(
+              heroTag: 'hasomi_voice_fab',
+              onPressed: () {
+                _voiceBarKey.currentState?.triggerVoiceListening();
+              },
+              backgroundColor: const Color(0xFF0F172A),
+              elevation: 4,
+              icon: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF00E5FF), Color(0xFF3B82F6)],
+                  ),
+                ),
+                child: const Icon(
+                  Icons.mic_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+              label: const Text(
+                'HASOMI',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+
+            bottomNavigationBar: desktop
+                ? null
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      HasomiBottomVoiceBar(key: _voiceBarKey),
+                      Container(
+                        decoration: const BoxDecoration(
+                          color: AppColors.surface,
+                          border: Border(
+                            top: BorderSide(color: AppColors.divider, width: 1),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0x06000000),
+                              blurRadius: 16,
+                              offset: Offset(0, -4),
+                            ),
+                          ],
+                        ),
+                        child: SafeArea(
+                          top: false,
+                          child: Container(
+                            height: 74,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Row(
+                              children: List.generate(tabs.length, (idx) {
+                                final tab = tabs[idx];
+                                final isSelected = safeIndex == idx;
+
+                                return Expanded(
+                                  child: InkWell(
+                                    onTap: () => _onTabTapped(idx),
+                                    splashColor: AppColors.primarySoft,
+                                    highlightColor: Colors.transparent,
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        AnimatedContainer(
+                                          duration: const Duration(
+                                            milliseconds: 180,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? AppColors.primarySoft
+                                                : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(
+                                              16,
                                             ),
-                                            if (tab.label == 'Activity' &&
-                                                criticalCount > 0)
-                                              Positioned(
-                                                top: -6,
-                                                right: -9,
-                                                child: Container(
-                                                  padding:
-                                                      const EdgeInsets.all(3),
-                                                  decoration:
-                                                      const BoxDecoration(
-                                                    color: AppColors.critical,
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                  constraints:
-                                                      const BoxConstraints(
-                                                    minWidth: 15,
-                                                    minHeight: 15,
-                                                  ),
-                                                  child: Text(
-                                                    '$criticalCount',
-                                                    textAlign:
-                                                        TextAlign.center,
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 8,
-                                                      fontWeight:
-                                                          FontWeight.w900,
-                                                      height: 1,
+                                          ),
+                                          child: Stack(
+                                            clipBehavior: Clip.none,
+                                            children: [
+                                              Icon(
+                                                tab.icon,
+                                                color: isSelected
+                                                    ? AppColors.primaryDark
+                                                    : AppColors.textSecondary,
+                                                size: 24,
+                                              ),
+                                              if (tab.label == 'Activity' &&
+                                                  criticalCount > 0)
+                                                Positioned(
+                                                  top: -6,
+                                                  right: -9,
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.all(3),
+                                                    decoration:
+                                                        const BoxDecoration(
+                                                          color: AppColors
+                                                              .critical,
+                                                          shape:
+                                                              BoxShape.circle,
+                                                        ),
+                                                    constraints:
+                                                        const BoxConstraints(
+                                                          minWidth: 15,
+                                                          minHeight: 15,
+                                                        ),
+                                                    child: Text(
+                                                      '$criticalCount',
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 8,
+                                                        fontWeight:
+                                                            FontWeight.w900,
+                                                        height: 1,
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Text(
-                                          tab.label,
-                                          style: TextStyle(
-                                            color: isSelected
-                                                ? AppColors.primaryDark
-                                                : AppColors.textSecondary,
-                                            fontSize: 11,
-                                            fontWeight: isSelected
-                                                ? FontWeight.w800
-                                                : FontWeight.w600,
+                                            ],
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(height: 3),
+                                        FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            tab.label,
+                                            style: TextStyle(
+                                              color: isSelected
+                                                  ? AppColors.primaryDark
+                                                  : AppColors.textSecondary,
+                                              fontSize: 11,
+                                              fontWeight: isSelected
+                                                  ? FontWeight.w800
+                                                  : FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              );
-                            }),
+                                );
+                              }),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-        );
-      },
-    ),
-  );
-}
+                    ],
+                  ),
+          );
+        },
+      ),
+    );
+  }
 }
 
 class _TabNavigator extends StatelessWidget {

@@ -1265,9 +1265,25 @@ class _DeviceFormState extends State<_DeviceForm> {
             .where((floor) => floor.propertyId == _propertyId)
             .toList();
 
-  List<ManagedRoom> get _availableRooms => _floorId == null
-      ? const []
-      : widget.rooms.where((room) => room.floorId == _floorId).toList();
+  List<ManagedRoom> get _availableRooms {
+    if (_floorId != null) {
+      return widget.rooms.where((room) => room.floorId == _floorId).toList();
+    }
+    if (_propertyId != null) {
+      final floorIds = widget.floors
+          .where((floor) => floor.propertyId == _propertyId)
+          .map((f) => f.id)
+          .toSet();
+      return widget.rooms
+          .where(
+            (r) =>
+                r.propertyId == _propertyId ||
+                (r.floorId != null && floorIds.contains(r.floorId)),
+          )
+          .toList();
+    }
+    return const [];
+  }
 
   @override
   void initState() {

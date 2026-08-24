@@ -636,10 +636,7 @@ class _PropertiesAndEnergySection extends StatelessWidget {
 
     if (properties.isEmpty) {
       propertiesWidget = _AddPropertyFullCard(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const HomesScreen()),
-        ),
+        onTap: () => Navigator.pushNamed(context, '/homes/setup'),
       );
     } else if (properties.length == 1) {
       propertiesWidget = Row(
@@ -656,10 +653,7 @@ class _PropertiesAndEnergySection extends StatelessWidget {
           const SizedBox(width: 16),
           Expanded(
             child: _AddPropertyCard(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const HomesScreen()),
-              ),
+              onTap: () => Navigator.pushNamed(context, '/homes/setup'),
             ),
           ),
         ],
@@ -701,10 +695,7 @@ class _PropertiesAndEnergySection extends StatelessWidget {
               return SizedBox(
                 width: 165,
                 child: _AddPropertyCard(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const HomesScreen()),
-                  ),
+                  onTap: () => Navigator.pushNamed(context, '/homes/setup'),
                 ),
               );
             }
@@ -1372,11 +1363,16 @@ class _SmartAssistantVoiceBanner extends StatelessWidget {
     required this.onTap,
   });
 
-  Future<void> _handleConnectAlexa(BuildContext context, AlexaProvider alexaProvider) async {
+  Future<void> _handleConnectAlexa(
+    BuildContext context,
+    AlexaProvider alexaProvider,
+  ) async {
     final messenger = ScaffoldMessenger.of(context);
     final success = await alexaProvider.connectAlexa();
 
-    if (!success && alexaProvider.errorMessage != null && alexaProvider.errorMessage!.isNotEmpty) {
+    if (!success &&
+        alexaProvider.errorMessage != null &&
+        alexaProvider.errorMessage!.isNotEmpty) {
       messenger.showSnackBar(
         SnackBar(
           content: Text(alexaProvider.errorMessage!),
@@ -1480,7 +1476,10 @@ class _SmartAssistantVoiceBanner extends StatelessWidget {
                     : () => _handleConnectAlexa(context, alexaProvider),
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF00CAFF),
                     borderRadius: BorderRadius.circular(16),

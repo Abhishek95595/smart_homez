@@ -103,7 +103,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Settings'), findsOneWidget);
-      expect(find.text('Integrations'), findsOneWidget);
       expect(find.text('Logout'), findsOneWidget);
 
       // Scroll back up to tap Brand Header at top

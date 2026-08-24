@@ -12,7 +12,7 @@ class AlexaProvider extends ChangeNotifier {
   final AlexaService _service;
 
   AlexaProvider({AlexaService? alexaService})
-      : _service = alexaService ?? AlexaService();
+    : _service = alexaService ?? AlexaService();
 
   AlexaConnectionState _state = AlexaConnectionState.notConnected;
   AlexaStatus _status = AlexaStatus.notConnected();
@@ -30,7 +30,8 @@ class AlexaProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isScanningWifi => _isScanningWifi;
   bool get isConnecting => _state == AlexaConnectionState.connecting;
-  bool get isConnected => _status.connected && _state == AlexaConnectionState.connected;
+  bool get isConnected =>
+      _status.connected && _state == AlexaConnectionState.connected;
   String? get errorMessage => _errorMessage;
   AlexaLinkResponse? get lastLinkResponse => _lastLinkResponse;
 
@@ -59,7 +60,9 @@ class AlexaProvider extends ChangeNotifier {
       try {
         launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       } catch (e) {
-        debugPrint('[AlexaProvider] Launch externalApplication failed: $e, trying platformDefault');
+        debugPrint(
+          '[AlexaProvider] Launch externalApplication failed: $e, trying platformDefault',
+        );
         try {
           launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
         } catch (_) {}
@@ -91,7 +94,8 @@ class AlexaProvider extends ChangeNotifier {
       debugPrint('[AlexaProvider] Response: ${e.response?.data}');
       if (e.response?.statusCode == 401) {
         _errorMessage = 'Your session has expired. Please log in again.';
-      } else if (e.response?.statusCode == 503 || e.response?.statusCode == 500) {
+      } else if (e.response?.statusCode == 503 ||
+          e.response?.statusCode == 500) {
         _errorMessage =
             'Alexa connection service is temporarily unavailable. Please try again later.';
       } else {
@@ -136,12 +140,16 @@ class AlexaProvider extends ChangeNotifier {
   }
 
   /// Scans local network for active user hardware devices ONLY
-  Future<List<AlexaWifiDevice>> scanLocalWifiDevices({List<Device>? realDevices}) async {
+  Future<List<AlexaWifiDevice>> scanLocalWifiDevices({
+    List<Device>? realDevices,
+  }) async {
     _isScanningWifi = true;
     notifyListeners();
 
     try {
-      final devices = await _service.scanLocalWifiDevices(realDevices: realDevices);
+      final devices = await _service.scanLocalWifiDevices(
+        realDevices: realDevices,
+      );
       _wifiDevices = devices;
       return devices;
     } catch (e) {

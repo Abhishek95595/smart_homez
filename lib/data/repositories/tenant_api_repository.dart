@@ -730,15 +730,28 @@ class TenantApiRepository {
     required String template,
     required String homeName,
     String? address,
+    String? structureType,
+    List<Map<String, dynamic>>? customRooms,
+    List<Map<String, dynamic>>? customFloors,
+    Map<String, dynamic>? extraData,
   }) async {
     try {
+      final payload = <String, dynamic>{
+        'template': template,
+        'home_name': homeName.trim(),
+        if (address != null && address.trim().isNotEmpty)
+          'address': address.trim(),
+        if (structureType != null && structureType.isNotEmpty)
+          'structure_type': structureType,
+        if (customRooms != null && customRooms.isNotEmpty) 'rooms': customRooms,
+        if (customFloors != null && customFloors.isNotEmpty)
+          'floors': customFloors,
+        ...?extraData,
+      };
+
       final response = await _api.post(
         ApiEndpoints.homesTemplateSetup,
-        data: {
-          'template': template,
-          'home_name': homeName.trim(),
-          if (address != null) 'address': address.trim(),
-        },
+        data: payload,
       );
       return _extractData(response.data);
     } on DioException catch (e) {
@@ -756,6 +769,20 @@ class TenantApiRepository {
       );
       final data = _extractData(response.data);
       return data['success'] != false;
+    } on DioException catch (e) {
+      throw mapDioException(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> bulkAssignDevicesToRoomsWithResult(
+    List<Map<String, String>> assignments,
+  ) async {
+    try {
+      final response = await _api.post(
+        ApiEndpoints.bulkAssignRooms,
+        data: {'assignments': assignments},
+      );
+      return _extractData(response.data);
     } on DioException catch (e) {
       throw mapDioException(e);
     }

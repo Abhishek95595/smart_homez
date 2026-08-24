@@ -54,15 +54,21 @@ class AlexaStatus {
     }
 
     final dynamic devCountVal =
-        json['deviceCount'] ?? json['device_count'] ?? json['devices_connected'] ?? 0;
+        json['deviceCount'] ??
+        json['device_count'] ??
+        json['devices_connected'] ??
+        0;
 
     return AlexaStatus(
       connected: json['connected'] == true || json['is_connected'] == true,
       deviceCount: devCountVal is num ? devCountVal.toInt() : 0,
       lastSyncedAt: parsedSync,
       errorMessage: json['errorMessage']?.toString(),
-      selectedDeviceName: json['selectedDeviceName']?.toString() ?? json['device_name']?.toString(),
-      selectedDeviceIp: json['selectedDeviceIp']?.toString() ?? json['device_ip']?.toString(),
+      selectedDeviceName:
+          json['selectedDeviceName']?.toString() ??
+          json['device_name']?.toString(),
+      selectedDeviceIp:
+          json['selectedDeviceIp']?.toString() ?? json['device_ip']?.toString(),
     );
   }
 
@@ -87,11 +93,11 @@ class AlexaStatus {
   }
 
   Map<String, dynamic> toJson() => {
-        'connected': connected,
-        'deviceCount': deviceCount,
-        'lastSyncedAt': lastSyncedAt?.toIso8601String(),
-        if (errorMessage != null) 'errorMessage': errorMessage,
-        if (selectedDeviceName != null) 'selectedDeviceName': selectedDeviceName,
-        if (selectedDeviceIp != null) 'selectedDeviceIp': selectedDeviceIp,
-      };
+    'connected': connected,
+    'deviceCount': deviceCount,
+    'lastSyncedAt': lastSyncedAt?.toIso8601String(),
+    if (errorMessage != null) 'errorMessage': errorMessage,
+    if (selectedDeviceName != null) 'selectedDeviceName': selectedDeviceName,
+    if (selectedDeviceIp != null) 'selectedDeviceIp': selectedDeviceIp,
+  };
 }

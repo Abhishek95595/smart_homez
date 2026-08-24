@@ -14,6 +14,8 @@ import 'providers/property_provider.dart';
 import 'providers/routine_provider.dart';
 import 'providers/ticket_provider.dart';
 import 'providers/water_provider.dart';
+import 'features/home_setup/providers/home_setup_provider.dart';
+import 'features/home_setup/screens/home_setup_screen.dart';
 import 'features/integrations/alexa/alexa_provider.dart';
 import 'screens/landing/landing_screen.dart';
 import 'theme/app_theme.dart';
@@ -55,12 +57,14 @@ class SmartBuildingApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => WaterProvider()),
         ChangeNotifierProvider(create: (_) => TicketProvider()),
         ChangeNotifierProvider(create: (_) => AlexaProvider()),
+        ChangeNotifierProvider(create: (_) => HomeSetupProvider()),
       ],
       child: MaterialApp(
         title: 'Hasomi',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: const LandingScreen(),
+        routes: {'/homes/setup': (context) => const HomeSetupScreen()},
       ),
     );
   }

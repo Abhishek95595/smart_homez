@@ -11,8 +11,8 @@ import 'alexa_status_model.dart';
 
 class AlexaService {
   AlexaService({ApiClient? apiClient, FlutterSecureStorage? storage})
-      : _api = apiClient ?? ApiClient(),
-        _storage = storage ?? const FlutterSecureStorage();
+    : _api = apiClient ?? ApiClient(),
+      _storage = storage ?? const FlutterSecureStorage();
 
   final ApiClient _api;
   final FlutterSecureStorage _storage;
@@ -39,11 +39,13 @@ class AlexaService {
     String? scope,
   }) async {
     final String currentState = state ?? generateSecureState();
-    final String? clientId = await _storage.read(key: 'api_client_id') ??
+    final String? clientId =
+        await _storage.read(key: 'api_client_id') ??
         await _storage.read(key: 'resolved_client_uuid');
 
     final Map<String, dynamic> body = {
-      if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
+      if (clientId != null && clientId.trim().isNotEmpty)
+        'clientId': clientId.trim(),
       'redirectUri': redirectUri ?? alexaRedirectUri,
       'state': currentState,
       'scope': scope ?? alexaScope,
@@ -73,13 +75,17 @@ class AlexaService {
   }
 
   /// Scans local network for active user hardware devices ONLY (no mock devices)
-  Future<List<AlexaWifiDevice>> scanLocalWifiDevices({List<Device>? realDevices}) async {
+  Future<List<AlexaWifiDevice>> scanLocalWifiDevices({
+    List<Device>? realDevices,
+  }) async {
     try {
       final Response<dynamic> response = await _api.post(
         ApiEndpoints.alexaDiscovery,
       );
       if (response.data is Map<String, dynamic>) {
-        final Map<String, dynamic> data = Map<String, dynamic>.from(response.data);
+        final Map<String, dynamic> data = Map<String, dynamic>.from(
+          response.data,
+        );
         if (data['endpoints'] is List) {
           final List list = data['endpoints'] as List;
           final List<AlexaWifiDevice> parsed = [];
@@ -90,7 +96,9 @@ class AlexaService {
                 AlexaWifiDevice(
                   id: item['endpointId']?.toString() ?? 'alexa_dev_$i',
                   name: item['friendlyName']?.toString() ?? 'Device ${i + 1}',
-                  model: item['displayCategories']?.first?.toString() ?? 'Smart Device',
+                  model:
+                      item['displayCategories']?.first?.toString() ??
+                      'Smart Device',
                   room: item['description']?.toString() ?? 'Smart Home',
                   ipAddress: '192.168.1.${100 + i}',
                 ),
@@ -131,7 +139,9 @@ class AlexaService {
         ApiEndpoints.alexaStatus,
       );
       if (response.data is Map<String, dynamic>) {
-        final Map<String, dynamic> data = Map<String, dynamic>.from(response.data);
+        final Map<String, dynamic> data = Map<String, dynamic>.from(
+          response.data,
+        );
         if (data['data'] is Map<String, dynamic>) {
           return AlexaStatus.fromJson(Map<String, dynamic>.from(data['data']));
         }

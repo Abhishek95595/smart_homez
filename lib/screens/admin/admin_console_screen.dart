@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../data/mock_data.dart';
 import '../../models/property_hierarchy.dart';
 import '../../models/user_role.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../providers/ticket_provider.dart';
@@ -13,7 +14,9 @@ import '../../theme/app_theme.dart';
 /// Building/Tower/Flat hierarchy + user roster + device registry summary,
 /// per PRD section "Society/BMS integration" and "User/role administration".
 class AdminConsoleScreen extends StatefulWidget {
-  const AdminConsoleScreen({super.key});
+  final int initialTabIndex;
+
+  const AdminConsoleScreen({super.key, this.initialTabIndex = 0});
 
   @override
   State<AdminConsoleScreen> createState() => _AdminConsoleScreenState();
@@ -26,7 +29,15 @@ class _AdminConsoleScreenState extends State<AdminConsoleScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    final validIndex =
+        (widget.initialTabIndex >= 0 && widget.initialTabIndex < 3)
+        ? widget.initialTabIndex
+        : 0;
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: validIndex,
+    );
   }
 
   @override
@@ -37,6 +48,23 @@ class _AdminConsoleScreenState extends State<AdminConsoleScreen>
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    if (!auth.role.canAccessAdminConsole) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Admin Console')),
+        body: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Text(
+              'Access Restricted: Administrator permissions are required to access this console.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Admin Console'),

@@ -67,6 +67,21 @@ class PropertyProvider extends ChangeNotifier {
     return result;
   }
 
+  List<ManagedRoom> roomsForHome(String propertyId) {
+    final floorIds = floorsFor(propertyId).map((item) => item.id).toSet();
+    final result = _rooms
+        .where(
+          (item) =>
+              item.propertyId == propertyId ||
+              (item.floorId != null && floorIds.contains(item.floorId)),
+        )
+        .toList();
+    result.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return result;
+  }
+
+  bool isFlatHome(String propertyId) => floorsFor(propertyId).isEmpty;
+
   ManagedProperty? propertyById(String id) =>
       _properties.where((item) => item.id == id).firstOrNull;
 
@@ -89,6 +104,9 @@ class PropertyProvider extends ChangeNotifier {
   Future<void> _load() async {
     try {
       final snapshot = await _repository.load();
+      _properties.clear();
+      _floors.clear();
+      _rooms.clear();
       if (snapshot == null) {
         _seedDefaults();
         await _save();
@@ -273,13 +291,22 @@ class PropertyProvider extends ChangeNotifier {
     );
   }
 
-  bool roomNameExists(String floorId, String name, {String? excludingId}) {
+  bool roomNameExists(
+    String? floorId,
+    String name, {
+    String? propertyId,
+    String? excludingId,
+  }) {
     final normalized = name.trim().toLowerCase();
     if (normalized.isEmpty) return false;
     return _rooms.any(
       (item) =>
           item.id != excludingId &&
-          item.floorId == floorId &&
+          (floorId != null
+              ? item.floorId == floorId
+              : (propertyId != null
+                    ? item.propertyId == propertyId
+                    : item.floorId == null)) &&
           item.name.toLowerCase() == normalized,
     );
   }
@@ -372,7 +399,11 @@ class PropertyProvider extends ChangeNotifier {
     }
 
     final floorIds = floorsFor(propertyId).map((item) => item.id).toSet();
-    _rooms.removeWhere((item) => floorIds.contains(item.floorId));
+    _rooms.removeWhere(
+      (item) =>
+          (item.floorId != null && floorIds.contains(item.floorId)) ||
+          item.propertyId == propertyId,
+    );
     _floors.removeWhere((item) => item.propertyId == propertyId);
     _properties.removeWhere((item) => item.id == propertyId);
     await _saveAndNotify();
@@ -451,22 +482,26 @@ class PropertyProvider extends ChangeNotifier {
 
   Future<ManagedRoom> addRoom({
     required String homeId,
-    required String floorId,
+    String? floorId,
     required String name,
     required String type,
   }) async {
     final enteredName = name.trim();
     final baseName = type.trim().isEmpty ? 'Room' : type.trim();
+    final existingRooms = floorId != null
+        ? _rooms.where((room) => room.floorId == floorId)
+        : _rooms.where(
+            (room) => room.propertyId == homeId || room.floorId == null,
+          );
+
     final resolvedName = enteredName.isEmpty
-        ? _nextAvailableName(
-            baseName,
-            _rooms
-                .where((room) => room.floorId == floorId)
-                .map((room) => room.name),
-          )
+        ? _nextAvailableName(baseName, existingRooms.map((room) => room.name))
         : enteredName;
 
-    if (_clientId != null && homeId.isNotEmpty && !homeId.startsWith('bldg_')) {
+    if (_clientId != null &&
+        homeId.isNotEmpty &&
+        !homeId.startsWith('bldg_') &&
+        floorId != null) {
       await _hierarchyService.createRoom(
         _clientId!,
         homeId,
@@ -480,6 +515,7 @@ class PropertyProvider extends ChangeNotifier {
     final item = ManagedRoom(
       id: _uuid.v4(),
       floorId: floorId,
+      propertyId: homeId,
       name: resolvedName,
       type: type,
     );
@@ -498,15 +534,18 @@ class PropertyProvider extends ChangeNotifier {
     if (index == -1) return;
     final resolvedName = name.trim().isEmpty ? room.name : name.trim();
 
-    if (_clientId != null && homeId != null && !homeId.startsWith('bldg_')) {
+    if (_clientId != null &&
+        homeId != null &&
+        !homeId.startsWith('bldg_') &&
+        room.floorId != null) {
       await _hierarchyService.renameRoom(
         clientId: _clientId!,
         homeId: homeId,
-        floorId: room.floorId,
+        floorId: room.floorId!,
         roomId: room.id,
         name: resolvedName,
       );
-      await fetchRoomsForFloor(homeId, room.floorId);
+      await fetchRoomsForFloor(homeId, room.floorId!);
       return;
     }
 
@@ -519,14 +558,15 @@ class PropertyProvider extends ChangeNotifier {
     if (room != null &&
         _clientId != null &&
         homeId != null &&
-        !homeId.startsWith('bldg_')) {
+        !homeId.startsWith('bldg_') &&
+        room.floorId != null) {
       await _hierarchyService.deleteRoom(
         clientId: _clientId!,
         homeId: homeId,
-        floorId: room.floorId,
+        floorId: room.floorId!,
         roomId: roomId,
       );
-      await fetchRoomsForFloor(homeId, room.floorId);
+      await fetchRoomsForFloor(homeId, room.floorId!);
       return;
     }
 

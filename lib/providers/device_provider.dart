@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../data/mock_data.dart';
 import '../models/app_user.dart';
 import '../models/device.dart';
 import '../models/device_model.dart';
@@ -869,7 +868,9 @@ class DeviceProvider extends ChangeNotifier {
       final List<Device>? stored = await _repository.load();
 
       if (stored != null) {
-        final realDevices = stored.where((d) => d.tenantId != 'anvya_greenwood').toList();
+        final realDevices = stored
+            .where((d) => d.tenantId != 'anvya_greenwood')
+            .toList();
         _devices
           ..clear()
           ..addAll(realDevices);

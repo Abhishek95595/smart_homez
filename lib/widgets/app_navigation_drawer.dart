@@ -15,6 +15,7 @@ import '../screens/energy/energy_screen.dart';
 import '../screens/environment/environment_screen.dart';
 import '../screens/fire_smoke/fire_smoke_screen.dart';
 import '../screens/integrations/integrations_screen.dart';
+import '../screens/integrations/vendor_nodes_screen.dart';
 import '../screens/main_shell.dart';
 import '../screens/properties/floors_screen.dart';
 import '../screens/properties/homes_screen.dart';
@@ -178,6 +179,7 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                               subtitle: 'Properties, Floors, Rooms & Devices',
                               isExpanded: _expandedKeys.contains('H'),
                               onToggle: () => _toggleSection('H'),
+                              backgroundColor: const Color(0xFFE6F7F5),
                               children: [
                                 _DrawerChildItem(
                                   title: 'Properties',
@@ -219,6 +221,7 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                               subtitle: 'Scenes & Automations',
                               isExpanded: _expandedKeys.contains('A'),
                               onToggle: () => _toggleSection('A'),
+                              backgroundColor: const Color(0xFFE8F0FE),
                               children: [
                                 _DrawerChildItem(
                                   title: 'Scenes',
@@ -251,6 +254,7 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                               subtitle: 'Environment Monitoring',
                               isExpanded: _expandedKeys.contains('S'),
                               onToggle: () => _toggleSection('S'),
+                              backgroundColor: const Color(0xFFE8F5E9),
                               children: [
                                 _DrawerChildItem(
                                   title: 'Environment',
@@ -271,6 +275,7 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                               subtitle: 'Energy, Water, Fire & More',
                               isExpanded: _expandedKeys.contains('O'),
                               onToggle: () => _toggleSection('O'),
+                              backgroundColor: const Color(0xFFFFF8E1),
                               children: [
                                 if (role.canViewEnergy)
                                   _DrawerChildItem(
@@ -316,6 +321,7 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                               subtitle: 'All Connected Devices',
                               isExpanded: _expandedKeys.contains('M'),
                               onToggle: () => _toggleSection('M'),
+                              backgroundColor: const Color(0xFFF3E8FF),
                               children: [
                                 _DrawerChildItem(
                                   title: 'Devices',
@@ -336,6 +342,7 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                               subtitle: 'AI-Powered Insights',
                               isExpanded: _expandedKeys.contains('I'),
                               onToggle: () => _toggleSection('I'),
+                              backgroundColor: const Color(0xFFEDE7F6),
                               children: [
                                 _DrawerChildItem(
                                   title: 'HASOMI Voice Assistant',
@@ -364,6 +371,110 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                                   ),
                               ],
                             ),
+
+                            // Tenant Administration (Super Admin & Facility Manager)
+                            if (role.canAccessTenantAdmin) ...[
+                              const SizedBox(height: 10),
+                              _SmartDrawerMenuCard(
+                                letter: 'T',
+                                icon: Icons.admin_panel_settings_outlined,
+                                title: 'Tenant Administration',
+                                subtitle: 'Clients, Spaces & Automations',
+                                isExpanded: _expandedKeys.contains('T'),
+                                onToggle: () => _toggleSection('T'),
+                                backgroundColor: const Color(0xFFE8F5E9),
+                                children: [
+                                  _DrawerChildItem(
+                                    title: 'Clients & Users',
+                                    icon: Icons.people_outline_rounded,
+                                    isLast: false,
+                                    onTap: () => _open(
+                                      context,
+                                      const AdminConsoleScreen(
+                                        initialTabIndex: 1,
+                                      ),
+                                    ),
+                                  ),
+                                  _DrawerChildItem(
+                                    title: 'Devices & Spaces',
+                                    icon: Icons.apartment_rounded,
+                                    isLast: false,
+                                    onTap: () =>
+                                        _open(context, const HomesScreen()),
+                                  ),
+                                  _DrawerChildItem(
+                                    title: 'Automations & Scenes',
+                                    icon:
+                                        Icons.precision_manufacturing_outlined,
+                                    isLast: false,
+                                    onTap: () => _open(
+                                      context,
+                                      const AutomationsScreen(),
+                                    ),
+                                  ),
+                                  _DrawerChildItem(
+                                    title: 'Integrations',
+                                    icon: Icons.extension_outlined,
+                                    isLast: false,
+                                    onTap: () => _open(
+                                      context,
+                                      const IntegrationsScreen(),
+                                    ),
+                                  ),
+                                  _DrawerChildItem(
+                                    title: 'Tenant Settings',
+                                    icon: Icons.settings_outlined,
+                                    isLast: true,
+                                    onTap: () =>
+                                        _open(context, const SettingsScreen()),
+                                  ),
+                                ],
+                              ),
+                            ],
+
+                            // Platform Administration (Super Admin only)
+                            if (role.canAccessPlatformAdmin) ...[
+                              const SizedBox(height: 10),
+                              _SmartDrawerMenuCard(
+                                letter: 'P',
+                                icon: Icons.shield_outlined,
+                                title: 'Platform Administration',
+                                subtitle: 'Multi-Tenant & System Governance',
+                                isExpanded: _expandedKeys.contains('P'),
+                                onToggle: () => _toggleSection('P'),
+                                backgroundColor: const Color(0xFFEDE7F6),
+                                children: [
+                                  _DrawerChildItem(
+                                    title: 'Tenant Management',
+                                    icon: Icons.corporate_fare_rounded,
+                                    isLast: false,
+                                    onTap: () => _open(
+                                      context,
+                                      const AdminConsoleScreen(
+                                        initialTabIndex: 0,
+                                      ),
+                                    ),
+                                  ),
+                                  _DrawerChildItem(
+                                    title: 'Global Integrations',
+                                    icon: Icons.hub_outlined,
+                                    isLast: false,
+                                    onTap: () => _open(
+                                      context,
+                                      const VendorNodesScreen(),
+                                    ),
+                                  ),
+                                  _DrawerChildItem(
+                                    title: 'Security & System Health',
+                                    icon: Icons.health_and_safety_outlined,
+                                    isLast: true,
+                                    onTap: () =>
+                                        _open(context, const AlertsScreen()),
+                                  ),
+                                ],
+                              ),
+                            ],
+
                             const SizedBox(height: 16),
 
                             // Individual Bottom Utility Cards
@@ -374,25 +485,6 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                               onTap: () =>
                                   _open(context, const SettingsScreen()),
                             ),
-                            const SizedBox(height: 10),
-
-                            _DrawerBottomMenuCard(
-                              icon: Icons.extension_outlined,
-                              title: 'Integrations',
-                              subtitle: 'Third Party Services',
-                              onTap: () =>
-                                  _open(context, const IntegrationsScreen()),
-                            ),
-                            if (role.canAccessAdminConsole) ...[
-                              const SizedBox(height: 10),
-                              _DrawerBottomMenuCard(
-                                icon: Icons.admin_panel_settings_outlined,
-                                title: 'Admin Console',
-                                subtitle: 'Manage Roles & System',
-                                onTap: () =>
-                                    _open(context, const AdminConsoleScreen()),
-                              ),
-                            ],
                             if (role.canManageTickets) ...[
                               const SizedBox(height: 10),
                               _DrawerBottomMenuCard(
@@ -626,6 +718,7 @@ class _SmartDrawerMenuCard extends StatelessWidget {
   final bool isExpanded;
   final VoidCallback onToggle;
   final List<Widget> children;
+  final Color backgroundColor;
 
   const _SmartDrawerMenuCard({
     required this.letter,
@@ -635,6 +728,7 @@ class _SmartDrawerMenuCard extends StatelessWidget {
     required this.isExpanded,
     required this.onToggle,
     required this.children,
+    this.backgroundColor = const Color(0xFFFFFFFF),
   });
 
   @override
@@ -642,8 +736,8 @@ class _SmartDrawerMenuCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isExpanded
-            ? const Color(0xFFFAFEFE)
-            : Colors.white.withValues(alpha: 0.98),
+            ? backgroundColor.withValues(alpha: 0.70)
+            : backgroundColor,
         borderRadius: BorderRadius.circular(26),
         border: Border.all(
           color: isExpanded ? const Color(0xFFC7EFE9) : const Color(0xFFE5F1EF),
@@ -996,7 +1090,7 @@ class _DrawerChildItem extends StatelessWidget {
                 ),
               ),
 
-              ?trailingBadge,
+              if (trailingBadge != null) trailingBadge!,
             ],
           ),
         ),
