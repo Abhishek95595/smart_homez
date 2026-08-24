@@ -60,18 +60,20 @@ class AlexaService {
     debugPrint('[AlexaService] Response Data: ${response.data}');
 
     if (response.statusCode != 200) {
-      throw Exception('Alexa API failed with status ${response.statusCode}');
+      throw Exception('Alexa connection API returned status ${response.statusCode}');
     }
 
     if (response.data is Map<String, dynamic>) {
       final AlexaLinkResponse linkResponse = AlexaLinkResponse.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );
-      debugPrint('[AlexaService] authorizeUrl: ${linkResponse.authorizeUrl}');
-      return linkResponse;
+      if (linkResponse.authorizeUrl.trim().isNotEmpty) {
+        debugPrint('[AlexaService] authorizeUrl: ${linkResponse.authorizeUrl}');
+        return linkResponse;
+      }
     }
 
-    throw Exception('Invalid server response format');
+    throw Exception('Server did not return a valid Alexa authorization URL.');
   }
 
   /// Scans local network for active user hardware devices ONLY (no mock devices)

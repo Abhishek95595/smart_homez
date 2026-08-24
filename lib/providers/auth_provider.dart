@@ -89,19 +89,6 @@ class AuthProvider extends ChangeNotifier {
             email: cleanIdentifier,
             password: secret,
           );
-          try {
-            final tenantAuth = await _authService.fetchToken(
-              clientId: 'anvyaaai_AEB3',
-              clientSecret: 'ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8',
-            );
-            if (tenantAuth.success &&
-                tenantAuth.token != null &&
-                tenantAuth.token!.isNotEmpty) {
-              _apiToken = tenantAuth.token;
-            }
-          } catch (tErr) {
-            debugPrint('[AuthProvider] Using user login token ($tErr)');
-          }
         } else {
           authResponse = await _authService.fetchToken(
             clientId: cleanIdentifier,

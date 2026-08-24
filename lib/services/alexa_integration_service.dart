@@ -40,7 +40,7 @@ class AlexaIntegrationService {
     } catch (error) {
       debugPrint('[AlexaService] Link token error: $error');
       final String msg = error.toString().contains('401')
-          ? '401 Unauthorized: Valid API JWT token required for Alexa Account Linking.'
+          ? 'Session expired or Alexa connection server requires authentication.'
           : error
                 .toString()
                 .replaceFirst('Exception: ', '')
