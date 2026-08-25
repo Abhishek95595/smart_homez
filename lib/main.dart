@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 
@@ -27,6 +28,10 @@ Future<void> main() async {
   // machine-specific Firebase desktop configuration.
   if (defaultTargetPlatform != TargetPlatform.windows) {
     await Firebase.initializeApp();
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.debug,
+      appleProvider: AppleProvider.debug,
+    );
   }
   await Hive.initFlutter();
   runApp(const SmartBuildingApp());

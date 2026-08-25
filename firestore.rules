@@ -1,0 +1,17 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /userTenantMappings/{document=**} {
+      allow read, write: if false;
+    }
+
+    match /pendingTenantRegistrations/{document=**} {
+      allow read, write: if false;
+    }
+
+    match /userPushTokens/{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
