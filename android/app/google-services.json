@@ -1,44 +1,26 @@
 {
   "project_info": {
-    "project_number": "280979635008",
-    "project_id": "smarthomez-73d81",
-    "storage_bucket": "smarthomez-73d81.firebasestorage.app"
+    "project_number": "907063848439",
+    "project_id": "hasomi-e2ba3",
+    "storage_bucket": "hasomi-e2ba3.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:280979635008:android:7d530079dbc20552b498a5",
+        "mobilesdk_app_id": "1:907063848439:android:ed7c5e17ec15de338992f2",
         "android_client_info": {
           "package_name": "com.smartbuildingmanager.flutter_app"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "280979635008-6osu0bmvn6qa78l9oactij70olace8mf.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.smartbuildingmanager.flutter_app",
-            "certificate_hash": "f2b6cae905909d4221d658902a5b5279558832bd"
-          }
-        },
-        {
-          "client_id": "280979635008-gq62p26um5pabh72l9l0q0gf3u15p5i8.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCO_W3-3MSjHUBO3SoMvJE-eTrfTDzR268"
+          "current_key": "AIzaSyATa171ZRlGP_b2aJGiojIlKtKL9xv0xY4"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "280979635008-gq62p26um5pabh72l9l0q0gf3u15p5i8.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

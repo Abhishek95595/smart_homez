@@ -1,0 +1,32 @@
+{
+  "name": "smarthome-bff-functions",
+  "version": "1.0.0",
+  "description": "Backend-for-Frontend proxy for Smart Homez API using Firebase Auth",
+  "main": "lib/index.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "lint": "tslint --project tsconfig.json",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "firebase-admin": "^12.1.0",
+    "firebase-functions": "^6.0.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.5.0",
+    "typescript": "^5.5.4"
+  },
+  "private": true
+}

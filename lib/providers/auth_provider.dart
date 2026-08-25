@@ -454,6 +454,18 @@ class AuthProvider extends ChangeNotifier {
           final token = await userCred.user?.getIdToken();
           if (token != null) {
             _apiToken = token;
+
+            try {
+              final authResponse = await _authService.verifyFirebaseTokenWithBackend(
+                firebaseIdToken: token,
+                fcmToken: 'MOCK_DEVICE_FCM_TOKEN',
+              );
+              _resolvedClientUuid = authResponse.clientId;
+            } catch (backendError) {
+              debugPrint('[AuthProvider] Auto-verification BFF mapping failed: $backendError');
+              _resolvedClientUuid = 'firebase_user_${userCred.user?.uid}';
+            }
+
             _currentUser = AppUser(
               id: userCred.user?.uid ?? '',
               name: userCred.user?.displayName ?? 'OTP User',
@@ -463,8 +475,6 @@ class AuthProvider extends ChangeNotifier {
               tenantId: 'aurabrain',
               avatarInitials: 'OU',
             );
-            _resolvedClientUuid = 'firebase_user_${userCred.user?.uid}';
-            await _authService.saveResolvedClientUuid(_resolvedClientUuid!);
             notifyListeners();
           }
         },
@@ -538,6 +548,18 @@ class AuthProvider extends ChangeNotifier {
         return;
       }
       _apiToken = token;
+
+      try {
+        final authResponse = await _authService.verifyFirebaseTokenWithBackend(
+          firebaseIdToken: token,
+          fcmToken: 'MOCK_DEVICE_FCM_TOKEN',
+        );
+        _resolvedClientUuid = authResponse.clientId;
+      } catch (backendError) {
+        _fail('BFF Session verification failed: $backendError');
+        return;
+      }
+
       _currentUser = AppUser(
         id: userCred.user?.uid ?? '',
         name: userCred.user?.displayName ?? 'OTP User',
@@ -547,8 +569,8 @@ class AuthProvider extends ChangeNotifier {
         tenantId: 'aurabrain',
         avatarInitials: 'OU',
       );
-      _resolvedClientUuid = 'firebase_user_${userCred.user?.uid}';
-      await _authService.saveResolvedClientUuid(_resolvedClientUuid!);
+      _otpSent = false;
+      _verificationId = null;
       notifyListeners();
     } catch (e) {
       _fail('Failed to verify OTP: $e');

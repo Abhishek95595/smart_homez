@@ -148,6 +148,41 @@ class AuthService {
     }
   }
 
+  /// Verifies Firebase ID Token with the Cloud Function backend.
+  Future<AuthResponse> verifyFirebaseTokenWithBackend({
+    required String firebaseIdToken,
+    String? fcmToken,
+  }) async {
+    try {
+      // Temporarily store the Firebase ID Token in secure storage so the ApiClient
+      // interceptor can pick it up and direct this request to the Cloud Functions URL.
+      await _storage.write(key: 'firebase_id_token', value: firebaseIdToken);
+
+      final response = await _api.post(
+        ApiEndpoints.bffSessionVerify,
+        data: {
+          'fcmToken': fcmToken,
+        },
+      );
+
+      final AuthResponse auth = AuthResponse.fromJson(response.data);
+      if (!auth.success) {
+        await _storage.delete(key: 'firebase_id_token');
+        throw Exception(auth.error ?? 'Backend session verification failed');
+      }
+
+      if (auth.clientId != null && auth.clientId!.isNotEmpty) {
+        await _storage.write(key: _resolvedClientUuidKey, value: auth.clientId);
+      }
+
+      return auth;
+    } catch (error) {
+      debugPrint('[AuthService] verifyFirebaseTokenWithBackend failed: $error');
+      await _storage.delete(key: 'firebase_id_token');
+      rethrow;
+    }
+  }
+
   Future<bool> hasValidToken() async {
     final String? token = await getSavedToken();
 
@@ -190,8 +225,10 @@ class AuthService {
       _storage.delete(key: 'api_client_secret'),
       _storage.delete(key: 'login_email'),
       _storage.delete(key: 'login_password'),
+      _storage.delete(key: 'firebase_id_token'),
     ]);
 
     debugPrint('[AuthService] Authentication data cleared.');
   }
 }
+

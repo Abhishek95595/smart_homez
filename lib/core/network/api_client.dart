@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 import 'api_endpoints.dart';
 import 'api_exception.dart';
@@ -32,12 +33,71 @@ class ApiClient {
             String? token;
 
             // =====================================================
+            // FIREBASE / BFF CALLABLE FUNCTIONS ROUTE
+            // =====================================================
+            final String? firebaseIdToken = await _storage.read(key: 'firebase_id_token');
+            final bool isBffVerify = path == ApiEndpoints.bffSessionVerify;
+
+            if (isBffVerify || (firebaseIdToken != null && firebaseIdToken.trim().isNotEmpty)) {
+              debugPrint('[API BFF] Intercepting REST call and delegating to Callable Function: $path');
+              try {
+                final functions = FirebaseFunctions.instanceFor(region: 'asia-south1');
+                HttpsCallableResult<dynamic> result;
+
+                if (isBffVerify) {
+                  final String? fcmToken = options.data is Map ? options.data['fcmToken'] : null;
+                  final callable = functions.httpsCallable('getTenantSession');
+                  result = await callable.call(<String, dynamic>{
+                    'fcmToken': fcmToken,
+                  });
+                } else if (path.contains('/devices/') && path.contains('/command')) {
+                  final regExp = RegExp(r'/api/v1/clients/[^/]+/devices/([^/]+)/command');
+                  final match = regExp.firstMatch(path);
+                  final String deviceId = match != null ? match.group(1)! : '';
+                  final String command = options.data is Map ? options.data['command'] : '';
+                  final dynamic value = options.data is Map ? options.data['value'] : null;
+                  final String? deviceName = options.data is Map ? options.data['deviceName'] : null;
+
+                  final callable = functions.httpsCallable('sendDeviceCommand');
+                  result = await callable.call(<String, dynamic>{
+                    'deviceId': deviceId,
+                    'command': command,
+                    'value': value,
+                    'deviceName': deviceName,
+                  });
+                } else if (path.endsWith('/devices')) {
+                  final callable = functions.httpsCallable('getDevices');
+                  result = await callable.call();
+                } else if (path.endsWith('/homes')) {
+                  final callable = functions.httpsCallable('getHomes');
+                  result = await callable.call();
+                } else {
+                  return handler.next(options);
+                }
+
+                // Wrap response data and resolve
+                final dioResponse = Response<dynamic>(
+                  requestOptions: options,
+                  data: result.data,
+                  statusCode: 200,
+                  statusMessage: 'OK',
+                );
+                return handler.resolve(dioResponse);
+              } catch (e) {
+                debugPrint('[API BFF] Firebase Callable Function error: $e');
+                return handler.reject(
+                  DioException(
+                    requestOptions: options,
+                    error: e,
+                    message: e.toString(),
+                  ),
+                );
+              }
+            }
+            // =====================================================
             // ALEXA
             // =====================================================
-            //
-            // Alexa account linking needs the logged-in
-            // USER / PLATFORM JWT.
-            if (_isAlexaEndpoint(path)) {
+            else if (_isAlexaEndpoint(path)) {
               token = await _storage.read(
                 key: 'platform_user_jwt',
               );
@@ -142,7 +202,16 @@ class ApiClient {
             );
 
             final String path = error.requestOptions.path;
-            if (path == ApiEndpoints.authToken || path == ApiEndpoints.authLogin) {
+            if (path == ApiEndpoints.authToken ||
+                path == ApiEndpoints.authLogin ||
+                path == ApiEndpoints.bffSessionVerify) {
+              return handler.next(error);
+            }
+
+            final String? firebaseIdToken = await _storage.read(key: 'firebase_id_token');
+            if (firebaseIdToken != null && firebaseIdToken.isNotEmpty) {
+              // In Firebase BFF mode, token refresh is managed by Firebase Auth
+              debugPrint('[API Auth] 401 detected in Firebase BFF flow. Skipping client-side credentials refresh.');
               return handler.next(error);
             }
 
