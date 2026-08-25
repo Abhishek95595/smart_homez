@@ -29,8 +29,12 @@ Future<void> main() async {
   if (defaultTargetPlatform != TargetPlatform.windows) {
     await Firebase.initializeApp();
     await FirebaseAppCheck.instance.activate(
-      androidProvider: AndroidProvider.debug,
-      appleProvider: AppleProvider.debug,
+      providerAndroid: kDebugMode
+          ? const AndroidDebugProvider()
+          : const AndroidPlayIntegrityProvider(),
+      providerApple: kDebugMode
+          ? const AppleDebugProvider()
+          : const AppleDeviceCheckProvider(),
     );
   }
   await Hive.initFlutter();
