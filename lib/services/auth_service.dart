@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
@@ -50,7 +51,10 @@ class AuthService {
           : clientId.trim();
 
       await _storage.write(key: _apiClientIdKey, value: savedApiClientId);
-      await _storage.write(key: 'api_client_secret', value: clientSecret.trim());
+      await _storage.write(
+        key: 'api_client_secret',
+        value: clientSecret.trim(),
+      );
 
       debugPrint('[AuthService] API token saved successfully.');
 
@@ -148,37 +152,87 @@ class AuthService {
     }
   }
 
-  /// Verifies Firebase ID Token with the Cloud Function backend.
-  Future<AuthResponse> verifyFirebaseTokenWithBackend({
-    required String firebaseIdToken,
+  FirebaseFunctions get _functions => FirebaseFunctions.instanceFor(
+        region: 'asia-south1',
+      );
+
+  /// Calls the getTenantSession Firebase Callable Function.
+  Future<Map<String, dynamic>> getTenantSession({String? fcmToken}) async {
+    try {
+      final callable = _functions.httpsCallable('getTenantSession');
+      final result = await callable.call(<String, dynamic>{
+        'fcmToken': fcmToken,
+      });
+
+      final Map<String, dynamic> data = Map<String, dynamic>.from(result.data);
+
+      if (data['success'] == true && data['client'] != null) {
+        final String? clientId = data['client']['id'];
+        if (clientId != null && clientId.isNotEmpty) {
+          await _storage.write(key: _resolvedClientUuidKey, value: clientId);
+        }
+      }
+
+      return data;
+    } catch (error) {
+      debugPrint('[AuthService] getTenantSession failed: $error');
+      rethrow;
+    }
+  }
+
+  /// Calls the registerTenantClient Firebase Callable Function.
+  Future<Map<String, dynamic>> registerTenantClient({
+    required String name,
     String? fcmToken,
   }) async {
     try {
-      // Temporarily store the Firebase ID Token in secure storage so the ApiClient
-      // interceptor can pick it up and direct this request to the Cloud Functions URL.
-      await _storage.write(key: 'firebase_id_token', value: firebaseIdToken);
+      final callable = _functions.httpsCallable('registerTenantClient');
+      final result = await callable.call(<String, dynamic>{
+        'name': name.trim(),
+        'fcmToken': fcmToken,
+      });
 
-      final response = await _api.post(
-        ApiEndpoints.bffSessionVerify,
-        data: {
-          'fcmToken': fcmToken,
-        },
-      );
-
-      final AuthResponse auth = AuthResponse.fromJson(response.data);
-      if (!auth.success) {
-        await _storage.delete(key: 'firebase_id_token');
-        throw Exception(auth.error ?? 'Backend session verification failed');
-      }
-
-      if (auth.clientId != null && auth.clientId!.isNotEmpty) {
-        await _storage.write(key: _resolvedClientUuidKey, value: auth.clientId);
-      }
-
-      return auth;
+      return Map<String, dynamic>.from(result.data);
     } catch (error) {
-      debugPrint('[AuthService] verifyFirebaseTokenWithBackend failed: $error');
-      await _storage.delete(key: 'firebase_id_token');
+      debugPrint('[AuthService] registerTenantClient failed: $error');
+      rethrow;
+    }
+  }
+
+  /// Calls the verifyTenantClient Firebase Callable Function.
+  Future<Map<String, dynamic>> verifyTenantClient({
+    required String code,
+  }) async {
+    try {
+      final callable = _functions.httpsCallable('verifyTenantClient');
+      final result = await callable.call(<String, dynamic>{
+        'code': code.trim(),
+      });
+
+      final Map<String, dynamic> data = Map<String, dynamic>.from(result.data);
+
+      if (data['success'] == true) {
+        final String? clientId = data['clientId'];
+        if (clientId != null && clientId.isNotEmpty) {
+          await _storage.write(key: _resolvedClientUuidKey, value: clientId);
+        }
+      }
+
+      return data;
+    } catch (error) {
+      debugPrint('[AuthService] verifyTenantClient failed: $error');
+      rethrow;
+    }
+  }
+
+  /// Calls the resendTenantRegistrationOtp Firebase Callable Function.
+  Future<Map<String, dynamic>> resendTenantRegistrationOtp() async {
+    try {
+      final callable = _functions.httpsCallable('resendTenantRegistrationOtp');
+      final result = await callable.call();
+      return Map<String, dynamic>.from(result.data);
+    } catch (error) {
+      debugPrint('[AuthService] resendTenantRegistrationOtp failed: $error');
       rethrow;
     }
   }
@@ -231,4 +285,3 @@ class AuthService {
     debugPrint('[AuthService] Authentication data cleared.');
   }
 }
-

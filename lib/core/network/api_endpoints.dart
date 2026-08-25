@@ -2,9 +2,9 @@ abstract final class ApiEndpoints {
   static const String baseUrl = 'https://tenant-api-qa.omnihome.in';
 
   // Cloud Functions / BFF Backend Base URL
-  static const String cloudFunctionsBaseUrl = 'https://us-central1-hasomi-e2ba3.cloudfunctions.net/api';
+  static const String cloudFunctionsBaseUrl =
+      'https://us-central1-hasomi-e2ba3.cloudfunctions.net/api';
   static const String bffSessionVerify = '/session/verify';
-
 
   // Auth
   static const String authToken = '/api/Auth/token';

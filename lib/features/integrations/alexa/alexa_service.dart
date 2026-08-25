@@ -60,7 +60,9 @@ class AlexaService {
     debugPrint('[AlexaService] Response Data: ${response.data}');
 
     if (response.statusCode != 200) {
-      throw Exception('Alexa connection API returned status ${response.statusCode}');
+      throw Exception(
+        'Alexa connection API returned status ${response.statusCode}',
+      );
     }
 
     if (response.data is Map<String, dynamic>) {

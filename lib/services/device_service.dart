@@ -1,191 +1,79 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
-import '../core/network/api_client.dart';
-import '../core/network/api_endpoints.dart';
 import '../core/network/api_exception.dart';
 import '../models/device_model.dart';
 
 class DeviceService {
-  DeviceService({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
+  DeviceService({dynamic apiClient});
 
-  final ApiClient _api;
+  FirebaseFunctions get _functions => FirebaseFunctions.instanceFor(
+        region: 'asia-south1',
+      );
 
-  /// GET /api/v1/clients/{clientId}/devices
+  /// GET devices via Firebase Callable Functions.
   Future<List<DeviceModel>> getDevices(
     String clientId, {
     String? homeId,
     String? roomId,
   }) async {
-    final String cleanClientId = clientId.trim();
-
-    if (cleanClientId.isEmpty) {
-      throw const FormatException('Client ID is missing.');
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw ApiException(
+        message: 'Unauthenticated. Log in with Firebase first.',
+        statusCode: 401,
+      );
     }
 
     try {
-      final Map<String, dynamic> queryParameters = <String, dynamic>{};
-
-      if (homeId != null && homeId.trim().isNotEmpty) {
-        queryParameters['homeId'] = homeId.trim();
-      }
-
-      if (roomId != null && roomId.trim().isNotEmpty) {
-        queryParameters['roomId'] = roomId.trim();
-      }
-
-      final Response<dynamic> response = await _api.get(
-        ApiEndpoints.clientDevices(cleanClientId),
-        queryParameters: queryParameters.isEmpty ? null : queryParameters,
-      );
-
-      debugPrint('[DeviceService] GET devices status: ${response.statusCode}');
-
-      return _parseDevices(response.data);
-    } on ApiException catch (error) {
-      debugPrint(
-        '[DeviceService] GET devices API error '
-        '${error.statusCode}: ${error.message}',
-      );
-      rethrow;
-    } catch (error, stackTrace) {
-      debugPrint('[DeviceService] GET devices error: $error');
-      debugPrintStack(stackTrace: stackTrace);
+      final callable = _functions.httpsCallable('getDevices');
+      final result = await callable.call();
+      return _parseDevices(result.data);
+    } catch (error) {
+      debugPrint('[DeviceService] Callable getDevices error: $error');
       rethrow;
     }
   }
 
-  /// Sends a command to a device.
-  ///
-  /// First tries:
-  /// POST /api/v1/clients/{clientId}/devices/{deviceId}/command
-  ///
-  /// If that returns 404, it falls back to:
-  /// POST /api/v1/devices/{deviceId}/command
+  /// Sends a command to a device via Firebase Callable Functions.
   Future<bool> sendCommand(
     String clientId,
     String deviceId,
     String command, [
     dynamic value,
   ]) async {
-    final String cleanClientId = clientId.trim();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw ApiException(
+        message: 'Unauthenticated. Log in with Firebase first.',
+        statusCode: 401,
+      );
+    }
+
     final String cleanDeviceId = deviceId.trim();
     final String cleanCommand = command.trim().toLowerCase();
 
-    if (cleanClientId.isEmpty ||
-        cleanDeviceId.isEmpty ||
-        cleanCommand.isEmpty) {
+    if (cleanDeviceId.isEmpty || cleanCommand.isEmpty) {
       debugPrint(
         '[DeviceService] Command rejected because required values are empty.',
       );
       return false;
     }
 
-    final Map<String, dynamic> requestBody = <String, dynamic>{
-      'command': cleanCommand,
-      'value': value,
-    };
-
-    final String clientScopedEndpoint = ApiEndpoints.deviceCommand(
-      cleanClientId,
-      cleanDeviceId,
-    );
-
     try {
-      return await _postCommand(
-        endpoint: clientScopedEndpoint,
-        deviceId: cleanDeviceId,
-        requestBody: requestBody,
-      );
-    } on ApiException catch (error) {
-      if (error.statusCode != 404) {
-        debugPrint(
-          '[DeviceService] Client-scoped command failed with status '
-          '${error.statusCode}: ${error.message}',
-        );
-        return false;
-      }
+      final callable = _functions.httpsCallable('sendDeviceCommand');
+      final result = await callable.call(<String, dynamic>{
+        'deviceId': cleanDeviceId,
+        'command': cleanCommand,
+        'value': value,
+      });
 
-      debugPrint(
-        '[DeviceService] Client-scoped endpoint returned 404. '
-        'Trying global device command endpoint.',
-      );
-
-      final String globalEndpoint = ApiEndpoints.globalDeviceCommand(
-        cleanDeviceId,
-      );
-
-      try {
-        return await _postCommand(
-          endpoint: globalEndpoint,
-          deviceId: cleanDeviceId,
-          requestBody: requestBody,
-        );
-      } on ApiException catch (fallbackError) {
-        debugPrint(
-          '[DeviceService] Global command failed with status '
-          '${fallbackError.statusCode}: '
-          '${fallbackError.message}',
-        );
-
-        debugPrint(
-          '[DeviceService] Global response data: '
-          '${fallbackError.data}',
-        );
-
-        return false;
-      } catch (fallbackError, stackTrace) {
-        debugPrint('[DeviceService] Global command error: $fallbackError');
-        debugPrintStack(stackTrace: stackTrace);
-        return false;
-      }
-    } catch (error, stackTrace) {
-      debugPrint('[DeviceService] Device command error: $error');
-      debugPrintStack(stackTrace: stackTrace);
+      return result.data != null && result.data['success'] == true;
+    } catch (error) {
+      debugPrint('[DeviceService] Callable sendCommand error: $error');
       return false;
     }
-  }
-
-  Future<bool> _postCommand({
-    required String endpoint,
-    required String deviceId,
-    required Map<String, dynamic> requestBody,
-  }) async {
-    debugPrint('========== DEVICE COMMAND ==========');
-    debugPrint('Endpoint : $endpoint');
-    debugPrint('Device ID: $deviceId');
-    debugPrint('Body     : $requestBody');
-
-    final Response<dynamic> response = await _api.post(
-      endpoint,
-      data: requestBody,
-    );
-
-    final int statusCode = response.statusCode ?? 0;
-
-    debugPrint('Status   : $statusCode');
-    debugPrint('Response : ${response.data}');
-    debugPrint('====================================');
-
-    if (statusCode < 200 || statusCode >= 300) {
-      return false;
-    }
-
-    final dynamic responseData = response.data;
-
-    if (responseData is Map) {
-      final Map<String, dynamic> body = Map<String, dynamic>.from(responseData);
-
-      if (body['success'] == false) {
-        debugPrint(
-          '[DeviceService] Command rejected: '
-          '${_extractErrorMessage(body['error'])}',
-        );
-        return false;
-      }
-    }
-
-    return true;
   }
 
   Future<bool> turnOn(String clientId, String deviceId) {
@@ -202,7 +90,6 @@ class DeviceService {
 
   Future<bool> setBrightness(String clientId, String deviceId, int brightness) {
     final int safeBrightness = brightness.clamp(0, 100);
-
     return sendCommand(clientId, deviceId, 'brightness', safeBrightness);
   }
 
@@ -214,16 +101,7 @@ class DeviceService {
         'Fan speed must be at least 1.',
       );
     }
-
     return sendCommand(clientId, deviceId, 'speed', speed);
-  }
-
-  Future<bool> setTemperature(
-    String clientId,
-    String deviceId,
-    num temperature,
-  ) {
-    return sendCommand(clientId, deviceId, 'temperature', temperature);
   }
 
   Future<bool> setColor(String clientId, String deviceId, String color) {
@@ -264,12 +142,9 @@ class DeviceService {
   }) {
     if (error is Map) {
       final Map<String, dynamic> map = Map<String, dynamic>.from(error);
-
       return map['message']?.toString() ?? map['code']?.toString() ?? fallback;
     }
-
     final String message = error?.toString().trim() ?? '';
-
     return message.isEmpty ? fallback : message;
   }
 }

@@ -148,7 +148,9 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
     setState(() => _invites.add(draft));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Opening SMS app for ${draft.name} (${draft.phoneNumber})...'),
+        content: Text(
+          'Opening SMS app for ${draft.name} (${draft.phoneNumber})...',
+        ),
         backgroundColor: AppColors.success,
       ),
     );
@@ -440,7 +442,9 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
                   final removedName = entry.value.name;
                   setState(() => _invites.removeAt(entry.key));
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Revoked invitation for $removedName.')),
+                    SnackBar(
+                      content: Text('Revoked invitation for $removedName.'),
+                    ),
                   );
                 },
               ),
@@ -725,10 +729,7 @@ class _InviteUserCardState extends State<_InviteUserCard> {
                     ],
                   ),
                 ),
-                Switch(
-                  value: invite.active,
-                  onChanged: widget.onToggleActive,
-                ),
+                Switch(value: invite.active, onChanged: widget.onToggleActive),
               ],
             ),
             const SizedBox(height: 14),
@@ -887,7 +888,10 @@ class _InviteUserCardState extends State<_InviteUserCard> {
                 ElevatedButton.icon(
                   onPressed: widget.onResendSms,
                   icon: const Icon(Icons.sms_rounded, size: 14),
-                  label: const Text('Send SMS', style: TextStyle(fontSize: 11.5)),
+                  label: const Text(
+                    'Send SMS',
+                    style: TextStyle(fontSize: 11.5),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -898,7 +902,10 @@ class _InviteUserCardState extends State<_InviteUserCard> {
                 OutlinedButton.icon(
                   onPressed: widget.onEdit,
                   icon: const Icon(Icons.edit_outlined, size: 14),
-                  label: const Text('Edit Access', style: TextStyle(fontSize: 11.5)),
+                  label: const Text(
+                    'Edit Access',
+                    style: TextStyle(fontSize: 11.5),
+                  ),
                   style: OutlinedButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                   ),
@@ -1035,7 +1042,9 @@ class _InviteFormModalState extends State<_InviteFormModal> {
     Navigator.pop(
       context,
       _InviteUser(
-        id: widget.initialUser?.id ?? 'inv_${DateTime.now().millisecondsSinceEpoch}',
+        id:
+            widget.initialUser?.id ??
+            'inv_${DateTime.now().millisecondsSinceEpoch}',
         name: name,
         phoneNumber: phone,
         accessLevel: _accessLevel,
@@ -1100,7 +1109,9 @@ class _InviteFormModalState extends State<_InviteFormModal> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isEditing ? 'Edit Access & Permissions' : 'Invite Person',
+                        isEditing
+                            ? 'Edit Access & Permissions'
+                            : 'Invite Person',
                         style: const TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.w900,
@@ -1129,8 +1140,9 @@ class _InviteFormModalState extends State<_InviteFormModal> {
                   hintText: 'Rahul Sharma',
                   prefixIcon: Icon(Icons.person_outline_rounded),
                 ),
-                validator: (value) =>
-                    (value?.trim().length ?? 0) < 2 ? 'Enter a valid name' : null,
+                validator: (value) => (value?.trim().length ?? 0) < 2
+                    ? 'Enter a valid name'
+                    : null,
               ),
               const SizedBox(height: 14),
 
@@ -1160,18 +1172,22 @@ class _InviteFormModalState extends State<_InviteFormModal> {
                   labelText: 'Permission Role',
                   prefixIcon: Icon(Icons.admin_panel_settings_outlined),
                 ),
-                items: const [
-                  'Device Control (ON/OFF)',
-                  'Full Control',
-                  'View Only',
-                ]
-                    .map(
-                      (level) => DropdownMenuItem(
-                        value: level,
-                        child: Text(level, style: const TextStyle(fontSize: 13)),
-                      ),
-                    )
-                    .toList(),
+                items:
+                    const [
+                          'Device Control (ON/OFF)',
+                          'Full Control',
+                          'View Only',
+                        ]
+                        .map(
+                          (level) => DropdownMenuItem(
+                            value: level,
+                            child: Text(
+                              level,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        )
+                        .toList(),
                 onChanged: (val) {
                   if (val != null) setState(() => _accessLevel = val);
                 },
@@ -1214,7 +1230,8 @@ class _InviteFormModalState extends State<_InviteFormModal> {
                       });
                     },
                     child: Text(
-                      _selectedDeviceNames.length == _availableDeviceNames.length
+                      _selectedDeviceNames.length ==
+                              _availableDeviceNames.length
                           ? 'Deselect All'
                           : 'Select All',
                       style: const TextStyle(fontSize: 11.5),
@@ -1251,7 +1268,10 @@ class _InviteFormModalState extends State<_InviteFormModal> {
                       ),
                       subtitle: const Text(
                         'Grant ON / OFF power control',
-                        style: TextStyle(fontSize: 10.5, color: AppColors.textFaint),
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          color: AppColors.textFaint,
+                        ),
                       ),
                       value: isChecked,
                       onChanged: (val) {
@@ -1279,7 +1299,10 @@ class _InviteFormModalState extends State<_InviteFormModal> {
                     isEditing
                         ? 'Save Updated Permissions'
                         : 'Send Invitation & Grant Access',
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,

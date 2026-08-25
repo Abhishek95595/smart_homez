@@ -66,7 +66,7 @@ class _VideoSplashScreenState extends State<VideoSplashScreen> {
       final authProvider = context.read<AuthProvider>();
       final propertyProvider = context.read<PropertyProvider>();
       final deviceProvider = context.read<DeviceProvider>();
-      
+
       await authProvider.restoreSession(
         propertyProvider: propertyProvider,
         deviceProvider: deviceProvider,
@@ -86,7 +86,8 @@ class _VideoSplashScreenState extends State<VideoSplashScreen> {
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => isLoggedIn ? const MainShell() : const LandingScreen(),
+          builder: (_) =>
+              isLoggedIn ? const MainShell() : const LandingScreen(),
         ),
       );
     }
@@ -111,10 +112,7 @@ class _VideoSplashScreenState extends State<VideoSplashScreen> {
         ),
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(
-              maxWidth: 600,
-              maxHeight: 600,
-            ),
+            constraints: const BoxConstraints(maxWidth: 600, maxHeight: 600),
             child: _isInitialized
                 ? AspectRatio(
                     aspectRatio: _controller.value.aspectRatio,

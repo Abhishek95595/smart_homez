@@ -12,6 +12,16 @@ import 'device_provider.dart';
 import '../services/client_service.dart';
 import 'property_provider.dart';
 
+enum TenantSessionStatus {
+  initial,
+  loading,
+  authenticated,
+  registrationRequired,
+  otpVerificationRequired,
+  temporarilyUnavailable,
+  unauthenticated,
+}
+
 class AuthProvider extends ChangeNotifier {
   AuthProvider({AuthService? authService, ClientService? clientService})
     : _authService = authService ?? AuthService(),
@@ -26,6 +36,17 @@ class AuthProvider extends ChangeNotifier {
 
   bool _isLoading = false;
   String? _errorMessage;
+
+  TenantSessionStatus _sessionStatus = TenantSessionStatus.initial;
+  TenantSessionStatus get sessionStatus => _sessionStatus;
+
+  String? _otpDeliveryChannel;
+  String? _otpMaskedDestination;
+  int _resendCooldown = 0;
+
+  String? get otpDeliveryChannel => _otpDeliveryChannel;
+  String? get otpMaskedDestination => _otpMaskedDestination;
+  int get resendCooldown => _resendCooldown;
 
   AppUser? get currentUser => _currentUser;
 
@@ -99,7 +120,9 @@ class AuthProvider extends ChangeNotifier {
             );
             _apiToken = apiAuth.token;
           } catch (apiTokenError) {
-            debugPrint('[AuthProvider] Failed to exchange API Client Token after email login: $apiTokenError');
+            debugPrint(
+              '[AuthProvider] Failed to exchange API Client Token after email login: $apiTokenError',
+            );
           }
         } else {
           authResponse = await _authService.fetchToken(
@@ -352,9 +375,50 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        try {
+          final sessionResult = await _authService.getTenantSession(
+            fcmToken: 'MOCK_DEVICE_FCM_TOKEN',
+          );
+          if (sessionResult['success'] == true &&
+              sessionResult['status'] == 'authenticated') {
+            _resolvedClientUuid = sessionResult['client']?['id'];
+            _sessionStatus = TenantSessionStatus.authenticated;
+            _currentUser = AppUser(
+              id: currentUser.uid,
+              name: sessionResult['client']?['name'] ?? 'OTP User',
+              email: currentUser.email ?? '',
+              phone: currentUser.phoneNumber ?? '',
+              role: UserRole.resident,
+              tenantId: 'aurabrain',
+              avatarInitials: 'OU',
+            );
+            propertyProvider.setClientId(_resolvedClientUuid!);
+            await Future.wait([
+              propertyProvider.syncFromApi(_resolvedClientUuid!),
+              deviceProvider.syncFromApi(_resolvedClientUuid!),
+            ]);
+            await deviceProvider.startRealtimeSync(_resolvedClientUuid!);
+          } else if (sessionResult['status'] == 'registrationRequired') {
+            _sessionStatus = TenantSessionStatus.registrationRequired;
+          } else {
+            _sessionStatus = TenantSessionStatus.unauthenticated;
+          }
+        } catch (restoreErr) {
+          debugPrint(
+            '[AuthProvider] Firebase Session restore failed: $restoreErr',
+          );
+          _sessionStatus = TenantSessionStatus.unauthenticated;
+        }
+        notifyListeners();
+        return;
+      }
+
       String? savedToken = await _authService.getSavedToken();
       final String? savedClientId = await _authService.getSavedApiClientId();
-      final String? savedClientSecret = await _authService.getSavedClientSecret();
+      final String? savedClientSecret = await _authService
+          .getSavedClientSecret();
       final String? savedEmail = await _authService.getSavedEmail();
       final String? savedPassword = await _authService.getSavedPassword();
 
@@ -456,14 +520,25 @@ class AuthProvider extends ChangeNotifier {
             _apiToken = token;
 
             try {
-              final authResponse = await _authService.verifyFirebaseTokenWithBackend(
-                firebaseIdToken: token,
-                fcmToken: 'MOCK_DEVICE_FCM_TOKEN',
-              );
-              _resolvedClientUuid = authResponse.clientId;
+              final Map<String, dynamic> sessionResult = await _authService
+                  .getTenantSession(fcmToken: 'MOCK_DEVICE_FCM_TOKEN');
+
+              if (sessionResult['success'] == true &&
+                  sessionResult['status'] == 'authenticated') {
+                _resolvedClientUuid = sessionResult['client']?['id'];
+                _sessionStatus = TenantSessionStatus.authenticated;
+              } else if (sessionResult['status'] == 'registrationRequired') {
+                _sessionStatus = TenantSessionStatus.registrationRequired;
+              } else if (sessionResult['status'] == 'temporarilyUnavailable') {
+                _sessionStatus = TenantSessionStatus.temporarilyUnavailable;
+              } else {
+                _sessionStatus = TenantSessionStatus.unauthenticated;
+              }
             } catch (backendError) {
-              debugPrint('[AuthProvider] Auto-verification BFF mapping failed: $backendError');
-              _resolvedClientUuid = 'firebase_user_${userCred.user?.uid}';
+              debugPrint(
+                '[AuthProvider] Auto-verification BFF mapping failed: $backendError',
+              );
+              _sessionStatus = TenantSessionStatus.unauthenticated;
             }
 
             _currentUser = AppUser(
@@ -550,12 +625,29 @@ class AuthProvider extends ChangeNotifier {
       _apiToken = token;
 
       try {
-        final authResponse = await _authService.verifyFirebaseTokenWithBackend(
-          firebaseIdToken: token,
-          fcmToken: 'MOCK_DEVICE_FCM_TOKEN',
-        );
-        _resolvedClientUuid = authResponse.clientId;
+        final Map<String, dynamic> sessionResult = await _authService
+            .getTenantSession(fcmToken: 'MOCK_DEVICE_FCM_TOKEN');
+
+        if (sessionResult['success'] == true &&
+            sessionResult['status'] == 'authenticated') {
+          _resolvedClientUuid = sessionResult['client']?['id'];
+          _sessionStatus = TenantSessionStatus.authenticated;
+        } else if (sessionResult['status'] == 'registrationRequired') {
+          _sessionStatus = TenantSessionStatus.registrationRequired;
+        } else if (sessionResult['status'] == 'temporarilyUnavailable') {
+          _sessionStatus = TenantSessionStatus.temporarilyUnavailable;
+          _fail(
+            sessionResult['message'] ??
+                'AuraBrain resolve service is currently offline.',
+          );
+          return;
+        } else {
+          _sessionStatus = TenantSessionStatus.unauthenticated;
+          _fail('Verification failed.');
+          return;
+        }
       } catch (backendError) {
+        _sessionStatus = TenantSessionStatus.unauthenticated;
         _fail('BFF Session verification failed: $backendError');
         return;
       }
@@ -576,6 +668,89 @@ class AuthProvider extends ChangeNotifier {
       _fail('Failed to verify OTP: $e');
     } finally {
       _setLoading(false);
+    }
+  }
+
+  /// Triggers client registration with the backend.
+  Future<String?> registerTenantClient(String name) async {
+    _setLoading(true);
+    _errorMessage = null;
+    try {
+      final res = await _authService.registerTenantClient(
+        name: name,
+        fcmToken: 'MOCK_DEVICE_FCM_TOKEN',
+      );
+
+      if (res['success'] == true) {
+        if (res['status'] == 'otpVerificationRequired') {
+          _otpDeliveryChannel = res['deliveryChannel'];
+          _otpMaskedDestination = res['maskedDestination'];
+          _resendCooldown = res['resendAvailableIn'] ?? 60;
+          _sessionStatus = TenantSessionStatus.otpVerificationRequired;
+        } else if (res['status'] == 'authenticated') {
+          _resolvedClientUuid = res['client']?['id'];
+          _sessionStatus = TenantSessionStatus.authenticated;
+        }
+        notifyListeners();
+        return null;
+      }
+
+      return _fail(res['message'] ?? 'Registration failed.');
+    } catch (e) {
+      return _fail('Registration failed: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Verifies the AuraBrain OTP code.
+  Future<String?> verifyTenantClientOtp(String code) async {
+    _setLoading(true);
+    _errorMessage = null;
+    try {
+      final res = await _authService.verifyTenantClient(code: code);
+
+      if (res['success'] == true) {
+        _sessionStatus = TenantSessionStatus.authenticated;
+        _resolvedClientUuid = res['clientId'];
+
+        final fbUser = FirebaseAuth.instance.currentUser;
+        if (fbUser != null) {
+          _currentUser = AppUser(
+            id: fbUser.uid,
+            name: fbUser.displayName ?? 'Smart Home User',
+            email: fbUser.email ?? '',
+            phone: fbUser.phoneNumber ?? '',
+            role: UserRole.resident,
+            tenantId: 'aurabrain',
+            avatarInitials: 'OU',
+          );
+        }
+        notifyListeners();
+        return null;
+      }
+
+      return _fail(res['message'] ?? 'OTP verification failed.');
+    } catch (e) {
+      return _fail('OTP verification failed: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Triggers resending the AuraBrain registration OTP.
+  Future<String?> resendTenantOtp() async {
+    _errorMessage = null;
+    try {
+      final res = await _authService.resendTenantRegistrationOtp();
+      if (res['success'] == true) {
+        _resendCooldown = res['resendAvailableIn'] ?? 60;
+        notifyListeners();
+        return null;
+      }
+      return _fail(res['message'] ?? 'Resend OTP failed.');
+    } catch (e) {
+      return _fail('Resend OTP failed: $e');
     }
   }
 

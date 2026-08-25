@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 
 import 'api_endpoints.dart';
 import 'api_exception.dart';
@@ -23,171 +22,84 @@ class ApiClient {
 
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (
-          RequestOptions options,
-          RequestInterceptorHandler handler,
-        ) async {
-          try {
-            final String path = options.path;
-
-            String? token;
-
-            // =====================================================
-            // FIREBASE / BFF CALLABLE FUNCTIONS ROUTE
-            // =====================================================
-            final String? firebaseIdToken = await _storage.read(key: 'firebase_id_token');
-            final bool isBffVerify = path == ApiEndpoints.bffSessionVerify;
-
-            if (isBffVerify || (firebaseIdToken != null && firebaseIdToken.trim().isNotEmpty)) {
-              debugPrint('[API BFF] Intercepting REST call and delegating to Callable Function: $path');
+        onRequest:
+            (RequestOptions options, RequestInterceptorHandler handler) async {
               try {
-                final functions = FirebaseFunctions.instanceFor(region: 'asia-south1');
-                HttpsCallableResult<dynamic> result;
+                final String path = options.path;
 
-                if (isBffVerify) {
-                  final String? fcmToken = options.data is Map ? options.data['fcmToken'] : null;
-                  final callable = functions.httpsCallable('getTenantSession');
-                  result = await callable.call(<String, dynamic>{
-                    'fcmToken': fcmToken,
-                  });
-                } else if (path.contains('/devices/') && path.contains('/command')) {
-                  final regExp = RegExp(r'/api/v1/clients/[^/]+/devices/([^/]+)/command');
-                  final match = regExp.firstMatch(path);
-                  final String deviceId = match != null ? match.group(1)! : '';
-                  final String command = options.data is Map ? options.data['command'] : '';
-                  final dynamic value = options.data is Map ? options.data['value'] : null;
-                  final String? deviceName = options.data is Map ? options.data['deviceName'] : null;
+                String? token;
 
-                  final callable = functions.httpsCallable('sendDeviceCommand');
-                  result = await callable.call(<String, dynamic>{
-                    'deviceId': deviceId,
-                    'command': command,
-                    'value': value,
-                    'deviceName': deviceName,
-                  });
-                } else if (path.endsWith('/devices')) {
-                  final callable = functions.httpsCallable('getDevices');
-                  result = await callable.call();
-                } else if (path.endsWith('/homes')) {
-                  final callable = functions.httpsCallable('getHomes');
-                  result = await callable.call();
-                } else {
-                  return handler.next(options);
+                // =====================================================
+                // ALEXA
+                // =====================================================
+                //
+                // Alexa account linking needs the logged-in
+                // USER / PLATFORM JWT.
+                if (_isAlexaEndpoint(path)) {
+                  token = await _storage.read(key: 'platform_user_jwt');
+
+                  debugPrint('[API Auth] Alexa endpoint detected.');
+
+                  debugPrint(
+                    '[API Auth] Platform user JWT exists: '
+                    '${token != null && token.trim().isNotEmpty}',
+                  );
+                }
+                // =====================================================
+                // NORMAL BACKEND APIs
+                // =====================================================
+                else {
+                  // First try API/service JWT.
+                  token = await _storage.read(key: 'api_service_jwt');
+
+                  // Backward compatibility with your current app.
+                  if (token == null || token.trim().isEmpty) {
+                    token = await _storage.read(key: 'jwt_token');
+                  }
+
+                  // If service token doesn't exist, try user token.
+                  if (token == null || token.trim().isEmpty) {
+                    token = await _storage.read(key: 'platform_user_jwt');
+                  }
                 }
 
-                // Wrap response data and resolve
-                final dioResponse = Response<dynamic>(
-                  requestOptions: options,
-                  data: result.data,
-                  statusCode: 200,
-                  statusMessage: 'OK',
-                );
-                return handler.resolve(dioResponse);
-              } catch (e) {
-                debugPrint('[API BFF] Firebase Callable Function error: $e');
-                return handler.reject(
-                  DioException(
-                    requestOptions: options,
-                    error: e,
-                    message: e.toString(),
-                  ),
-                );
+                // =====================================================
+                // ATTACH AUTHORIZATION HEADER
+                // =====================================================
+
+                if (token != null && token.trim().isNotEmpty) {
+                  options.headers['Authorization'] = 'Bearer ${token.trim()}';
+
+                  debugPrint('[API Auth] Authorization attached: true');
+                } else {
+                  options.headers.remove('Authorization');
+
+                  debugPrint('[API Auth] Authorization attached: false');
+                }
+
+                debugPrint('[API Request] ${options.method} ${options.path}');
+
+                return handler.next(options);
+              } catch (error) {
+                debugPrint('[API Auth] Request interceptor error: $error');
+
+                return handler.next(options);
               }
-            }
-            // =====================================================
-            // ALEXA
-            // =====================================================
-            else if (_isAlexaEndpoint(path)) {
-              token = await _storage.read(
-                key: 'platform_user_jwt',
-              );
+            },
 
+        onResponse:
+            (Response<dynamic> response, ResponseInterceptorHandler handler) {
               debugPrint(
-                '[API Auth] Alexa endpoint detected.',
+                '[API Response] '
+                '${response.statusCode} '
+                '${response.requestOptions.path}',
               );
 
-              debugPrint(
-                '[API Auth] Platform user JWT exists: '
-                '${token != null && token.trim().isNotEmpty}',
-              );
-            }
+              return handler.next(response);
+            },
 
-            // =====================================================
-            // NORMAL BACKEND APIs
-            // =====================================================
-            else {
-              // First try API/service JWT.
-              token = await _storage.read(
-                key: 'api_service_jwt',
-              );
-
-              // Backward compatibility with your current app.
-              if (token == null || token.trim().isEmpty) {
-                token = await _storage.read(
-                  key: 'jwt_token',
-                );
-              }
-
-              // If service token doesn't exist, try user token.
-              if (token == null || token.trim().isEmpty) {
-                token = await _storage.read(
-                  key: 'platform_user_jwt',
-                );
-              }
-            }
-
-            // =====================================================
-            // ATTACH AUTHORIZATION HEADER
-            // =====================================================
-
-            if (token != null && token.trim().isNotEmpty) {
-              options.headers['Authorization'] =
-                  'Bearer ${token.trim()}';
-
-              debugPrint(
-                '[API Auth] Authorization attached: true',
-              );
-            } else {
-              options.headers.remove('Authorization');
-
-              debugPrint(
-                '[API Auth] Authorization attached: false',
-              );
-            }
-
-            debugPrint(
-              '[API Request] ${options.method} ${options.path}',
-            );
-
-            return handler.next(options);
-          } catch (error) {
-            debugPrint(
-              '[API Auth] Request interceptor error: $error',
-            );
-
-            return handler.next(options);
-          }
-        },
-
-        onResponse: (
-          Response<dynamic> response,
-          ResponseInterceptorHandler handler,
-        ) {
-          debugPrint(
-            '[API Response] '
-            '${response.statusCode} '
-            '${response.requestOptions.path}',
-          );
-
-          return handler.next(response);
-        },
-
-        onError: (
-          DioException error,
-          ErrorInterceptorHandler handler,
-        ) async {
-          final int? statusCode =
-              error.response?.statusCode;
+        onError: (DioException error, ErrorInterceptorHandler handler) async {
+          final int? statusCode = error.response?.statusCode;
 
           debugPrint(
             '[API Error] '
@@ -203,23 +115,21 @@ class ApiClient {
 
             final String path = error.requestOptions.path;
             if (path == ApiEndpoints.authToken ||
-                path == ApiEndpoints.authLogin ||
-                path == ApiEndpoints.bffSessionVerify) {
-              return handler.next(error);
-            }
-
-            final String? firebaseIdToken = await _storage.read(key: 'firebase_id_token');
-            if (firebaseIdToken != null && firebaseIdToken.isNotEmpty) {
-              // In Firebase BFF mode, token refresh is managed by Firebase Auth
-              debugPrint('[API Auth] 401 detected in Firebase BFF flow. Skipping client-side credentials refresh.');
+                path == ApiEndpoints.authLogin) {
               return handler.next(error);
             }
 
             try {
-              final String? clientId = await _storage.read(key: 'api_client_id');
-              final String? clientSecret = await _storage.read(key: 'api_client_secret');
+              final String? clientId = await _storage.read(
+                key: 'api_client_id',
+              );
+              final String? clientSecret = await _storage.read(
+                key: 'api_client_secret',
+              );
               final String? email = await _storage.read(key: 'login_email');
-              final String? password = await _storage.read(key: 'login_password');
+              final String? password = await _storage.read(
+                key: 'login_password',
+              );
 
               String? newToken;
 
@@ -228,7 +138,9 @@ class ApiClient {
                   clientId.isNotEmpty &&
                   clientSecret.isNotEmpty) {
                 debugPrint('[API Auth] Refreshing token via Client API...');
-                final Dio refreshDio = Dio(BaseOptions(baseUrl: ApiEndpoints.baseUrl));
+                final Dio refreshDio = Dio(
+                  BaseOptions(baseUrl: ApiEndpoints.baseUrl),
+                );
                 final response = await refreshDio.post<dynamic>(
                   ApiEndpoints.authToken,
                   data: <String, dynamic>{
@@ -244,7 +156,9 @@ class ApiClient {
                   newToken = responseBody['token']?.toString();
                   if (newToken != null && newToken.isNotEmpty) {
                     await _storage.write(key: 'jwt_token', value: newToken);
-                    debugPrint('[API Auth] Client API token refreshed successfully.');
+                    debugPrint(
+                      '[API Auth] Client API token refreshed successfully.',
+                    );
                   }
                 }
               } else if (email != null &&
@@ -252,13 +166,12 @@ class ApiClient {
                   email.isNotEmpty &&
                   password.isNotEmpty) {
                 debugPrint('[API Auth] Refreshing token via email/password...');
-                final Dio refreshDio = Dio(BaseOptions(baseUrl: ApiEndpoints.baseUrl));
+                final Dio refreshDio = Dio(
+                  BaseOptions(baseUrl: ApiEndpoints.baseUrl),
+                );
                 final response = await refreshDio.post<dynamic>(
                   ApiEndpoints.authLogin,
-                  data: <String, dynamic>{
-                    'email': email,
-                    'password': password,
-                  },
+                  data: <String, dynamic>{'email': email, 'password': password},
                 );
 
                 final dynamic responseBody = response.data;
@@ -284,11 +197,14 @@ class ApiClient {
                   ),
                 );
 
-                final Response<dynamic> retryResponse = await retryDio.fetch<dynamic>(options);
+                final Response<dynamic> retryResponse = await retryDio
+                    .fetch<dynamic>(options);
                 return handler.resolve(retryResponse);
               }
             } catch (refreshError) {
-              debugPrint('[API Auth] Automatic token refresh failed: $refreshError');
+              debugPrint(
+                '[API Auth] Automatic token refresh failed: $refreshError',
+              );
             }
           }
 
@@ -302,8 +218,7 @@ class ApiClient {
   // SINGLETON
   // =============================================================
 
-  static final ApiClient _instance =
-      ApiClient._internal();
+  static final ApiClient _instance = ApiClient._internal();
 
   factory ApiClient() {
     return _instance;
@@ -311,17 +226,14 @@ class ApiClient {
 
   late final Dio _dio;
 
-  final FlutterSecureStorage _storage =
-      const FlutterSecureStorage();
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   // =============================================================
   // ALEXA ENDPOINT CHECK
   // =============================================================
 
   static bool _isAlexaEndpoint(String path) {
-    return path.startsWith(
-      '/api/integrations/alexa/',
-    );
+    return path.startsWith('/api/integrations/alexa/');
   }
 
   // =============================================================
@@ -333,10 +245,7 @@ class ApiClient {
     Map<String, dynamic>? queryParameters,
   }) async {
     try {
-      return await _dio.get<dynamic>(
-        path,
-        queryParameters: queryParameters,
-      );
+      return await _dio.get<dynamic>(path, queryParameters: queryParameters);
     } on DioException catch (error) {
       throw ApiException.fromDioError(error);
     }

@@ -1,3 +1,8 @@
+import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+
+import '../core/network/api_exception.dart';
 import '../data/models/requests/add_vendor_account_request.dart';
 import '../data/models/requests/move_device_request.dart';
 import '../data/models/requests/pair_vendor_node_request.dart';
@@ -23,18 +28,40 @@ class HierarchyService {
   // ============================================================
 
   Future<List<HomeModel>> getHomes(String clientId) async {
-    final apiHomes = await _repository.getHomes(clientId);
-    return apiHomes
-        .map(
-          (h) => HomeModel(
-            id: h.id,
-            name: h.name,
-            address: h.address,
-            latitude: h.latitude,
-            longitude: h.longitude,
-          ),
-        )
-        .toList();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw ApiException(
+        message: 'Unauthenticated. Log in with Firebase first.',
+        statusCode: 401,
+      );
+    }
+
+    try {
+      final callable = FirebaseFunctions.instanceFor(
+        region: 'asia-south1',
+      ).httpsCallable('getHomes');
+      final result = await callable.call();
+      final List<dynamic> list = result.data as List<dynamic>;
+      return list
+          .whereType<Map>()
+          .map(
+            (item) => HomeModel(
+              id: item['id'] ?? '',
+              name: item['name'] ?? '',
+              address: item['address'] ?? '',
+              latitude: item['latitude'] != null
+                  ? (item['latitude'] as num).toDouble()
+                  : null,
+              longitude: item['longitude'] != null
+                  ? (item['longitude'] as num).toDouble()
+                  : null,
+            ),
+          )
+          .toList();
+    } catch (e) {
+      debugPrint('[HierarchyService] getHomes failed: $e');
+      rethrow;
+    }
   }
 
   Future<HomeModel?> createHome(
@@ -93,12 +120,34 @@ class HierarchyService {
   // ============================================================
 
   Future<List<FloorModel>> getFloors(String clientId, String homeId) async {
-    final floors = await _repository.getFloors(clientId, homeId);
-    return floors
-        .map(
-          (f) => FloorModel(id: f.id, name: f.name, floorNumber: f.floorNumber),
-        )
-        .toList();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw ApiException(
+        message: 'Unauthenticated. Log in with Firebase first.',
+        statusCode: 401,
+      );
+    }
+
+    try {
+      final callable = FirebaseFunctions.instanceFor(
+        region: 'asia-south1',
+      ).httpsCallable('getFloors');
+      final result = await callable.call(<String, dynamic>{'homeId': homeId});
+      final List<dynamic> list = result.data as List<dynamic>;
+      return list
+          .whereType<Map>()
+          .map(
+            (item) => FloorModel(
+              id: item['id'] ?? '',
+              name: item['name'] ?? '',
+              floorNumber: item['floorNumber'] ?? 0,
+            ),
+          )
+          .toList();
+    } catch (e) {
+      debugPrint('[HierarchyService] getFloors failed: $e');
+      rethrow;
+    }
   }
 
   Future<FloorModel?> createFloor(
@@ -157,8 +206,33 @@ class HierarchyService {
     String homeId,
     String floorId,
   ) async {
-    final rooms = await _repository.getRooms(clientId, homeId, floorId);
-    return rooms.map((r) => RoomModel(id: r.id, name: r.name)).toList();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw ApiException(
+        message: 'Unauthenticated. Log in with Firebase first.',
+        statusCode: 401,
+      );
+    }
+
+    try {
+      final callable = FirebaseFunctions.instanceFor(
+        region: 'asia-south1',
+      ).httpsCallable('getRooms');
+      final result = await callable.call(<String, dynamic>{
+        'homeId': homeId,
+        'floorId': floorId,
+      });
+      final List<dynamic> list = result.data as List<dynamic>;
+      return list
+          .whereType<Map>()
+          .map(
+            (item) => RoomModel(id: item['id'] ?? '', name: item['name'] ?? ''),
+          )
+          .toList();
+    } catch (e) {
+      debugPrint('[HierarchyService] getRooms failed: $e');
+      rethrow;
+    }
   }
 
   Future<RoomModel?> createRoom(
