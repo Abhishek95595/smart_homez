@@ -17,7 +17,7 @@ import 'providers/water_provider.dart';
 import 'features/home_setup/providers/home_setup_provider.dart';
 import 'features/home_setup/screens/home_setup_screen.dart';
 import 'features/integrations/alexa/alexa_provider.dart';
-import 'screens/landing/landing_screen.dart';
+import 'screens/splash/splash_screen.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -63,7 +63,7 @@ class SmartBuildingApp extends StatelessWidget {
         title: 'Hasomi',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: const LandingScreen(),
+        home: const VideoSplashScreen(),
         routes: {'/homes/setup': (context) => const HomeSetupScreen()},
       ),
     );

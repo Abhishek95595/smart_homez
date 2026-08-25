@@ -13,7 +13,7 @@ class SseService {
     return _instance;
   }
 
-  static const String _baseUrl = 'https://tenant-api.saajsajja.in';
+  static const String _baseUrl = 'https://tenant-api-qa.omnihome.in';
 
   final StreamController<Map<String, dynamic>> _eventController =
       StreamController<Map<String, dynamic>>.broadcast();

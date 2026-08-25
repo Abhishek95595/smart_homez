@@ -50,6 +50,7 @@ class AuthService {
           : clientId.trim();
 
       await _storage.write(key: _apiClientIdKey, value: savedApiClientId);
+      await _storage.write(key: 'api_client_secret', value: clientSecret.trim());
 
       debugPrint('[AuthService] API token saved successfully.');
 
@@ -95,6 +96,8 @@ class AuthService {
       if (auth.clientId != null && auth.clientId!.isNotEmpty) {
         await _storage.write(key: _apiClientIdKey, value: auth.clientId);
       }
+      await _storage.write(key: 'login_email', value: email.trim());
+      await _storage.write(key: 'login_password', value: password);
 
       debugPrint('[AuthService] Tenant login successful.');
 
@@ -159,6 +162,18 @@ class AuthService {
     return _storage.read(key: _apiClientIdKey);
   }
 
+  Future<String?> getSavedClientSecret() {
+    return _storage.read(key: 'api_client_secret');
+  }
+
+  Future<String?> getSavedEmail() {
+    return _storage.read(key: 'login_email');
+  }
+
+  Future<String?> getSavedPassword() {
+    return _storage.read(key: 'login_password');
+  }
+
   Future<String?> getResolvedClientUuid() {
     return _storage.read(key: _resolvedClientUuidKey);
   }
@@ -172,6 +187,9 @@ class AuthService {
       _storage.delete(key: _tokenKey),
       _storage.delete(key: _resolvedClientUuidKey),
       _storage.delete(key: _apiClientIdKey),
+      _storage.delete(key: 'api_client_secret'),
+      _storage.delete(key: 'login_email'),
+      _storage.delete(key: 'login_password'),
     ]);
 
     debugPrint('[AuthService] Authentication data cleared.');

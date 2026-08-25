@@ -1,5 +1,5 @@
 abstract final class ApiEndpoints {
-  static const String baseUrl = 'https://tenant-api.saajsajja.in';
+  static const String baseUrl = 'https://tenant-api-qa.omnihome.in';
 
   // Auth
   static const String authToken = '/api/Auth/token';

@@ -89,7 +89,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
         : 'Smart Homez Property Devices';
 
     final String inviteUrl =
-        'https://tenant-api.saajsajja.in/invite?phone=${Uri.encodeComponent(cleanPhone)}';
+        'https://tenant-api-qa.omnihome.in/invite?phone=${Uri.encodeComponent(cleanPhone)}';
     final String message =
         'Hi $inviteeName! You have been invited to Smart Homez to manage property devices ($devicesListStr). Open access link: $inviteUrl';
 

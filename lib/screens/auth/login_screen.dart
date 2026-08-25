@@ -55,7 +55,9 @@ class _LoginScreenState extends State<LoginScreen> {
       deviceProvider: deviceProvider,
       customerEmail: identifier.contains('@')
           ? identifier
-          : 'admin@smarthomez.com',
+          : (identifier == 'anvyaaai_AEB3'
+              ? 'aditya.vikram.singh@anvyaai.com'
+              : 'admin@smarthomez.com'),
     );
 
     if (!mounted) return;

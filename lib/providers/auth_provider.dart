@@ -89,6 +89,18 @@ class AuthProvider extends ChangeNotifier {
             email: cleanIdentifier,
             password: secret,
           );
+
+          // Tenant API endpoints (like client homes and devices) require an API Client Token.
+          // Fetch and store the API Client Token to authorize subsequent API requests.
+          try {
+            final apiAuth = await _authService.fetchToken(
+              clientId: 'anvyaaai_AEB3',
+              clientSecret: 'ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8',
+            );
+            _apiToken = apiAuth.token;
+          } catch (apiTokenError) {
+            debugPrint('[AuthProvider] Failed to exchange API Client Token after email login: $apiTokenError');
+          }
         } else {
           authResponse = await _authService.fetchToken(
             clientId: cleanIdentifier,
@@ -341,15 +353,38 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       String? savedToken = await _authService.getSavedToken();
+      final String? savedClientId = await _authService.getSavedApiClientId();
+      final String? savedClientSecret = await _authService.getSavedClientSecret();
+      final String? savedEmail = await _authService.getSavedEmail();
+      final String? savedPassword = await _authService.getSavedPassword();
+
       try {
-        final tenantAuth = await _authService.fetchToken(
-          clientId: 'anvyaaai_AEB3',
-          clientSecret: 'ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8',
-        );
-        if (tenantAuth.success &&
-            tenantAuth.token != null &&
-            tenantAuth.token!.isNotEmpty) {
-          savedToken = tenantAuth.token;
+        if (savedClientId != null &&
+            savedClientSecret != null &&
+            savedClientId.isNotEmpty &&
+            savedClientSecret.isNotEmpty) {
+          final tenantAuth = await _authService.fetchToken(
+            clientId: savedClientId,
+            clientSecret: savedClientSecret,
+          );
+          if (tenantAuth.success &&
+              tenantAuth.token != null &&
+              tenantAuth.token!.isNotEmpty) {
+            savedToken = tenantAuth.token;
+          }
+        } else if (savedEmail != null &&
+            savedPassword != null &&
+            savedEmail.isNotEmpty &&
+            savedPassword.isNotEmpty) {
+          final tenantAuth = await _authService.tenantLogin(
+            email: savedEmail,
+            password: savedPassword,
+          );
+          if (tenantAuth.success &&
+              tenantAuth.token != null &&
+              tenantAuth.token!.isNotEmpty) {
+            savedToken = tenantAuth.token;
+          }
         }
       } catch (tErr) {
         debugPrint('[AuthProvider] Restore token notice: $tErr');

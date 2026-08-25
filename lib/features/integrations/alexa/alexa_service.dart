@@ -19,7 +19,7 @@ class AlexaService {
 
   /// Production Alexa OAuth Link Constants
   static const String alexaRedirectUri =
-      'https://tenant-api.saajsajja.in/api/integrations/alexa/callback';
+      'https://tenant-api-qa.omnihome.in/api/integrations/alexa/callback';
   static const String alexaScope = 'alexa::skills:account_linking';
 
   String? _lastGeneratedState;
