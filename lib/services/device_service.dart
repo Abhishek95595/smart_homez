@@ -8,9 +8,8 @@ import '../models/device_model.dart';
 class DeviceService {
   DeviceService({dynamic apiClient});
 
-  FirebaseFunctions get _functions => FirebaseFunctions.instanceFor(
-        region: 'asia-south1',
-      );
+  FirebaseFunctions get _functions =>
+      FirebaseFunctions.instanceFor(region: 'asia-south1');
 
   /// GET devices via Firebase Callable Functions.
   Future<List<DeviceModel>> getDevices(
@@ -69,7 +68,13 @@ class DeviceService {
         'value': value,
       });
 
-      return result.data != null && result.data['success'] == true;
+      final dynamic data = result.data;
+      if (data is Map) {
+        return data['success'] == true ||
+            data['status'] == 'sent' ||
+            data['data'] != null;
+      }
+      return data != null;
     } catch (error) {
       debugPrint('[DeviceService] Callable sendCommand error: $error');
       return false;

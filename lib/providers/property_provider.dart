@@ -25,8 +25,10 @@ class PropertyProvider extends ChangeNotifier {
   }
 
   void setClientId(String? id) {
+    if (id == null || id == _clientId) return;
+    final bool isDifferentClient = _clientId != null && _clientId != id;
     _clientId = id;
-    if (id != null) {
+    if (isDifferentClient) {
       _properties.clear();
       _floors.clear();
       _rooms.clear();
