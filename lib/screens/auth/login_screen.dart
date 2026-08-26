@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -31,12 +32,16 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoggingIn = false;
   bool _isPhoneLogin = false;
 
+  int _secondsRemaining = 0;
+  Timer? _cooldownTimer;
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     _phoneController.dispose();
     _phoneOtpController.dispose();
+    _cooldownTimer?.cancel();
     super.dispose();
   }
 
@@ -88,18 +93,46 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _startResendTimer(int seconds) {
+    _cooldownTimer?.cancel();
+    setState(() => _secondsRemaining = seconds);
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining > 0) {
+        setState(() => _secondsRemaining--);
+      } else {
+        _cooldownTimer?.cancel();
+      }
+    });
+  }
+
   Future<void> _requestPhoneOtp() async {
     if (!_phoneFormKey.currentState!.validate()) return;
 
     setState(() => _isLoggingIn = true);
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    await auth.requestOtp(_phoneController.text.trim());
+
+    // Auto-prepend +91 if needed or format E.164
+    String phone = _phoneController.text.trim().replaceAll(
+      RegExp(r'\s+|-'),
+      '',
+    );
+    if (!phone.startsWith('+')) {
+      if (phone.startsWith('91') && phone.length == 12) {
+        phone = '+$phone';
+      } else {
+        phone = '+91$phone';
+      }
+    }
+
+    await auth.requestOtp(phone);
 
     if (!mounted) return;
     setState(() => _isLoggingIn = false);
 
-    if (auth.errorMessage != null) {
+    if (auth.errorMessage == null) {
+      _startResendTimer(60); // 60 seconds cooldown for resend
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(auth.errorMessage!),
@@ -124,7 +157,20 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoggingIn = true);
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    await auth.verifyOtp(_phoneController.text.trim(), otp);
+
+    String phone = _phoneController.text.trim().replaceAll(
+      RegExp(r'\s+|-'),
+      '',
+    );
+    if (!phone.startsWith('+')) {
+      if (phone.startsWith('91') && phone.length == 12) {
+        phone = '+$phone';
+      } else {
+        phone = '+91$phone';
+      }
+    }
+
+    await auth.verifyOtp(phone, otp);
 
     if (!mounted) return;
     setState(() => _isLoggingIn = false);
@@ -644,15 +690,33 @@ class _LoginScreenState extends State<LoginScreen> {
               fontWeight: FontWeight.w600,
             ),
             decoration: InputDecoration(
-              hintText: '+919876543210',
+              hintText: '9876543210',
               hintStyle: const TextStyle(
                 color: AppColors.textFaint,
                 fontSize: 13,
               ),
-              prefixIcon: const Icon(
-                Icons.phone_iphone_rounded,
-                color: AppColors.primary,
-                size: 20,
+              prefixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(width: 12),
+                  const Icon(
+                    Icons.phone_iphone_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    '+91',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(height: 20, width: 1, color: AppColors.divider),
+                  const SizedBox(width: 8),
+                ],
               ),
               filled: true,
               fillColor: AppColors.primarySoft,
@@ -740,6 +804,35 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _secondsRemaining > 0
+                      ? 'Resend in ${_secondsRemaining}s'
+                      : 'Didn\'t receive code?',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                TextButton(
+                  onPressed: _secondsRemaining > 0 ? null : _requestPhoneOtp,
+                  child: Text(
+                    'Resend OTP',
+                    style: TextStyle(
+                      color: _secondsRemaining > 0
+                          ? AppColors.textFaint
+                          : AppColors.primary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
           ],

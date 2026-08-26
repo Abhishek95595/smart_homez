@@ -1,0 +1,1393 @@
+[debug] [2026-08-26T10:08:11.512Z] ----------------------------------------------------------------------
+[debug] [2026-08-26T10:08:11.515Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Aditya Vikram Singh\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions
+[debug] [2026-08-26T10:08:11.515Z] CLI Version:   15.23.0
+[debug] [2026-08-26T10:08:11.515Z] Platform:      win32
+[debug] [2026-08-26T10:08:11.516Z] Node Version:  v22.21.0
+[debug] [2026-08-26T10:08:11.516Z] Detected Agent: unknown
+[debug] [2026-08-26T10:08:11.516Z] Time:          Wed Aug 26 2026 15:38:11 GMT+0530 (India Standard Time)
+[debug] [2026-08-26T10:08:11.516Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-08-26T10:08:13.524Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-08-26T10:08:13.525Z] > authorizing via signed-in user (antivikramsingh@gmail.com)
+[debug] [2026-08-26T10:08:13.525Z] [iam] checking project smarthomez-73d81 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-08-26T10:08:13.534Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:13.535Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:13.536Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81:testIamPermissions [none]
+[debug] [2026-08-26T10:08:13.536Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81:testIamPermissions  x-goog-user-project=smarthomez-73d81
+[debug] [2026-08-26T10:08:13.536Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-08-26T10:08:15.085Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81:testIamPermissions 200
+[debug] [2026-08-26T10:08:15.086Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-08-26T10:08:15.086Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:15.086Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:15.086Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/smarthomez-73d81/serviceAccounts/smarthomez-73d81@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2026-08-26T10:08:15.086Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/smarthomez-73d81/serviceAccounts/smarthomez-73d81@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-08-26T10:08:16.819Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/smarthomez-73d81/serviceAccounts/smarthomez-73d81@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2026-08-26T10:08:16.819Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/smarthomez-73d81/serviceAccounts/smarthomez-73d81@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'smarthomez-73d81'...
+[info] 
+[info] i  deploying functions 
+[debug] [2026-08-26T10:08:16.824Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:16.825Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:16.825Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81 [none]
+[debug] [2026-08-26T10:08:17.226Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81 200
+[debug] [2026-08-26T10:08:17.226Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81 {"projectNumber":"280979635008","projectId":"smarthomez-73d81","lifecycleState":"ACTIVE","name":"Smarthomez","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2026-08-10T07:57:34.402Z"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2026-08-26T10:08:17.230Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:17.231Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:17.231Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/smarthomez-73d81/adminSdkConfig [none]
+[debug] [2026-08-26T10:08:17.946Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/smarthomez-73d81/adminSdkConfig 200
+[debug] [2026-08-26T10:08:17.947Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/smarthomez-73d81/adminSdkConfig {"projectId":"smarthomez-73d81","storageBucket":"smarthomez-73d81.firebasestorage.app"}
+[debug] [2026-08-26T10:08:17.947Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:17.948Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:17.948Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/smarthomez-73d81/configs [none]
+[debug] [2026-08-26T10:08:18.559Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/smarthomez-73d81/configs 200
+[debug] [2026-08-26T10:08:18.559Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/smarthomez-73d81/configs {}
+[debug] [2026-08-26T10:08:18.563Z] Validating nodejs source
+[warn] !  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[warn] !  functions: Please note that there will be breaking changes when you upgrade. 
+[debug] [2026-08-26T10:08:21.105Z] > [functions] package.json contents: {
+  "name": "smarthome-bff-functions",
+  "version": "1.0.0",
+  "description": "Backend-for-Frontend proxy for Smart Homez API using Firebase Auth",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "lint": "tslint --project tsconfig.json",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "firebase-admin": "^12.1.0",
+    "firebase-functions": "^6.0.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.5.0",
+    "typescript": "^5.5.4"
+  },
+  "private": true
+}
+[debug] [2026-08-26T10:08:21.105Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase default to determine what to deploy 
+[debug] [2026-08-26T10:08:21.107Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-08-26T10:08:21.115Z] Found firebase-functions binary at 'C:\Users\Aditya Vikram Singh\Downloads\smart_homez_windows_ready\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8544
+
+[debug] [2026-08-26T10:08:22.607Z] Got response from /__/functions.yaml {"endpoints":{"getTenantSession":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID"},{"key":"TENANT_CLIENT_SECRET"}],"labels":{},"callableTrigger":{},"entryPoint":"getTenantSession"},"registerTenantClient":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID"},{"key":"TENANT_CLIENT_SECRET"}],"labels":{},"callableTrigger":{},"entryPoint":"registerTenantClient"},"verifyTenantClient":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID"},{"key":"TENANT_CLIENT_SECRET"}],"labels":{},"callableTrigger":{},"entryPoint":"verifyTenantClient"},"resendTenantRegistrationOtp":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID"},{"key":"TENANT_CLIENT_SECRET"}],"labels":{},"callableTrigger":{},"entryPoint":"resendTenantRegistrationOtp"},"getHomes":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID"},{"key":"TENANT_CLIENT_SECRET"}],"labels":{},"callableTrigger":{},"entryPoint":"getHomes"},"getFloors":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID"},{"key":"TENANT_CLIENT_SECRET"}],"labels":{},"callableTrigger":{},"entryPoint":"getFloors"},"getRooms":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID"},{"key":"TENANT_CLIENT_SECRET"}],"labels":{},"callableTrigger":{},"entryPoint":"getRooms"},"getDevices":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID"},{"key":"TENANT_CLIENT_SECRET"}],"labels":{},"callableTrigger":{},"entryPoint":"getDevices"},"getDevice":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID"},{"key":"TENANT_CLIENT_SECRET"}],"labels":{},"callableTrigger":{},"entryPoint":"getDevice"},"sendDeviceCommand":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID"},{"key":"TENANT_CLIENT_SECRET"}],"labels":{},"callableTrigger":{},"entryPoint":"sendDeviceCommand"},"getDashboard":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID"},{"key":"TENANT_CLIENT_SECRET"}],"labels":{},"callableTrigger":{},"entryPoint":"getDashboard"},"syncDevices":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID"},{"key":"TENANT_CLIENT_SECRET"}],"labels":{},"callableTrigger":{},"entryPoint":"syncDevices"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{},"params":[{"type":"secret","name":"TENANT_CLIENT_ID"},{"type":"secret","name":"TENANT_CLIENT_SECRET"}]}
+[debug] [2026-08-26T10:08:25.658Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:25.658Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:25.658Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v1/projects/smarthomez-73d81/locations/-/functions [none]
+[debug] [2026-08-26T10:08:26.440Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v1/projects/smarthomez-73d81/locations/-/functions 200
+[debug] [2026-08-26T10:08:26.440Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v1/projects/smarthomez-73d81/locations/-/functions {}
+[debug] [2026-08-26T10:08:26.441Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:26.441Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:26.441Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/-/functions filter=environment%3D%22GEN_2%22
+[debug] [2026-08-26T10:08:28.181Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/-/functions 200
+[debug] [2026-08-26T10:08:28.182Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/-/functions {}
+[info] i  extensions: ensuring required API firebaseextensions.googleapis.com is enabled... 
+[debug] [2026-08-26T10:08:28.184Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-08-26T10:08:28.185Z] > authorizing via signed-in user (antivikramsingh@gmail.com)
+[debug] [2026-08-26T10:08:28.185Z] [iam] checking project smarthomez-73d81 for permissions ["firebase.projects.get","firebaseextensions.instances.list"]
+[debug] [2026-08-26T10:08:28.185Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:28.185Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:28.185Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81:testIamPermissions [none]
+[debug] [2026-08-26T10:08:28.186Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81:testIamPermissions  x-goog-user-project=smarthomez-73d81
+[debug] [2026-08-26T10:08:28.186Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2026-08-26T10:08:29.614Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81:testIamPermissions 200
+[debug] [2026-08-26T10:08:29.614Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2026-08-26T10:08:29.615Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:29.615Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:29.615Z] >>> [apiv2][query] GET https://firebaseextensions.googleapis.com/v1beta/projects/smarthomez-73d81/instances pageSize=100&pageToken=
+[debug] [2026-08-26T10:08:31.357Z] <<< [apiv2][status] GET https://firebaseextensions.googleapis.com/v1beta/projects/smarthomez-73d81/instances 200
+[debug] [2026-08-26T10:08:31.357Z] <<< [apiv2][body] GET https://firebaseextensions.googleapis.com/v1beta/projects/smarthomez-73d81/instances {}
+[info] i  functions: Loaded environment variables from .env. 
+[info] i  functions: preparing functions directory for uploading... 
+[info] i  functions: packaged C:\Users\Aditya Vikram Singh\Downloads\smart_homez_windows_ready\functions (50.21 KB) for uploading 
+[info] i  functions: ensuring required API run.googleapis.com is enabled... 
+[info] i  functions: ensuring required API eventarc.googleapis.com is enabled... 
+[info] i  functions: ensuring required API pubsub.googleapis.com is enabled... 
+[info] i  functions: ensuring required API storage.googleapis.com is enabled... 
+[info] i  functions: generating the service identity for pubsub.googleapis.com... 
+[debug] [2026-08-26T10:08:31.401Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:31.401Z] Checked if tokens are valid: true, expires at: 1787742241025
+[info] i  functions: generating the service identity for eventarc.googleapis.com... 
+[debug] [2026-08-26T10:08:31.401Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:31.401Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:31.402Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1beta1/projects/280979635008/services/pubsub.googleapis.com:generateServiceIdentity [none]
+[debug] [2026-08-26T10:08:31.402Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1beta1/projects/280979635008/services/pubsub.googleapis.com:generateServiceIdentity  x-goog-user-project=280979635008
+[debug] [2026-08-26T10:08:31.402Z] >>> [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/280979635008/services/pubsub.googleapis.com:generateServiceIdentity {}
+[debug] [2026-08-26T10:08:31.402Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1beta1/projects/280979635008/services/eventarc.googleapis.com:generateServiceIdentity [none]
+[debug] [2026-08-26T10:08:31.402Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1beta1/projects/280979635008/services/eventarc.googleapis.com:generateServiceIdentity  x-goog-user-project=280979635008
+[debug] [2026-08-26T10:08:31.402Z] >>> [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/280979635008/services/eventarc.googleapis.com:generateServiceIdentity {}
+[debug] [2026-08-26T10:08:33.302Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1beta1/projects/280979635008/services/pubsub.googleapis.com:generateServiceIdentity 200
+[debug] [2026-08-26T10:08:33.302Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/280979635008/services/pubsub.googleapis.com:generateServiceIdentity {"name":"operations/finished.DONE_OPERATION","done":true,"response":{"@type":"type.googleapis.com/google.api.serviceusage.v1beta1.ServiceIdentity","email":"service-280979635008@gcp-sa-pubsub.iam.gserviceaccount.com","uniqueId":"117285253943361234063"}}
+[debug] [2026-08-26T10:08:33.302Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1beta1/projects/280979635008/services/eventarc.googleapis.com:generateServiceIdentity 200
+[debug] [2026-08-26T10:08:33.302Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/280979635008/services/eventarc.googleapis.com:generateServiceIdentity {"name":"operations/finished.DONE_OPERATION","done":true,"response":{"@type":"type.googleapis.com/google.api.serviceusage.v1beta1.ServiceIdentity","email":"service-280979635008@gcp-sa-eventarc.iam.gserviceaccount.com","uniqueId":"108757576224136443526"}}
+[info] i  functions: ensuring required API secretmanager.googleapis.com is enabled... 
+[debug] [2026-08-26T10:08:33.305Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:33.305Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:33.306Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:33.306Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:33.306Z] >>> [apiv2][query] GET https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_ID/versions/latest [none]
+[debug] [2026-08-26T10:08:33.307Z] >>> [apiv2][query] GET https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_SECRET/versions/latest [none]
+[debug] [2026-08-26T10:08:33.641Z] <<< [apiv2][status] GET https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_ID/versions/latest 200
+[debug] [2026-08-26T10:08:33.641Z] <<< [apiv2][body] GET https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_ID/versions/latest {"name":"projects/280979635008/secrets/TENANT_CLIENT_ID/versions/1","createTime":"2026-08-26T10:07:55.575923Z","state":"ENABLED","replicationStatus":{"automatic":{}},"etag":"\"1659f064a13e73\""}
+[debug] [2026-08-26T10:08:33.642Z] Resolved secret version of TENANT_CLIENT_ID to 1.
+[debug] [2026-08-26T10:08:34.016Z] <<< [apiv2][status] GET https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_SECRET/versions/latest 200
+[debug] [2026-08-26T10:08:34.016Z] <<< [apiv2][body] GET https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_SECRET/versions/latest {"name":"projects/280979635008/secrets/TENANT_CLIENT_SECRET/versions/1","createTime":"2026-08-26T10:08:07.246953Z","state":"ENABLED","replicationStatus":{"automatic":{}},"etag":"\"1659f065535469\""}
+[debug] [2026-08-26T10:08:34.016Z] Resolved secret version of TENANT_CLIENT_SECRET to 1.
+[debug] [2026-08-26T10:08:34.017Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:34.017Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:34.017Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81 [none]
+[debug] [2026-08-26T10:08:35.556Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81 200
+[debug] [2026-08-26T10:08:35.556Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/smarthomez-73d81 {"projectNumber":"280979635008","projectId":"smarthomez-73d81","lifecycleState":"ACTIVE","name":"Smarthomez","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2026-08-10T07:57:34.402Z"}
+[debug] [2026-08-26T10:08:35.557Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:35.557Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:35.557Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/280979635008 [none]
+[debug] [2026-08-26T10:08:35.964Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/280979635008 403
+[debug] [2026-08-26T10:08:35.964Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/280979635008 {"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","serviceTitle":"Compute Engine API","service":"compute.googleapis.com","containerInfo":"280979635008","consumer":"projects/280979635008"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}}
+[debug] [2026-08-26T10:08:35.965Z] unable to look up default compute service account. Falling back to 280979635008-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","serviceTitle":"Compute Engine API","service":"compute.googleapis.com","containerInfo":"280979635008","consumer":"projects/280979635008"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/280979635008 had HTTP Error: 403, Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[debug] [2026-08-26T10:08:35.965Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:35.965Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:35.965Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/280979635008 [none]
+[debug] [2026-08-26T10:08:36.373Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/280979635008 403
+[debug] [2026-08-26T10:08:36.373Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/280979635008 {"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","consumer":"projects/280979635008","containerInfo":"280979635008","serviceTitle":"Compute Engine API","service":"compute.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}}
+[debug] [2026-08-26T10:08:36.373Z] unable to look up default compute service account. Falling back to 280979635008-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","consumer":"projects/280979635008","containerInfo":"280979635008","serviceTitle":"Compute Engine API","service":"compute.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/280979635008 had HTTP Error: 403, Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[debug] [2026-08-26T10:08:36.373Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:36.373Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:36.373Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/280979635008 [none]
+[debug] [2026-08-26T10:08:36.784Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/280979635008 403
+[debug] [2026-08-26T10:08:36.784Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/280979635008 {"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"consumer":"projects/280979635008","serviceTitle":"Compute Engine API","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","service":"compute.googleapis.com","containerInfo":"280979635008"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}}
+[debug] [2026-08-26T10:08:36.785Z] unable to look up default compute service account. Falling back to 280979635008-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"consumer":"projects/280979635008","serviceTitle":"Compute Engine API","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","service":"compute.googleapis.com","containerInfo":"280979635008"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/280979635008 had HTTP Error: 403, Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[debug] [2026-08-26T10:08:36.785Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:36.785Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:36.786Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/280979635008 [none]
+[debug] [2026-08-26T10:08:37.145Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/280979635008 403
+[debug] [2026-08-26T10:08:37.145Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/280979635008 {"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"containerInfo":"280979635008","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","service":"compute.googleapis.com","consumer":"projects/280979635008","serviceTitle":"Compute Engine API"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}}
+[debug] [2026-08-26T10:08:37.146Z] unable to look up default compute service account. Falling back to 280979635008-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"containerInfo":"280979635008","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","service":"compute.googleapis.com","consumer":"projects/280979635008","serviceTitle":"Compute Engine API"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/280979635008 had HTTP Error: 403, Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[debug] [2026-08-26T10:08:37.146Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:37.146Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:37.146Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/280979635008 [none]
+[debug] [2026-08-26T10:08:37.587Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/280979635008 403
+[debug] [2026-08-26T10:08:37.588Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/280979635008 {"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"consumer":"projects/280979635008","containerInfo":"280979635008","service":"compute.googleapis.com","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","serviceTitle":"Compute Engine API"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}}
+[debug] [2026-08-26T10:08:37.588Z] unable to look up default compute service account. Falling back to 280979635008-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"consumer":"projects/280979635008","containerInfo":"280979635008","service":"compute.googleapis.com","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","serviceTitle":"Compute Engine API"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/280979635008 had HTTP Error: 403, Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[debug] [2026-08-26T10:08:37.588Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:37.588Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:37.589Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/280979635008 [none]
+[debug] [2026-08-26T10:08:38.010Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/280979635008 403
+[debug] [2026-08-26T10:08:38.010Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/280979635008 {"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"consumer":"projects/280979635008","service":"compute.googleapis.com","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","serviceTitle":"Compute Engine API","containerInfo":"280979635008"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}}
+[debug] [2026-08-26T10:08:38.011Z] unable to look up default compute service account. Falling back to 280979635008-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"consumer":"projects/280979635008","service":"compute.googleapis.com","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","serviceTitle":"Compute Engine API","containerInfo":"280979635008"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/280979635008 had HTTP Error: 403, Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[debug] [2026-08-26T10:08:38.011Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:38.011Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:38.011Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/280979635008 [none]
+[debug] [2026-08-26T10:08:38.420Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/280979635008 403
+[debug] [2026-08-26T10:08:38.421Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/280979635008 {"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"containerInfo":"280979635008","service":"compute.googleapis.com","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","consumer":"projects/280979635008","serviceTitle":"Compute Engine API"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}}
+[debug] [2026-08-26T10:08:38.421Z] unable to look up default compute service account. Falling back to 280979635008-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"containerInfo":"280979635008","service":"compute.googleapis.com","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","consumer":"projects/280979635008","serviceTitle":"Compute Engine API"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/280979635008 had HTTP Error: 403, Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[debug] [2026-08-26T10:08:38.422Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:38.422Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:38.422Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/280979635008 [none]
+[debug] [2026-08-26T10:08:38.774Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/280979635008 403
+[debug] [2026-08-26T10:08:38.774Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/280979635008 {"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"consumer":"projects/280979635008","service":"compute.googleapis.com","serviceTitle":"Compute Engine API","containerInfo":"280979635008","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}}
+[debug] [2026-08-26T10:08:38.774Z] unable to look up default compute service account. Falling back to 280979635008-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"consumer":"projects/280979635008","service":"compute.googleapis.com","serviceTitle":"Compute Engine API","containerInfo":"280979635008","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/280979635008 had HTTP Error: 403, Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[debug] [2026-08-26T10:08:38.775Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:38.775Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:38.775Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/280979635008 [none]
+[debug] [2026-08-26T10:08:39.138Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/280979635008 403
+[debug] [2026-08-26T10:08:39.138Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/280979635008 {"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"consumer":"projects/280979635008","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","containerInfo":"280979635008","serviceTitle":"Compute Engine API","service":"compute.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}}
+[debug] [2026-08-26T10:08:39.138Z] unable to look up default compute service account. Falling back to 280979635008-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"consumer":"projects/280979635008","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","containerInfo":"280979635008","serviceTitle":"Compute Engine API","service":"compute.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/280979635008 had HTTP Error: 403, Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[debug] [2026-08-26T10:08:39.138Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:39.138Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:39.138Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/280979635008 [none]
+[debug] [2026-08-26T10:08:39.546Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/280979635008 403
+[debug] [2026-08-26T10:08:39.547Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/280979635008 {"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"serviceTitle":"Compute Engine API","containerInfo":"280979635008","service":"compute.googleapis.com","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","consumer":"projects/280979635008"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}}
+[debug] [2026-08-26T10:08:39.547Z] unable to look up default compute service account. Falling back to 280979635008-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"serviceTitle":"Compute Engine API","containerInfo":"280979635008","service":"compute.googleapis.com","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","consumer":"projects/280979635008"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/280979635008 had HTTP Error: 403, Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[debug] [2026-08-26T10:08:39.547Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:39.547Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:39.547Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/280979635008 [none]
+[debug] [2026-08-26T10:08:43.542Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/280979635008 403
+[debug] [2026-08-26T10:08:43.542Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/280979635008 {"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","service":"compute.googleapis.com","serviceTitle":"Compute Engine API","containerInfo":"280979635008","consumer":"projects/280979635008"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}}
+[debug] [2026-08-26T10:08:43.542Z] unable to look up default compute service account. Falling back to 280979635008-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","service":"compute.googleapis.com","serviceTitle":"Compute Engine API","containerInfo":"280979635008","consumer":"projects/280979635008"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/280979635008 had HTTP Error: 403, Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[debug] [2026-08-26T10:08:43.542Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:43.543Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:43.543Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/280979635008 [none]
+[debug] [2026-08-26T10:08:43.949Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/280979635008 403
+[debug] [2026-08-26T10:08:43.949Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/280979635008 {"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","service":"compute.googleapis.com","consumer":"projects/280979635008","containerInfo":"280979635008","serviceTitle":"Compute Engine API"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}}
+[debug] [2026-08-26T10:08:43.949Z] unable to look up default compute service account. Falling back to 280979635008-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008","service":"compute.googleapis.com","consumer":"projects/280979635008","containerInfo":"280979635008","serviceTitle":"Compute Engine API"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/280979635008 had HTTP Error: 403, Compute Engine API has not been used in project 280979635008 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=280979635008 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[info] i  functions: ensuring 280979635008-compute@developer.gserviceaccount.com access to secret TENANT_CLIENT_ID. 
+[debug] [2026-08-26T10:08:43.951Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:43.951Z] Checked if tokens are valid: true, expires at: 1787742241025
+[info] i  functions: ensuring 280979635008-compute@developer.gserviceaccount.com access to secret TENANT_CLIENT_SECRET. 
+[debug] [2026-08-26T10:08:43.951Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:43.951Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:43.951Z] >>> [apiv2][query] GET https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_ID:getIamPolicy [none]
+[debug] [2026-08-26T10:08:43.952Z] >>> [apiv2][query] GET https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_SECRET:getIamPolicy [none]
+[debug] [2026-08-26T10:08:44.667Z] <<< [apiv2][status] GET https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_ID:getIamPolicy 200
+[debug] [2026-08-26T10:08:44.668Z] <<< [apiv2][body] GET https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_ID:getIamPolicy {"etag":"ACAB"}
+[debug] [2026-08-26T10:08:44.668Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:44.668Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:44.669Z] >>> [apiv2][query] POST https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_ID:setIamPolicy [none]
+[debug] [2026-08-26T10:08:44.669Z] >>> [apiv2][body] POST https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_ID:setIamPolicy {"policy":{"bindings":[{"role":"roles/secretmanager.secretAccessor","members":["serviceAccount:280979635008-compute@developer.gserviceaccount.com"]}]},"updateMask":"bindings"}
+[debug] [2026-08-26T10:08:44.973Z] <<< [apiv2][status] GET https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_SECRET:getIamPolicy 200
+[debug] [2026-08-26T10:08:44.974Z] <<< [apiv2][body] GET https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_SECRET:getIamPolicy {"etag":"ACAB"}
+[debug] [2026-08-26T10:08:44.974Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:44.974Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:44.974Z] >>> [apiv2][query] POST https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_SECRET:setIamPolicy [none]
+[debug] [2026-08-26T10:08:44.974Z] >>> [apiv2][body] POST https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_SECRET:setIamPolicy {"policy":{"bindings":[{"role":"roles/secretmanager.secretAccessor","members":["serviceAccount:280979635008-compute@developer.gserviceaccount.com"]}]},"updateMask":"bindings"}
+[debug] [2026-08-26T10:08:45.587Z] <<< [apiv2][status] POST https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_ID:setIamPolicy 200
+[debug] [2026-08-26T10:08:45.587Z] <<< [apiv2][body] POST https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_ID:setIamPolicy {"version":1,"etag":"BwZZ8GeeXyY=","bindings":[{"role":"roles/secretmanager.secretAccessor","members":["serviceAccount:280979635008-compute@developer.gserviceaccount.com"]}]}
+[info] +  secretmanager: Granted roles/secretmanager.secretAccessor on projects/smarthomez-73d81/secrets/TENANT_CLIENT_ID to 280979635008-compute@developer.gserviceaccount.com 
+[info] +  functions: ensured 280979635008-compute@developer.gserviceaccount.com access to TENANT_CLIENT_ID. 
+[debug] [2026-08-26T10:08:45.896Z] <<< [apiv2][status] POST https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_SECRET:setIamPolicy 200
+[debug] [2026-08-26T10:08:45.897Z] <<< [apiv2][body] POST https://secretmanager.googleapis.com/v1/projects/smarthomez-73d81/secrets/TENANT_CLIENT_SECRET:setIamPolicy {"version":1,"etag":"BwZZ8GeimTk=","bindings":[{"role":"roles/secretmanager.secretAccessor","members":["serviceAccount:280979635008-compute@developer.gserviceaccount.com"]}]}
+[info] +  secretmanager: Granted roles/secretmanager.secretAccessor on projects/smarthomez-73d81/secrets/TENANT_CLIENT_SECRET to 280979635008-compute@developer.gserviceaccount.com 
+[info] +  functions: ensured 280979635008-compute@developer.gserviceaccount.com access to TENANT_CLIENT_SECRET. 
+[debug] [2026-08-26T10:08:45.900Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:45.900Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:45.900Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/smarthomez-73d81/services/cloudbilling.googleapis.com [none]
+[debug] [2026-08-26T10:08:45.900Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/smarthomez-73d81/services/cloudbilling.googleapis.com  x-goog-user-project=smarthomez-73d81
+[debug] [2026-08-26T10:08:47.738Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/smarthomez-73d81/services/cloudbilling.googleapis.com 200
+[debug] [2026-08-26T10:08:47.738Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/smarthomez-73d81/services/cloudbilling.googleapis.com [omitted]
+[debug] [2026-08-26T10:08:47.738Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:47.738Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:47.739Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/smarthomez-73d81/services/cloudbilling.googleapis.com:enable [none]
+[debug] [2026-08-26T10:08:47.739Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/smarthomez-73d81/services/cloudbilling.googleapis.com:enable  x-goog-user-project=smarthomez-73d81
+[debug] [2026-08-26T10:08:49.566Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/smarthomez-73d81/services/cloudbilling.googleapis.com:enable 200
+[debug] [2026-08-26T10:08:49.566Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/smarthomez-73d81/services/cloudbilling.googleapis.com:enable [omitted]
+[debug] [2026-08-26T10:08:59.595Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:59.595Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:08:59.596Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/smarthomez-73d81/billingInfo [none]
+[debug] [2026-08-26T10:08:59.596Z] >>> [apiv2][(partial)header] GET https://cloudbilling.googleapis.com/v1/projects/smarthomez-73d81/billingInfo  x-goog-user-project=smarthomez-73d81
+[debug] [2026-08-26T10:09:00.235Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/smarthomez-73d81/billingInfo 200
+[debug] [2026-08-26T10:09:00.235Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/smarthomez-73d81/billingInfo {"name":"projects/smarthomez-73d81/billingInfo","projectId":"smarthomez-73d81","billingAccountName":"billingAccounts/01DD9B-C89ED2-C0B060","billingEnabled":true}
+[debug] [2026-08-26T10:09:00.237Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:00.237Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:00.238Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions:generateUploadUrl [none]
+[debug] [2026-08-26T10:09:04.942Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions:generateUploadUrl 200
+[debug] [2026-08-26T10:09:04.942Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions:generateUploadUrl {"uploadUrl":"https://storage.googleapis.com/gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com/537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip?GoogleAccessId=service-280979635008@gcf-admin-robot.iam.gserviceaccount.com&Expires=1787740745&Signature=i4xtDQO%2F2qqVhZDVhAuwVycHR%2BMBth92gIYFXSLDDtLzTRX8xixD75mqD%2F3nN4g0An76ttwxXuZrh8nMRfQqrFHWOM%2BwRLczg4CdUf5OeFuTppNqGsCY5jD0%2FpDFlaCpplEd%2FjNB8wA6lNL4pNzBzKvQygd3W4BhOB%2F8IHL3XOj1dovRF4Wi901a1gAF8xdu0z3%2BuJz4vQlHXrkBPujAcpj2c5Am2waG0BBNVSirxBnATnBKjlx55OLc8oac%2BNp5yKbq%2Frau88tqXf2D3QOU%2BPOWcVQtbvufw%2FDlw3eZz%2Bke2%2B9F%2BzLuXcaWT2KleWDC7dPldDDPQEbuPcOIwICZfw%3D%3D","storageSource":{"bucket":"gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com","object":"537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip"}}
+[debug] [2026-08-26T10:09:04.944Z] >>> [apiv2][query] PUT https://storage.googleapis.com/gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com/537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip GoogleAccessId=service-280979635008%40gcf-admin-robot.iam.gserviceaccount.com&Expires=1787740745&Signature=i4xtDQO%2F2qqVhZDVhAuwVycHR%2BMBth92gIYFXSLDDtLzTRX8xixD75mqD%2F3nN4g0An76ttwxXuZrh8nMRfQqrFHWOM%2BwRLczg4CdUf5OeFuTppNqGsCY5jD0%2FpDFlaCpplEd%2FjNB8wA6lNL4pNzBzKvQygd3W4BhOB%2F8IHL3XOj1dovRF4Wi901a1gAF8xdu0z3%2BuJz4vQlHXrkBPujAcpj2c5Am2waG0BBNVSirxBnATnBKjlx55OLc8oac%2BNp5yKbq%2Frau88tqXf2D3QOU%2BPOWcVQtbvufw%2FDlw3eZz%2Bke2%2B9F%2BzLuXcaWT2KleWDC7dPldDDPQEbuPcOIwICZfw%3D%3D
+[debug] [2026-08-26T10:09:04.944Z] >>> [apiv2][body] PUT https://storage.googleapis.com/gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com/537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip [stream]
+[debug] [2026-08-26T10:09:05.145Z] <<< [apiv2][status] PUT https://storage.googleapis.com/gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com/537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip 200
+[debug] [2026-08-26T10:09:05.146Z] <<< [apiv2][body] PUT https://storage.googleapis.com/gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com/537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip [omitted]
+[info] +  functions: functions source uploaded successfully 
+[info] i  functions: creating Node.js 22 (2nd Gen) function getTenantSession(asia-south1)... 
+[info] i  functions: creating Node.js 22 (2nd Gen) function registerTenantClient(asia-south1)... 
+[info] i  functions: creating Node.js 22 (2nd Gen) function verifyTenantClient(asia-south1)... 
+[info] i  functions: creating Node.js 22 (2nd Gen) function resendTenantRegistrationOtp(asia-south1)... 
+[info] i  functions: creating Node.js 22 (2nd Gen) function getHomes(asia-south1)... 
+[info] i  functions: creating Node.js 22 (2nd Gen) function getFloors(asia-south1)... 
+[info] i  functions: creating Node.js 22 (2nd Gen) function getRooms(asia-south1)... 
+[info] i  functions: creating Node.js 22 (2nd Gen) function getDevices(asia-south1)... 
+[info] i  functions: creating Node.js 22 (2nd Gen) function getDevice(asia-south1)... 
+[info] i  functions: creating Node.js 22 (2nd Gen) function sendDeviceCommand(asia-south1)... 
+[info] i  functions: creating Node.js 22 (2nd Gen) function getDashboard(asia-south1)... 
+[info] i  functions: creating Node.js 22 (2nd Gen) function syncDevices(asia-south1)... 
+[debug] [2026-08-26T10:09:05.155Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:05.155Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:05.155Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions functionId=getTenantSession
+[debug] [2026-08-26T10:09:05.155Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"name":"projects/smarthomez-73d81/locations/asia-south1/functions/getTenantSession","buildConfig":{"runtime":"nodejs22","entryPoint":"getTenantSession","source":{"storageSource":{"bucket":"gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com","object":"537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"TENANT_BASE_URL":"https://tenant-api-qa.omnihome.in","TENANT_CLIENT_ID":"anvyaaai_AEB3","TENANT_CLIENT_SECRET":"ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8","FIREBASE_CONFIG":"{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}","GCLOUD_PROJECT":"smarthomez-73d81","EVENTARC_CLOUD_EVENT_SOURCE":"projects/smarthomez-73d81/locations/asia-south1/services/getTenantSession","FUNCTION_TARGET":"getTenantSession","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID","secret":"TENANT_CLIENT_ID","projectId":"smarthomez-73d81","version":"1"},{"key":"TENANT_CLIENT_SECRET","secret":"TENANT_CLIENT_SECRET","projectId":"smarthomez-73d81","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"444750ee5334cafea519f9755d2f77242173b850"}}
+[debug] [2026-08-26T10:09:08.732Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions 400
+[debug] [2026-08-26T10:09:08.733Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"error":{"code":400,"message":"Could not create Cloud Run service gettenantsession. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID","status":"INVALID_ARGUMENT"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=getTenantSession had HTTP Error: 400, Could not create Cloud Run service gettenantsession. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID 
+[warn] !  functions:  failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getTenantSession 
+[error] Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getTenantSession
+[debug] [2026-08-26T10:09:08.736Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.736Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.736Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.736Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.736Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.736Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.736Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.736Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.736Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.737Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.737Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.737Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.737Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.737Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.737Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.737Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.737Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.737Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.737Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.738Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.738Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.738Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:08.738Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions functionId=registerTenantClient
+[debug] [2026-08-26T10:09:08.738Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"name":"projects/smarthomez-73d81/locations/asia-south1/functions/registerTenantClient","buildConfig":{"runtime":"nodejs22","entryPoint":"registerTenantClient","source":{"storageSource":{"bucket":"gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com","object":"537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"TENANT_BASE_URL":"https://tenant-api-qa.omnihome.in","TENANT_CLIENT_ID":"anvyaaai_AEB3","TENANT_CLIENT_SECRET":"ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8","FIREBASE_CONFIG":"{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}","GCLOUD_PROJECT":"smarthomez-73d81","EVENTARC_CLOUD_EVENT_SOURCE":"projects/smarthomez-73d81/locations/asia-south1/services/registerTenantClient","FUNCTION_TARGET":"registerTenantClient","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID","secret":"TENANT_CLIENT_ID","projectId":"smarthomez-73d81","version":"1"},{"key":"TENANT_CLIENT_SECRET","secret":"TENANT_CLIENT_SECRET","projectId":"smarthomez-73d81","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"444750ee5334cafea519f9755d2f77242173b850"}}
+[debug] [2026-08-26T10:09:08.739Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions functionId=verifyTenantClient
+[debug] [2026-08-26T10:09:08.739Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"name":"projects/smarthomez-73d81/locations/asia-south1/functions/verifyTenantClient","buildConfig":{"runtime":"nodejs22","entryPoint":"verifyTenantClient","source":{"storageSource":{"bucket":"gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com","object":"537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"TENANT_BASE_URL":"https://tenant-api-qa.omnihome.in","TENANT_CLIENT_ID":"anvyaaai_AEB3","TENANT_CLIENT_SECRET":"ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8","FIREBASE_CONFIG":"{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}","GCLOUD_PROJECT":"smarthomez-73d81","EVENTARC_CLOUD_EVENT_SOURCE":"projects/smarthomez-73d81/locations/asia-south1/services/verifyTenantClient","FUNCTION_TARGET":"verifyTenantClient","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID","secret":"TENANT_CLIENT_ID","projectId":"smarthomez-73d81","version":"1"},{"key":"TENANT_CLIENT_SECRET","secret":"TENANT_CLIENT_SECRET","projectId":"smarthomez-73d81","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"444750ee5334cafea519f9755d2f77242173b850"}}
+[debug] [2026-08-26T10:09:08.740Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions functionId=resendTenantRegistrationOtp
+[debug] [2026-08-26T10:09:08.740Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"name":"projects/smarthomez-73d81/locations/asia-south1/functions/resendTenantRegistrationOtp","buildConfig":{"runtime":"nodejs22","entryPoint":"resendTenantRegistrationOtp","source":{"storageSource":{"bucket":"gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com","object":"537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"TENANT_BASE_URL":"https://tenant-api-qa.omnihome.in","TENANT_CLIENT_ID":"anvyaaai_AEB3","TENANT_CLIENT_SECRET":"ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8","FIREBASE_CONFIG":"{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}","GCLOUD_PROJECT":"smarthomez-73d81","EVENTARC_CLOUD_EVENT_SOURCE":"projects/smarthomez-73d81/locations/asia-south1/services/resendTenantRegistrationOtp","FUNCTION_TARGET":"resendTenantRegistrationOtp","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID","secret":"TENANT_CLIENT_ID","projectId":"smarthomez-73d81","version":"1"},{"key":"TENANT_CLIENT_SECRET","secret":"TENANT_CLIENT_SECRET","projectId":"smarthomez-73d81","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"444750ee5334cafea519f9755d2f77242173b850"}}
+[debug] [2026-08-26T10:09:08.740Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions functionId=getHomes
+[debug] [2026-08-26T10:09:08.740Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"name":"projects/smarthomez-73d81/locations/asia-south1/functions/getHomes","buildConfig":{"runtime":"nodejs22","entryPoint":"getHomes","source":{"storageSource":{"bucket":"gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com","object":"537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"TENANT_BASE_URL":"https://tenant-api-qa.omnihome.in","TENANT_CLIENT_ID":"anvyaaai_AEB3","TENANT_CLIENT_SECRET":"ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8","FIREBASE_CONFIG":"{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}","GCLOUD_PROJECT":"smarthomez-73d81","EVENTARC_CLOUD_EVENT_SOURCE":"projects/smarthomez-73d81/locations/asia-south1/services/getHomes","FUNCTION_TARGET":"getHomes","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID","secret":"TENANT_CLIENT_ID","projectId":"smarthomez-73d81","version":"1"},{"key":"TENANT_CLIENT_SECRET","secret":"TENANT_CLIENT_SECRET","projectId":"smarthomez-73d81","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"444750ee5334cafea519f9755d2f77242173b850"}}
+[debug] [2026-08-26T10:09:08.741Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions functionId=getFloors
+[debug] [2026-08-26T10:09:08.741Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"name":"projects/smarthomez-73d81/locations/asia-south1/functions/getFloors","buildConfig":{"runtime":"nodejs22","entryPoint":"getFloors","source":{"storageSource":{"bucket":"gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com","object":"537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"TENANT_BASE_URL":"https://tenant-api-qa.omnihome.in","TENANT_CLIENT_ID":"anvyaaai_AEB3","TENANT_CLIENT_SECRET":"ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8","FIREBASE_CONFIG":"{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}","GCLOUD_PROJECT":"smarthomez-73d81","EVENTARC_CLOUD_EVENT_SOURCE":"projects/smarthomez-73d81/locations/asia-south1/services/getFloors","FUNCTION_TARGET":"getFloors","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID","secret":"TENANT_CLIENT_ID","projectId":"smarthomez-73d81","version":"1"},{"key":"TENANT_CLIENT_SECRET","secret":"TENANT_CLIENT_SECRET","projectId":"smarthomez-73d81","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"444750ee5334cafea519f9755d2f77242173b850"}}
+[debug] [2026-08-26T10:09:08.741Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions functionId=getRooms
+[debug] [2026-08-26T10:09:08.741Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"name":"projects/smarthomez-73d81/locations/asia-south1/functions/getRooms","buildConfig":{"runtime":"nodejs22","entryPoint":"getRooms","source":{"storageSource":{"bucket":"gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com","object":"537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"TENANT_BASE_URL":"https://tenant-api-qa.omnihome.in","TENANT_CLIENT_ID":"anvyaaai_AEB3","TENANT_CLIENT_SECRET":"ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8","FIREBASE_CONFIG":"{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}","GCLOUD_PROJECT":"smarthomez-73d81","EVENTARC_CLOUD_EVENT_SOURCE":"projects/smarthomez-73d81/locations/asia-south1/services/getRooms","FUNCTION_TARGET":"getRooms","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID","secret":"TENANT_CLIENT_ID","projectId":"smarthomez-73d81","version":"1"},{"key":"TENANT_CLIENT_SECRET","secret":"TENANT_CLIENT_SECRET","projectId":"smarthomez-73d81","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"444750ee5334cafea519f9755d2f77242173b850"}}
+[debug] [2026-08-26T10:09:08.742Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions functionId=getDevices
+[debug] [2026-08-26T10:09:08.742Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"name":"projects/smarthomez-73d81/locations/asia-south1/functions/getDevices","buildConfig":{"runtime":"nodejs22","entryPoint":"getDevices","source":{"storageSource":{"bucket":"gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com","object":"537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"TENANT_BASE_URL":"https://tenant-api-qa.omnihome.in","TENANT_CLIENT_ID":"anvyaaai_AEB3","TENANT_CLIENT_SECRET":"ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8","FIREBASE_CONFIG":"{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}","GCLOUD_PROJECT":"smarthomez-73d81","EVENTARC_CLOUD_EVENT_SOURCE":"projects/smarthomez-73d81/locations/asia-south1/services/getDevices","FUNCTION_TARGET":"getDevices","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID","secret":"TENANT_CLIENT_ID","projectId":"smarthomez-73d81","version":"1"},{"key":"TENANT_CLIENT_SECRET","secret":"TENANT_CLIENT_SECRET","projectId":"smarthomez-73d81","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"444750ee5334cafea519f9755d2f77242173b850"}}
+[debug] [2026-08-26T10:09:08.742Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions functionId=getDevice
+[debug] [2026-08-26T10:09:08.742Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"name":"projects/smarthomez-73d81/locations/asia-south1/functions/getDevice","buildConfig":{"runtime":"nodejs22","entryPoint":"getDevice","source":{"storageSource":{"bucket":"gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com","object":"537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"TENANT_BASE_URL":"https://tenant-api-qa.omnihome.in","TENANT_CLIENT_ID":"anvyaaai_AEB3","TENANT_CLIENT_SECRET":"ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8","FIREBASE_CONFIG":"{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}","GCLOUD_PROJECT":"smarthomez-73d81","EVENTARC_CLOUD_EVENT_SOURCE":"projects/smarthomez-73d81/locations/asia-south1/services/getDevice","FUNCTION_TARGET":"getDevice","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID","secret":"TENANT_CLIENT_ID","projectId":"smarthomez-73d81","version":"1"},{"key":"TENANT_CLIENT_SECRET","secret":"TENANT_CLIENT_SECRET","projectId":"smarthomez-73d81","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"444750ee5334cafea519f9755d2f77242173b850"}}
+[debug] [2026-08-26T10:09:08.742Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions functionId=sendDeviceCommand
+[debug] [2026-08-26T10:09:08.742Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"name":"projects/smarthomez-73d81/locations/asia-south1/functions/sendDeviceCommand","buildConfig":{"runtime":"nodejs22","entryPoint":"sendDeviceCommand","source":{"storageSource":{"bucket":"gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com","object":"537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"TENANT_BASE_URL":"https://tenant-api-qa.omnihome.in","TENANT_CLIENT_ID":"anvyaaai_AEB3","TENANT_CLIENT_SECRET":"ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8","FIREBASE_CONFIG":"{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}","GCLOUD_PROJECT":"smarthomez-73d81","EVENTARC_CLOUD_EVENT_SOURCE":"projects/smarthomez-73d81/locations/asia-south1/services/sendDeviceCommand","FUNCTION_TARGET":"sendDeviceCommand","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID","secret":"TENANT_CLIENT_ID","projectId":"smarthomez-73d81","version":"1"},{"key":"TENANT_CLIENT_SECRET","secret":"TENANT_CLIENT_SECRET","projectId":"smarthomez-73d81","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"444750ee5334cafea519f9755d2f77242173b850"}}
+[debug] [2026-08-26T10:09:08.743Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions functionId=getDashboard
+[debug] [2026-08-26T10:09:08.743Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"name":"projects/smarthomez-73d81/locations/asia-south1/functions/getDashboard","buildConfig":{"runtime":"nodejs22","entryPoint":"getDashboard","source":{"storageSource":{"bucket":"gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com","object":"537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"TENANT_BASE_URL":"https://tenant-api-qa.omnihome.in","TENANT_CLIENT_ID":"anvyaaai_AEB3","TENANT_CLIENT_SECRET":"ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8","FIREBASE_CONFIG":"{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}","GCLOUD_PROJECT":"smarthomez-73d81","EVENTARC_CLOUD_EVENT_SOURCE":"projects/smarthomez-73d81/locations/asia-south1/services/getDashboard","FUNCTION_TARGET":"getDashboard","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID","secret":"TENANT_CLIENT_ID","projectId":"smarthomez-73d81","version":"1"},{"key":"TENANT_CLIENT_SECRET","secret":"TENANT_CLIENT_SECRET","projectId":"smarthomez-73d81","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"444750ee5334cafea519f9755d2f77242173b850"}}
+[debug] [2026-08-26T10:09:08.744Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions functionId=syncDevices
+[debug] [2026-08-26T10:09:08.744Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"name":"projects/smarthomez-73d81/locations/asia-south1/functions/syncDevices","buildConfig":{"runtime":"nodejs22","entryPoint":"syncDevices","source":{"storageSource":{"bucket":"gcf-v2-uploads-280979635008.asia-south1.cloudfunctions.appspot.com","object":"537794bd-a8e7-4e4e-9f00-9a6c95cde3fb.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"TENANT_BASE_URL":"https://tenant-api-qa.omnihome.in","TENANT_CLIENT_ID":"anvyaaai_AEB3","TENANT_CLIENT_SECRET":"ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8","FIREBASE_CONFIG":"{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}","GCLOUD_PROJECT":"smarthomez-73d81","EVENTARC_CLOUD_EVENT_SOURCE":"projects/smarthomez-73d81/locations/asia-south1/services/syncDevices","FUNCTION_TARGET":"syncDevices","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TENANT_CLIENT_ID","secret":"TENANT_CLIENT_ID","projectId":"smarthomez-73d81","version":"1"},{"key":"TENANT_CLIENT_SECRET","secret":"TENANT_CLIENT_SECRET","projectId":"smarthomez-73d81","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"444750ee5334cafea519f9755d2f77242173b850"}}
+[debug] [2026-08-26T10:09:09.831Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions 400
+[debug] [2026-08-26T10:09:09.831Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"error":{"code":400,"message":"Could not create Cloud Run service getdashboard. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID","status":"INVALID_ARGUMENT"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=getDashboard had HTTP Error: 400, Could not create Cloud Run service getdashboard. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID 
+[warn] !  functions:  failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getDashboard 
+[error] Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getDashboard
+[debug] [2026-08-26T10:09:09.868Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions 400
+[debug] [2026-08-26T10:09:09.868Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"error":{"code":400,"message":"Could not create Cloud Run service registertenantclient. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID","status":"INVALID_ARGUMENT"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=registerTenantClient had HTTP Error: 400, Could not create Cloud Run service registertenantclient. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID 
+[warn] !  functions:  failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/registerTenantClient 
+[error] Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/registerTenantClient
+[debug] [2026-08-26T10:09:10.064Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions 400
+[debug] [2026-08-26T10:09:10.064Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"error":{"code":400,"message":"Could not create Cloud Run service resendtenantregistrationotp. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID","status":"INVALID_ARGUMENT"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=resendTenantRegistrationOtp had HTTP Error: 400, Could not create Cloud Run service resendtenantregistrationotp. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID 
+[warn] !  functions:  failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/resendTenantRegistrationOtp 
+[error] Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/resendTenantRegistrationOtp
+[debug] [2026-08-26T10:09:10.065Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions 400
+[debug] [2026-08-26T10:09:10.065Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"error":{"code":400,"message":"Could not create Cloud Run service syncdevices. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID","status":"INVALID_ARGUMENT"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=syncDevices had HTTP Error: 400, Could not create Cloud Run service syncdevices. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID 
+[warn] !  functions:  failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/syncDevices 
+[error] Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/syncDevices
+[debug] [2026-08-26T10:09:10.576Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions 400
+[debug] [2026-08-26T10:09:10.576Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"error":{"code":400,"message":"Could not create Cloud Run service getfloors. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID","status":"INVALID_ARGUMENT"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=getFloors had HTTP Error: 400, Could not create Cloud Run service getfloors. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID 
+[warn] !  functions:  failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getFloors 
+[error] Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getFloors
+[debug] [2026-08-26T10:09:10.581Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions 400
+[debug] [2026-08-26T10:09:10.581Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"error":{"code":400,"message":"Could not create Cloud Run service getdevices. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID","status":"INVALID_ARGUMENT"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=getDevices had HTTP Error: 400, Could not create Cloud Run service getdevices. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID 
+[warn] !  functions:  failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getDevices 
+[error] Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getDevices
+[debug] [2026-08-26T10:09:11.096Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions 400
+[debug] [2026-08-26T10:09:11.096Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"error":{"code":400,"message":"Could not create Cloud Run service getdevice. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID","status":"INVALID_ARGUMENT"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=getDevice had HTTP Error: 400, Could not create Cloud Run service getdevice. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID 
+[warn] !  functions:  failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getDevice 
+[error] Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getDevice
+[debug] [2026-08-26T10:09:11.271Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions 400
+[debug] [2026-08-26T10:09:11.271Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"error":{"code":400,"message":"Could not create Cloud Run service senddevicecommand. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID","status":"INVALID_ARGUMENT"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=sendDeviceCommand had HTTP Error: 400, Could not create Cloud Run service senddevicecommand. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID 
+[warn] !  functions:  failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/sendDeviceCommand 
+[error] Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/sendDeviceCommand
+[debug] [2026-08-26T10:09:11.274Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions 400
+[debug] [2026-08-26T10:09:11.274Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"error":{"code":400,"message":"Could not create Cloud Run service verifytenantclient. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID","status":"INVALID_ARGUMENT"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=verifyTenantClient had HTTP Error: 400, Could not create Cloud Run service verifytenantclient. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID 
+[warn] !  functions:  failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/verifyTenantClient 
+[error] Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/verifyTenantClient
+[debug] [2026-08-26T10:09:11.599Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions 400
+[debug] [2026-08-26T10:09:11.599Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"error":{"code":400,"message":"Could not create Cloud Run service getrooms. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID","status":"INVALID_ARGUMENT"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=getRooms had HTTP Error: 400, Could not create Cloud Run service getrooms. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID 
+[warn] !  functions:  failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getRooms 
+[error] Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getRooms
+[debug] [2026-08-26T10:09:11.804Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions 400
+[debug] [2026-08-26T10:09:11.804Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions {"error":{"code":400,"message":"Could not create Cloud Run service gethomes. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID","status":"INVALID_ARGUMENT"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=getHomes had HTTP Error: 400, Could not create Cloud Run service gethomes. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID 
+[warn] !  functions:  failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getHomes 
+[error] Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getHomes
+[warn] !  functions: Deploys failed. Skipping deletes. 
+[debug] [2026-08-26T10:09:11.810Z] Total Function Deployment time: 6656
+[debug] [2026-08-26T10:09:11.811Z] 12 Functions Deployed
+[debug] [2026-08-26T10:09:11.811Z] 12 Functions Errored
+[debug] [2026-08-26T10:09:11.811Z] 0 Function Deployments Aborted
+[debug] [2026-08-26T10:09:11.811Z] Average Function Deployment time: 5412.5
+[info] 
+[info] Functions deploy had errors with the following functions:
+	getDashboard(asia-south1)
+	getDevice(asia-south1)
+	getDevices(asia-south1)
+	getFloors(asia-south1)
+	getHomes(asia-south1)
+	getRooms(asia-south1)
+	getTenantSession(asia-south1)
+	registerTenantClient(asia-south1)
+	resendTenantRegistrationOtp(asia-south1)
+	sendDeviceCommand(asia-south1)
+	syncDevices(asia-south1)
+	verifyTenantClient(asia-south1)
+[debug] [2026-08-26T10:09:22.426Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:22.426Z] Checked if tokens are valid: true, expires at: 1787742241025
+[debug] [2026-08-26T10:09:22.426Z] >>> [apiv2][query] GET https://artifactregistry.googleapis.com/v1/projects/smarthomez-73d81/locations/asia-south1/repositories/gcf-artifacts [none]
+[debug] [2026-08-26T10:09:23.033Z] <<< [apiv2][status] GET https://artifactregistry.googleapis.com/v1/projects/smarthomez-73d81/locations/asia-south1/repositories/gcf-artifacts 404
+[debug] [2026-08-26T10:09:23.033Z] <<< [apiv2][body] GET https://artifactregistry.googleapis.com/v1/projects/smarthomez-73d81/locations/asia-south1/repositories/gcf-artifacts {"error":{"code":404,"message":"Requested entity was not found.","status":"NOT_FOUND"}}
+[debug] [2026-08-26T10:09:23.033Z] Failed to check artifact cleanup policy for region asia-south1: Request to https://artifactregistry.googleapis.com/v1/projects/smarthomez-73d81/locations/asia-south1/repositories/gcf-artifacts had HTTP Error: 404, Requested entity was not found. {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":404,"message":"Requested entity was not found.","status":"NOT_FOUND"}},"response":{"statusCode":404}},"exit":1,"message":"Request to https://artifactregistry.googleapis.com/v1/projects/smarthomez-73d81/locations/asia-south1/repositories/gcf-artifacts had HTTP Error: 404, Requested entity was not found.","status":404}
+[debug] [2026-08-26T10:09:23.034Z] Functions deploy failed.
+[debug] [2026-08-26T10:09:23.034Z] {
+  "endpoint": {
+    "id": "getTenantSession",
+    "project": "smarthomez-73d81",
+    "region": "asia-south1",
+    "entryPoint": "getTenantSession",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "callableTrigger": {},
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TENANT_CLIENT_ID",
+        "secret": "TENANT_CLIENT_ID",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      },
+      {
+        "key": "TENANT_CLIENT_SECRET",
+        "secret": "TENANT_CLIENT_SECRET",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "TENANT_BASE_URL": "https://tenant-api-qa.omnihome.in",
+      "TENANT_CLIENT_ID": "anvyaaai_AEB3",
+      "TENANT_CLIENT_SECRET": "ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8",
+      "FIREBASE_CONFIG": "{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "smarthomez-73d81",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/smarthomez-73d81/locations/asia-south1/services/getTenantSession"
+    },
+    "codebase": "default",
+    "cpu": 1,
+    "targetedByOnly": false,
+    "hash": "444750ee5334cafea519f9755d2f77242173b850"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/smarthomez-73d81/locations/asia-south1/functions/getTenantSession"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getTenantSession",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Could not create Cloud Run service gettenantsession. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=getTenantSession had HTTP Error: 400, Could not create Cloud Run service gettenantsession. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2026-08-26T10:09:23.034Z] {
+  "endpoint": {
+    "id": "registerTenantClient",
+    "project": "smarthomez-73d81",
+    "region": "asia-south1",
+    "entryPoint": "registerTenantClient",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "callableTrigger": {},
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TENANT_CLIENT_ID",
+        "secret": "TENANT_CLIENT_ID",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      },
+      {
+        "key": "TENANT_CLIENT_SECRET",
+        "secret": "TENANT_CLIENT_SECRET",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "TENANT_BASE_URL": "https://tenant-api-qa.omnihome.in",
+      "TENANT_CLIENT_ID": "anvyaaai_AEB3",
+      "TENANT_CLIENT_SECRET": "ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8",
+      "FIREBASE_CONFIG": "{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "smarthomez-73d81",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/smarthomez-73d81/locations/asia-south1/services/registerTenantClient"
+    },
+    "codebase": "default",
+    "cpu": 1,
+    "targetedByOnly": false,
+    "hash": "444750ee5334cafea519f9755d2f77242173b850"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/smarthomez-73d81/locations/asia-south1/functions/registerTenantClient"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/registerTenantClient",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Could not create Cloud Run service registertenantclient. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=registerTenantClient had HTTP Error: 400, Could not create Cloud Run service registertenantclient. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2026-08-26T10:09:23.034Z] {
+  "endpoint": {
+    "id": "verifyTenantClient",
+    "project": "smarthomez-73d81",
+    "region": "asia-south1",
+    "entryPoint": "verifyTenantClient",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "callableTrigger": {},
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TENANT_CLIENT_ID",
+        "secret": "TENANT_CLIENT_ID",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      },
+      {
+        "key": "TENANT_CLIENT_SECRET",
+        "secret": "TENANT_CLIENT_SECRET",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "TENANT_BASE_URL": "https://tenant-api-qa.omnihome.in",
+      "TENANT_CLIENT_ID": "anvyaaai_AEB3",
+      "TENANT_CLIENT_SECRET": "ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8",
+      "FIREBASE_CONFIG": "{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "smarthomez-73d81",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/smarthomez-73d81/locations/asia-south1/services/verifyTenantClient"
+    },
+    "codebase": "default",
+    "cpu": 1,
+    "targetedByOnly": false,
+    "hash": "444750ee5334cafea519f9755d2f77242173b850"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/smarthomez-73d81/locations/asia-south1/functions/verifyTenantClient"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/verifyTenantClient",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Could not create Cloud Run service verifytenantclient. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=verifyTenantClient had HTTP Error: 400, Could not create Cloud Run service verifytenantclient. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2026-08-26T10:09:23.035Z] {
+  "endpoint": {
+    "id": "resendTenantRegistrationOtp",
+    "project": "smarthomez-73d81",
+    "region": "asia-south1",
+    "entryPoint": "resendTenantRegistrationOtp",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "callableTrigger": {},
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TENANT_CLIENT_ID",
+        "secret": "TENANT_CLIENT_ID",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      },
+      {
+        "key": "TENANT_CLIENT_SECRET",
+        "secret": "TENANT_CLIENT_SECRET",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "TENANT_BASE_URL": "https://tenant-api-qa.omnihome.in",
+      "TENANT_CLIENT_ID": "anvyaaai_AEB3",
+      "TENANT_CLIENT_SECRET": "ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8",
+      "FIREBASE_CONFIG": "{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "smarthomez-73d81",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/smarthomez-73d81/locations/asia-south1/services/resendTenantRegistrationOtp"
+    },
+    "codebase": "default",
+    "cpu": 1,
+    "targetedByOnly": false,
+    "hash": "444750ee5334cafea519f9755d2f77242173b850"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/smarthomez-73d81/locations/asia-south1/functions/resendTenantRegistrationOtp"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/resendTenantRegistrationOtp",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Could not create Cloud Run service resendtenantregistrationotp. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=resendTenantRegistrationOtp had HTTP Error: 400, Could not create Cloud Run service resendtenantregistrationotp. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2026-08-26T10:09:23.035Z] {
+  "endpoint": {
+    "id": "getHomes",
+    "project": "smarthomez-73d81",
+    "region": "asia-south1",
+    "entryPoint": "getHomes",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "callableTrigger": {},
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TENANT_CLIENT_ID",
+        "secret": "TENANT_CLIENT_ID",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      },
+      {
+        "key": "TENANT_CLIENT_SECRET",
+        "secret": "TENANT_CLIENT_SECRET",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "TENANT_BASE_URL": "https://tenant-api-qa.omnihome.in",
+      "TENANT_CLIENT_ID": "anvyaaai_AEB3",
+      "TENANT_CLIENT_SECRET": "ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8",
+      "FIREBASE_CONFIG": "{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "smarthomez-73d81",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/smarthomez-73d81/locations/asia-south1/services/getHomes"
+    },
+    "codebase": "default",
+    "cpu": 1,
+    "targetedByOnly": false,
+    "hash": "444750ee5334cafea519f9755d2f77242173b850"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/smarthomez-73d81/locations/asia-south1/functions/getHomes"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getHomes",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Could not create Cloud Run service gethomes. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=getHomes had HTTP Error: 400, Could not create Cloud Run service gethomes. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2026-08-26T10:09:23.035Z] {
+  "endpoint": {
+    "id": "getFloors",
+    "project": "smarthomez-73d81",
+    "region": "asia-south1",
+    "entryPoint": "getFloors",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "callableTrigger": {},
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TENANT_CLIENT_ID",
+        "secret": "TENANT_CLIENT_ID",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      },
+      {
+        "key": "TENANT_CLIENT_SECRET",
+        "secret": "TENANT_CLIENT_SECRET",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "TENANT_BASE_URL": "https://tenant-api-qa.omnihome.in",
+      "TENANT_CLIENT_ID": "anvyaaai_AEB3",
+      "TENANT_CLIENT_SECRET": "ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8",
+      "FIREBASE_CONFIG": "{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "smarthomez-73d81",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/smarthomez-73d81/locations/asia-south1/services/getFloors"
+    },
+    "codebase": "default",
+    "cpu": 1,
+    "targetedByOnly": false,
+    "hash": "444750ee5334cafea519f9755d2f77242173b850"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/smarthomez-73d81/locations/asia-south1/functions/getFloors"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getFloors",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Could not create Cloud Run service getfloors. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=getFloors had HTTP Error: 400, Could not create Cloud Run service getfloors. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2026-08-26T10:09:23.035Z] {
+  "endpoint": {
+    "id": "getRooms",
+    "project": "smarthomez-73d81",
+    "region": "asia-south1",
+    "entryPoint": "getRooms",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "callableTrigger": {},
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TENANT_CLIENT_ID",
+        "secret": "TENANT_CLIENT_ID",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      },
+      {
+        "key": "TENANT_CLIENT_SECRET",
+        "secret": "TENANT_CLIENT_SECRET",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "TENANT_BASE_URL": "https://tenant-api-qa.omnihome.in",
+      "TENANT_CLIENT_ID": "anvyaaai_AEB3",
+      "TENANT_CLIENT_SECRET": "ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8",
+      "FIREBASE_CONFIG": "{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "smarthomez-73d81",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/smarthomez-73d81/locations/asia-south1/services/getRooms"
+    },
+    "codebase": "default",
+    "cpu": 1,
+    "targetedByOnly": false,
+    "hash": "444750ee5334cafea519f9755d2f77242173b850"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/smarthomez-73d81/locations/asia-south1/functions/getRooms"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getRooms",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Could not create Cloud Run service getrooms. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=getRooms had HTTP Error: 400, Could not create Cloud Run service getrooms. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2026-08-26T10:09:23.035Z] {
+  "endpoint": {
+    "id": "getDevices",
+    "project": "smarthomez-73d81",
+    "region": "asia-south1",
+    "entryPoint": "getDevices",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "callableTrigger": {},
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TENANT_CLIENT_ID",
+        "secret": "TENANT_CLIENT_ID",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      },
+      {
+        "key": "TENANT_CLIENT_SECRET",
+        "secret": "TENANT_CLIENT_SECRET",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "TENANT_BASE_URL": "https://tenant-api-qa.omnihome.in",
+      "TENANT_CLIENT_ID": "anvyaaai_AEB3",
+      "TENANT_CLIENT_SECRET": "ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8",
+      "FIREBASE_CONFIG": "{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "smarthomez-73d81",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/smarthomez-73d81/locations/asia-south1/services/getDevices"
+    },
+    "codebase": "default",
+    "cpu": 1,
+    "targetedByOnly": false,
+    "hash": "444750ee5334cafea519f9755d2f77242173b850"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/smarthomez-73d81/locations/asia-south1/functions/getDevices"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getDevices",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Could not create Cloud Run service getdevices. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=getDevices had HTTP Error: 400, Could not create Cloud Run service getdevices. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2026-08-26T10:09:23.035Z] {
+  "endpoint": {
+    "id": "getDevice",
+    "project": "smarthomez-73d81",
+    "region": "asia-south1",
+    "entryPoint": "getDevice",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "callableTrigger": {},
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TENANT_CLIENT_ID",
+        "secret": "TENANT_CLIENT_ID",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      },
+      {
+        "key": "TENANT_CLIENT_SECRET",
+        "secret": "TENANT_CLIENT_SECRET",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "TENANT_BASE_URL": "https://tenant-api-qa.omnihome.in",
+      "TENANT_CLIENT_ID": "anvyaaai_AEB3",
+      "TENANT_CLIENT_SECRET": "ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8",
+      "FIREBASE_CONFIG": "{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "smarthomez-73d81",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/smarthomez-73d81/locations/asia-south1/services/getDevice"
+    },
+    "codebase": "default",
+    "cpu": 1,
+    "targetedByOnly": false,
+    "hash": "444750ee5334cafea519f9755d2f77242173b850"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/smarthomez-73d81/locations/asia-south1/functions/getDevice"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getDevice",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Could not create Cloud Run service getdevice. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=getDevice had HTTP Error: 400, Could not create Cloud Run service getdevice. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2026-08-26T10:09:23.035Z] {
+  "endpoint": {
+    "id": "sendDeviceCommand",
+    "project": "smarthomez-73d81",
+    "region": "asia-south1",
+    "entryPoint": "sendDeviceCommand",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "callableTrigger": {},
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TENANT_CLIENT_ID",
+        "secret": "TENANT_CLIENT_ID",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      },
+      {
+        "key": "TENANT_CLIENT_SECRET",
+        "secret": "TENANT_CLIENT_SECRET",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "TENANT_BASE_URL": "https://tenant-api-qa.omnihome.in",
+      "TENANT_CLIENT_ID": "anvyaaai_AEB3",
+      "TENANT_CLIENT_SECRET": "ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8",
+      "FIREBASE_CONFIG": "{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "smarthomez-73d81",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/smarthomez-73d81/locations/asia-south1/services/sendDeviceCommand"
+    },
+    "codebase": "default",
+    "cpu": 1,
+    "targetedByOnly": false,
+    "hash": "444750ee5334cafea519f9755d2f77242173b850"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/smarthomez-73d81/locations/asia-south1/functions/sendDeviceCommand"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/sendDeviceCommand",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Could not create Cloud Run service senddevicecommand. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=sendDeviceCommand had HTTP Error: 400, Could not create Cloud Run service senddevicecommand. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2026-08-26T10:09:23.035Z] {
+  "endpoint": {
+    "id": "getDashboard",
+    "project": "smarthomez-73d81",
+    "region": "asia-south1",
+    "entryPoint": "getDashboard",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "callableTrigger": {},
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TENANT_CLIENT_ID",
+        "secret": "TENANT_CLIENT_ID",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      },
+      {
+        "key": "TENANT_CLIENT_SECRET",
+        "secret": "TENANT_CLIENT_SECRET",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "TENANT_BASE_URL": "https://tenant-api-qa.omnihome.in",
+      "TENANT_CLIENT_ID": "anvyaaai_AEB3",
+      "TENANT_CLIENT_SECRET": "ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8",
+      "FIREBASE_CONFIG": "{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "smarthomez-73d81",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/smarthomez-73d81/locations/asia-south1/services/getDashboard"
+    },
+    "codebase": "default",
+    "cpu": 1,
+    "targetedByOnly": false,
+    "hash": "444750ee5334cafea519f9755d2f77242173b850"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/smarthomez-73d81/locations/asia-south1/functions/getDashboard"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/getDashboard",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Could not create Cloud Run service getdashboard. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=getDashboard had HTTP Error: 400, Could not create Cloud Run service getdashboard. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2026-08-26T10:09:23.035Z] {
+  "endpoint": {
+    "id": "syncDevices",
+    "project": "smarthomez-73d81",
+    "region": "asia-south1",
+    "entryPoint": "syncDevices",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "callableTrigger": {},
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TENANT_CLIENT_ID",
+        "secret": "TENANT_CLIENT_ID",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      },
+      {
+        "key": "TENANT_CLIENT_SECRET",
+        "secret": "TENANT_CLIENT_SECRET",
+        "projectId": "smarthomez-73d81",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "TENANT_BASE_URL": "https://tenant-api-qa.omnihome.in",
+      "TENANT_CLIENT_ID": "anvyaaai_AEB3",
+      "TENANT_CLIENT_SECRET": "ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8",
+      "FIREBASE_CONFIG": "{\"projectId\":\"smarthomez-73d81\",\"storageBucket\":\"smarthomez-73d81.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "smarthomez-73d81",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/smarthomez-73d81/locations/asia-south1/services/syncDevices"
+    },
+    "codebase": "default",
+    "cpu": 1,
+    "targetedByOnly": false,
+    "hash": "444750ee5334cafea519f9755d2f77242173b850"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/smarthomez-73d81/locations/asia-south1/functions/syncDevices"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/smarthomez-73d81/locations/asia-south1/functions/syncDevices",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Could not create Cloud Run service syncdevices. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/smarthomez-73d81/locations/asia-south1/functions?functionId=syncDevices had HTTP Error: 400, Could not create Cloud Run service syncdevices. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: TENANT_CLIENT_ID",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[error] Error: There was an error deploying functions:
+[error] - Error Failed to create function getTenantSession in region asia-south1
+[error] - Error Failed to create function registerTenantClient in region asia-south1
+[error] - Error Failed to create function verifyTenantClient in region asia-south1
+[error] - Error Failed to create function resendTenantRegistrationOtp in region asia-south1
+[error] - Error Failed to create function getHomes in region asia-south1
+[error] - Error Failed to create function getFloors in region asia-south1
+[error] - Error Failed to create function getRooms in region asia-south1
+[error] - Error Failed to create function getDevices in region asia-south1
+[error] - Error Failed to create function getDevice in region asia-south1
+[error] - Error Failed to create function sendDeviceCommand in region asia-south1
+[error] - Error Failed to create function getDashboard in region asia-south1
+[error] - Error Failed to create function syncDevices in region asia-south1
