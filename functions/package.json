@@ -4,7 +4,7 @@
   "description": "Backend-for-Frontend proxy for Smart Homez API using Firebase Auth",
   "main": "lib/index.js",
   "engines": {
-    "node": ">=22"
+    "node": "22"
   },
   "scripts": {
     "lint": "tslint --project tsconfig.json",
