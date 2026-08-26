@@ -4,6 +4,15 @@ import { getMessaging } from "firebase-admin/messaging";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import axios from "axios";
+import * as https from "https";
+
+// Initialize Keep-Alive agent for fast connection reuse to AuraBrain
+const httpsAgent = new https.Agent({
+  keepAlive: true,
+  maxSockets: 50,
+  keepAliveMsecs: 1000,
+});
+axios.defaults.httpsAgent = httpsAgent;
 
 // Initialize Firebase Admin SDK
 initializeApp();
@@ -167,6 +176,7 @@ export const getTenantSession = onCall(
     region: "asia-south1",
     secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
     enforceAppCheck: false, // production will enforceAppCheck
+    minInstances: 1, // Keep warm to prevent cold starts
   },
   async (request) => {
     if (!request.auth) {
@@ -854,6 +864,7 @@ export const getDashboard = onCall(
     region: "asia-south1",
     secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
     enforceAppCheck: false,
+    minInstances: 1, // Keep warm to prevent cold starts
   },
   async (request) => {
     if (!request.auth) {

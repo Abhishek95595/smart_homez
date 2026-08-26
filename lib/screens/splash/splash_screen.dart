@@ -45,7 +45,7 @@ class _VideoSplashScreenState extends State<VideoSplashScreen> {
     } catch (e) {
       debugPrint('[SplashScreen] Video initialization failed: $e');
       // If video fails to load, fallback to immediate navigation after a short delay
-      Future.delayed(const Duration(seconds: 3), _navigateToNextScreen);
+      Future.delayed(const Duration(milliseconds: 1500), _navigateToNextScreen);
     }
   }
 
@@ -103,24 +103,29 @@ class _VideoSplashScreenState extends State<VideoSplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/splash_bg.png'),
-            fit: BoxFit.cover,
+      body: GestureDetector(
+        onTap:
+            _navigateToNextScreen, // Tap to skip splash screen video instantly
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/splash_bg.png'),
+              fit: BoxFit.cover,
+            ),
           ),
-        ),
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 600, maxHeight: 600),
-            child: _isInitialized
-                ? AspectRatio(
-                    aspectRatio: _controller.value.aspectRatio,
-                    child: VideoPlayer(_controller),
-                  )
-                : const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-                  ),
+          child: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 600, maxHeight: 600),
+              child: _isInitialized
+                  ? AspectRatio(
+                      aspectRatio: _controller.value.aspectRatio,
+                      child: VideoPlayer(_controller),
+                    )
+                  : const CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                    ),
+            ),
           ),
         ),
       ),
