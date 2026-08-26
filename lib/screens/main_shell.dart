@@ -5,6 +5,7 @@ import '../models/user_role.dart';
 import '../providers/alert_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/device_provider.dart';
+import '../providers/property_provider.dart';
 import 'automations/automations_screen.dart';
 import 'activity/activity_screen.dart';
 import 'dashboard/dashboard_screen.dart';
