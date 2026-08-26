@@ -311,9 +311,15 @@ exports.registerTenantClient = (0, https_1.onCall)({
         console.log(`[BFF] Calling createClient for UID ${uid}`);
         const createResponse = await axios_1.default.post(`${TENANT_BASE_URL}/api/v1/clients/createClient`, { name: name.trim(), email: email || "", phone: phone || "" }, { headers: { Authorization: `Bearer ${token}` } });
         const createData = createResponse.data;
-        const pendingClientId = createData.clientId || createData.id;
+        console.log("[BFF] createClient response payload:", JSON.stringify(createData));
+        const pendingClientId = createData?.clientId ||
+            createData?.id ||
+            createData?.client_id ||
+            createData?.data?.clientId ||
+            createData?.data?.id ||
+            createData?.data?.client_id;
         if (!pendingClientId) {
-            throw new Error("createClient response missing client ID.");
+            throw new Error(`createClient response missing client ID. Payload: ${JSON.stringify(createData)}`);
         }
         // Store pending registration document
         await db.collection("pendingTenantRegistrations").doc(uid).set({

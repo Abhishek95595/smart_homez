@@ -344,10 +344,17 @@ export const registerTenantClient = onCall(
       );
 
       const createData = createResponse.data;
-      const pendingClientId = createData.clientId || createData.id;
+      console.log("[BFF] createClient response payload:", JSON.stringify(createData));
+
+      const pendingClientId = createData?.clientId || 
+                              createData?.id || 
+                              createData?.client_id || 
+                              createData?.data?.clientId || 
+                              createData?.data?.id || 
+                              createData?.data?.client_id;
 
       if (!pendingClientId) {
-        throw new Error("createClient response missing client ID.");
+        throw new Error(`createClient response missing client ID. Payload: ${JSON.stringify(createData)}`);
       }
 
       // Store pending registration document
