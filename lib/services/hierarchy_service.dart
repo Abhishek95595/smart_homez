@@ -41,14 +41,18 @@ class HierarchyService {
         region: 'asia-south1',
       ).httpsCallable('getHomes');
       final result = await callable.call();
-      final List<dynamic> list = result.data as List<dynamic>;
+      dynamic raw = result.data;
+      if (raw is Map && raw['data'] != null) {
+        raw = raw['data'];
+      }
+      final List<dynamic> list = raw is List ? raw : <dynamic>[];
       return list
           .whereType<Map>()
           .map(
             (item) => HomeModel(
-              id: item['id'] ?? '',
-              name: item['name'] ?? '',
-              address: item['address'] ?? '',
+              id: (item['id'] ?? '').toString(),
+              name: (item['name'] ?? 'Smart Home').toString(),
+              address: (item['address'] ?? '').toString(),
               latitude: item['latitude'] != null
                   ? (item['latitude'] as num).toDouble()
                   : null,
@@ -133,14 +137,21 @@ class HierarchyService {
         region: 'asia-south1',
       ).httpsCallable('getFloors');
       final result = await callable.call(<String, dynamic>{'homeId': homeId});
-      final List<dynamic> list = result.data as List<dynamic>;
+      dynamic raw = result.data;
+      if (raw is Map && raw['data'] != null) {
+        raw = raw['data'];
+      }
+      final List<dynamic> list = raw is List ? raw : <dynamic>[];
       return list
           .whereType<Map>()
           .map(
             (item) => FloorModel(
-              id: item['id'] ?? '',
-              name: item['name'] ?? '',
-              floorNumber: item['floorNumber'] ?? 0,
+              id: (item['id'] ?? '').toString(),
+              name: (item['name'] ?? 'Floor').toString(),
+              floorNumber:
+                  (item['floorNumber'] ?? item['floor_number'] ?? 0) is num
+                  ? (item['floorNumber'] ?? item['floor_number'] as num).toInt()
+                  : 0,
             ),
           )
           .toList();
@@ -171,7 +182,7 @@ class HierarchyService {
     required String homeId,
     required String floorId,
     required String name,
-    required int floorNumber,
+    int floorNumber = 0,
   }) async {
     if (name.trim().isEmpty) {
       throw const FormatException('Floor name cannot be empty.');
@@ -222,11 +233,18 @@ class HierarchyService {
         'homeId': homeId,
         'floorId': floorId,
       });
-      final List<dynamic> list = result.data as List<dynamic>;
+      dynamic raw = result.data;
+      if (raw is Map && raw['data'] != null) {
+        raw = raw['data'];
+      }
+      final List<dynamic> list = raw is List ? raw : <dynamic>[];
       return list
           .whereType<Map>()
           .map(
-            (item) => RoomModel(id: item['id'] ?? '', name: item['name'] ?? ''),
+            (item) => RoomModel(
+              id: (item['id'] ?? '').toString(),
+              name: (item['name'] ?? 'Room').toString(),
+            ),
           )
           .toList();
     } catch (e) {
