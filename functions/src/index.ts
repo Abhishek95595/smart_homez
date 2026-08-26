@@ -13,6 +13,7 @@ const httpsAgent = new https.Agent({
   keepAliveMsecs: 1000,
 });
 axios.defaults.httpsAgent = httpsAgent;
+axios.defaults.timeout = 8000; // 8s global timeout for all AuraBrain calls
 
 // Initialize Firebase Admin SDK
 initializeApp();

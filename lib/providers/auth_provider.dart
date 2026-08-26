@@ -398,8 +398,8 @@ class AuthProvider extends ChangeNotifier {
             await Future.wait([
               propertyProvider.syncFromApi(_resolvedClientUuid!),
               deviceProvider.syncFromApi(_resolvedClientUuid!),
+              deviceProvider.startRealtimeSync(_resolvedClientUuid!),
             ]);
-            await deviceProvider.startRealtimeSync(_resolvedClientUuid!);
           } else if (sessionResult['status'] == 'registrationRequired') {
             _sessionStatus = TenantSessionStatus.registrationRequired;
           } else {
@@ -470,9 +470,8 @@ class AuthProvider extends ChangeNotifier {
       await Future.wait([
         propertyProvider.syncFromApi(savedClientUuid),
         deviceProvider.syncFromApi(savedClientUuid),
+        deviceProvider.startRealtimeSync(savedClientUuid),
       ]);
-
-      await deviceProvider.startRealtimeSync(savedClientUuid);
     } catch (error) {
       debugPrint('[AuthProvider] Session restore failed: $error');
 
@@ -509,7 +508,7 @@ class AuthProvider extends ChangeNotifier {
 
       await FirebaseAuth.instance.verifyPhoneNumber(
         phoneNumber: phone.trim(),
-        timeout: const Duration(seconds: 60),
+        timeout: const Duration(seconds: 30),
         verificationCompleted: (PhoneAuthCredential credential) async {
           // Auto‑retrieval (Android only). Direct sign‑in.
           final userCred = await FirebaseAuth.instance.signInWithCredential(
