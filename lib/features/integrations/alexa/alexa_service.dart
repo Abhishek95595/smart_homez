@@ -18,8 +18,7 @@ class AlexaService {
   final FlutterSecureStorage _storage;
 
   /// Production Alexa OAuth Link Constants
-  static const String alexaRedirectUri =
-      'https://tenant-api-qa.omnihome.in/api/integrations/alexa/callback';
+  static const String alexaRedirectUri = 'app1://alexa-callback';
   static const String alexaScope = 'alexa::skills:account_linking';
 
   String? _lastGeneratedState;

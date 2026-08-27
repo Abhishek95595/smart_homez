@@ -28,6 +28,7 @@ class AlexaWifiDevice {
 }
 
 class AlexaStatus {
+  final bool linked;
   final bool connected;
   final int deviceCount;
   final DateTime? lastSyncedAt;
@@ -36,6 +37,7 @@ class AlexaStatus {
   final String? selectedDeviceIp;
 
   const AlexaStatus({
+    this.linked = false,
     required this.connected,
     this.deviceCount = 0,
     this.lastSyncedAt,
@@ -45,8 +47,13 @@ class AlexaStatus {
   });
 
   factory AlexaStatus.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic> data = json;
+    if (json['data'] is Map<String, dynamic>) {
+      data = Map<String, dynamic>.from(json['data'] as Map);
+    }
+
     DateTime? parsedSync;
-    final dynamic syncVal = json['lastSyncedAt'] ?? json['last_synced_at'];
+    final dynamic syncVal = data['lastSyncedAt'] ?? data['last_synced_at'];
     if (syncVal != null) {
       try {
         parsedSync = DateTime.parse(syncVal.toString());
@@ -54,27 +61,33 @@ class AlexaStatus {
     }
 
     final dynamic devCountVal =
-        json['deviceCount'] ??
-        json['device_count'] ??
-        json['devices_connected'] ??
+        data['deviceCount'] ??
+        data['device_count'] ??
+        data['devices_connected'] ??
         0;
 
+    final bool isLinked = data['linked'] == true || data['is_linked'] == true;
+    final bool isConnected =
+        data['connected'] == true || data['is_connected'] == true;
+
     return AlexaStatus(
-      connected: json['connected'] == true || json['is_connected'] == true,
+      linked: isLinked,
+      connected: isConnected || isLinked,
       deviceCount: devCountVal is num ? devCountVal.toInt() : 0,
       lastSyncedAt: parsedSync,
-      errorMessage: json['errorMessage']?.toString(),
+      errorMessage: data['errorMessage']?.toString(),
       selectedDeviceName:
-          json['selectedDeviceName']?.toString() ??
-          json['device_name']?.toString(),
+          data['selectedDeviceName']?.toString() ??
+          data['device_name']?.toString(),
       selectedDeviceIp:
-          json['selectedDeviceIp']?.toString() ?? json['device_ip']?.toString(),
+          data['selectedDeviceIp']?.toString() ?? data['device_ip']?.toString(),
     );
   }
 
-  factory AlexaStatus.notConnected() => const AlexaStatus(connected: false);
+  factory AlexaStatus.notConnected() => const AlexaStatus(linked: false, connected: false);
 
   AlexaStatus copyWith({
+    bool? linked,
     bool? connected,
     int? deviceCount,
     DateTime? lastSyncedAt,
@@ -83,6 +96,7 @@ class AlexaStatus {
     String? selectedDeviceIp,
   }) {
     return AlexaStatus(
+      linked: linked ?? this.linked,
       connected: connected ?? this.connected,
       deviceCount: deviceCount ?? this.deviceCount,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
@@ -93,6 +107,7 @@ class AlexaStatus {
   }
 
   Map<String, dynamic> toJson() => {
+    'linked': linked,
     'connected': connected,
     'deviceCount': deviceCount,
     'lastSyncedAt': lastSyncedAt?.toIso8601String(),

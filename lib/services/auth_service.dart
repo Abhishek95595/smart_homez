@@ -11,7 +11,8 @@ class AuthService {
     : _api = apiClient ?? ApiClient(),
       _storage = storage ?? const FlutterSecureStorage();
 
-  static const String _tokenKey = 'jwt_token';
+  static const String platformUserJwtKey = 'platform_user_jwt';
+  static const String clientApiJwtKey = 'client_api_jwt';
   static const String _apiClientIdKey = 'api_client_id';
   static const String _resolvedClientUuidKey = 'resolved_client_uuid';
 
@@ -44,7 +45,8 @@ class AuthService {
         throw Exception('JWT token was not returned by the API.');
       }
 
-      await _storage.write(key: _tokenKey, value: token);
+      await _storage.write(key: clientApiJwtKey, value: token);
+      await _storage.delete(key: 'jwt_token');
 
       final String savedApiClientId = auth.clientId?.isNotEmpty == true
           ? auth.clientId!
@@ -56,7 +58,7 @@ class AuthService {
         value: clientSecret.trim(),
       );
 
-      debugPrint('[AuthService] API token saved successfully.');
+      debugPrint('[AuthService] Client API token saved successfully.');
 
       return auth;
     } catch (error) {
@@ -95,7 +97,8 @@ class AuthService {
         throw Exception('JWT token was not returned by the API.');
       }
 
-      await _storage.write(key: _tokenKey, value: token);
+      await _storage.write(key: platformUserJwtKey, value: token);
+      await _storage.delete(key: 'jwt_token');
 
       if (auth.clientId != null && auth.clientId!.isNotEmpty) {
         await _storage.write(key: _apiClientIdKey, value: auth.clientId);
@@ -103,7 +106,7 @@ class AuthService {
       await _storage.write(key: 'login_email', value: email.trim());
       await _storage.write(key: 'login_password', value: password);
 
-      debugPrint('[AuthService] Tenant login successful.');
+      debugPrint('[AuthService] Tenant user login successful.');
 
       return auth;
     } catch (error) {
@@ -243,8 +246,10 @@ class AuthService {
     return token != null && token.isNotEmpty;
   }
 
-  Future<String?> getSavedToken() {
-    return _storage.read(key: _tokenKey);
+  Future<String?> getSavedToken() async {
+    final String? userToken = await _storage.read(key: platformUserJwtKey);
+    if (userToken != null && userToken.isNotEmpty) return userToken;
+    return _storage.read(key: clientApiJwtKey);
   }
 
   Future<String?> getSavedApiClientId() {
@@ -273,7 +278,9 @@ class AuthService {
 
   Future<void> logout() async {
     await Future.wait([
-      _storage.delete(key: _tokenKey),
+      _storage.delete(key: platformUserJwtKey),
+      _storage.delete(key: clientApiJwtKey),
+      _storage.delete(key: 'jwt_token'),
       _storage.delete(key: _resolvedClientUuidKey),
       _storage.delete(key: _apiClientIdKey),
       _storage.delete(key: 'api_client_secret'),

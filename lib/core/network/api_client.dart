@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -26,63 +28,32 @@ class ApiClient {
             (RequestOptions options, RequestInterceptorHandler handler) async {
               try {
                 final String path = options.path;
+                final bool isAlexa = _isAlexaEndpoint(path);
+                final String tokenKey =
+                    isAlexa ? 'platform_user_jwt' : 'client_api_jwt';
 
-                String? token;
-
-                // =====================================================
-                // ALEXA
-                // =====================================================
-                //
-                // Alexa account linking needs the logged-in
-                // USER / PLATFORM JWT.
-                if (_isAlexaEndpoint(path)) {
-                  token = await _storage.read(key: 'platform_user_jwt');
-
-                  debugPrint('[API Auth] Alexa endpoint detected.');
-
-                  debugPrint(
-                    '[API Auth] Platform user JWT exists: '
-                    '${token != null && token.trim().isNotEmpty}',
-                  );
-                }
-                // =====================================================
-                // NORMAL BACKEND APIs
-                // =====================================================
-                else {
-                  // First try API/service JWT.
-                  token = await _storage.read(key: 'api_service_jwt');
-
-                  // Backward compatibility with your current app.
-                  if (token == null || token.trim().isEmpty) {
-                    token = await _storage.read(key: 'jwt_token');
-                  }
-
-                  // If service token doesn't exist, try user token.
-                  if (token == null || token.trim().isEmpty) {
-                    token = await _storage.read(key: 'platform_user_jwt');
-                  }
-                }
-
-                // =====================================================
-                // ATTACH AUTHORIZATION HEADER
-                // =====================================================
+                final String? token = await _storage.read(key: tokenKey);
 
                 if (token != null && token.trim().isNotEmpty) {
                   options.headers['Authorization'] = 'Bearer ${token.trim()}';
+                  debugPrint(
+                    '[API Auth] Attached token from key "$tokenKey" for $path',
+                  );
 
-                  debugPrint('[API Auth] Authorization attached: true');
+                  if (isAlexa) {
+                    _logJwtClaims(token.trim());
+                  }
                 } else {
                   options.headers.remove('Authorization');
-
-                  debugPrint('[API Auth] Authorization attached: false');
+                  debugPrint(
+                    '[API Auth] No token found in key "$tokenKey" for $path',
+                  );
                 }
 
                 debugPrint('[API Request] ${options.method} ${options.path}');
-
                 return handler.next(options);
               } catch (error) {
                 debugPrint('[API Auth] Request interceptor error: $error');
-
                 return handler.next(options);
               }
             },
@@ -94,49 +65,49 @@ class ApiClient {
                 '${response.statusCode} '
                 '${response.requestOptions.path}',
               );
-
               return handler.next(response);
             },
 
         onError: (DioException error, ErrorInterceptorHandler handler) async {
           final int? statusCode = error.response?.statusCode;
+          final String path = error.requestOptions.path;
+          final bool isAlexa = _isAlexaEndpoint(path);
 
           debugPrint(
             '[API Error] '
             '$statusCode '
             '${error.requestOptions.method} '
-            '${error.requestOptions.path}',
+            '$path',
           );
 
           if (statusCode == 401) {
-            debugPrint(
-              '[API Auth] 401 Unauthorized detected. Attempting automatic token refresh...',
-            );
+            if (isAlexa) {
+              debugPrint(
+                '[API Auth] 401 Unauthorized on Alexa endpoint. Skipping Client API token refresh to prevent wrong token type retry.',
+              );
+              return handler.next(error);
+            }
 
-            final String path = error.requestOptions.path;
             if (path == ApiEndpoints.authToken ||
                 path == ApiEndpoints.authLogin) {
               return handler.next(error);
             }
 
             try {
-              final String? clientId = await _storage.read(
-                key: 'api_client_id',
-              );
-              final String? clientSecret = await _storage.read(
+              String? clientId = await _storage.read(key: 'api_client_id');
+              String? clientSecret = await _storage.read(
                 key: 'api_client_secret',
               );
-              final String? email = await _storage.read(key: 'login_email');
-              final String? password = await _storage.read(
-                key: 'login_password',
-              );
 
-              String? newToken;
+              if (clientId == null ||
+                  clientId.trim().isEmpty ||
+                  clientSecret == null ||
+                  clientSecret.trim().isEmpty) {
+                clientId = 'anvyaaai_AEB3';
+                clientSecret = 'ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8';
+              }
 
-              if (clientId != null &&
-                  clientSecret != null &&
-                  clientId.isNotEmpty &&
-                  clientSecret.isNotEmpty) {
+              if (clientId.isNotEmpty && clientSecret.isNotEmpty) {
                 debugPrint('[API Auth] Refreshing token via Client API...');
                 final Dio refreshDio = Dio(
                   BaseOptions(baseUrl: ApiEndpoints.baseUrl),
@@ -153,53 +124,30 @@ class ApiClient {
                 if (responseBody is Map &&
                     responseBody['success'] == true &&
                     responseBody['token'] != null) {
-                  newToken = responseBody['token']?.toString();
+                  final String? newToken = responseBody['token']?.toString();
                   if (newToken != null && newToken.isNotEmpty) {
-                    await _storage.write(key: 'jwt_token', value: newToken);
+                    await _storage.write(
+                      key: 'client_api_jwt',
+                      value: newToken,
+                    );
+                    await _storage.delete(key: 'jwt_token');
                     debugPrint(
                       '[API Auth] Client API token refreshed successfully.',
                     );
+
+                    final RequestOptions options = error.requestOptions;
+                    options.headers['Authorization'] = 'Bearer $newToken';
+                    final Dio retryDio = Dio(
+                      BaseOptions(
+                        baseUrl: ApiEndpoints.baseUrl,
+                        headers: options.headers,
+                      ),
+                    );
+                    final Response<dynamic> retryResponse = await retryDio
+                        .fetch<dynamic>(options);
+                    return handler.resolve(retryResponse);
                   }
                 }
-              } else if (email != null &&
-                  password != null &&
-                  email.isNotEmpty &&
-                  password.isNotEmpty) {
-                debugPrint('[API Auth] Refreshing token via email/password...');
-                final Dio refreshDio = Dio(
-                  BaseOptions(baseUrl: ApiEndpoints.baseUrl),
-                );
-                final response = await refreshDio.post<dynamic>(
-                  ApiEndpoints.authLogin,
-                  data: <String, dynamic>{'email': email, 'password': password},
-                );
-
-                final dynamic responseBody = response.data;
-                if (responseBody is Map &&
-                    responseBody['success'] == true &&
-                    responseBody['token'] != null) {
-                  newToken = responseBody['token']?.toString();
-                  if (newToken != null && newToken.isNotEmpty) {
-                    await _storage.write(key: 'jwt_token', value: newToken);
-                    debugPrint('[API Auth] User token refreshed successfully.');
-                  }
-                }
-              }
-
-              if (newToken != null && newToken.isNotEmpty) {
-                final RequestOptions options = error.requestOptions;
-                options.headers['Authorization'] = 'Bearer $newToken';
-
-                final Dio retryDio = Dio(
-                  BaseOptions(
-                    baseUrl: ApiEndpoints.baseUrl,
-                    headers: options.headers,
-                  ),
-                );
-
-                final Response<dynamic> retryResponse = await retryDio
-                    .fetch<dynamic>(options);
-                return handler.resolve(retryResponse);
               }
             } catch (refreshError) {
               debugPrint(
@@ -212,6 +160,31 @@ class ApiClient {
         },
       ),
     );
+  }
+
+  static void _logJwtClaims(String token) {
+    try {
+      final List<String> parts = token.split('.');
+      if (parts.length == 3) {
+        final String normalized = base64Url.normalize(parts[1]);
+        final String payloadString = utf8.decode(base64Url.decode(normalized));
+        final Map<String, dynamic> claims =
+            jsonDecode(payloadString) as Map<String, dynamic>;
+
+        debugPrint('[API Auth JWT Claims] keys: ${claims.keys.toList()}');
+        debugPrint('[API Auth JWT Claims] sub: ${claims['sub']}');
+        debugPrint('[API Auth JWT Claims] userId: ${claims['userId']}');
+        debugPrint('[API Auth JWT Claims] uid: ${claims['uid']}');
+        debugPrint(
+          '[API Auth JWT Claims] nameidentifier: ${claims['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']}',
+        );
+        debugPrint(
+          '[API Auth JWT Claims] aud: ${claims['aud']}, iss: ${claims['iss']}, exp: ${claims['exp']}',
+        );
+      }
+    } catch (e) {
+      debugPrint('[API Auth JWT Claims] Unable to parse claims: $e');
+    }
   }
 
   // =============================================================

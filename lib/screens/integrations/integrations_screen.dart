@@ -3,8 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../models/device.dart';
-import '../../providers/device_provider.dart';
+import '../../features/integrations/alexa/alexa_provider.dart';
 import '../../services/alexa_integration_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -70,6 +69,9 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
           ? 1
           : widget.initialTab,
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AlexaProvider>().fetchStatus();
+    });
   }
 
   @override
@@ -179,145 +181,38 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
   }
 
   Future<void> _linkAlexa() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Connecting to Alexa Integration API...'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    final service = AlexaIntegrationService();
-    final result = await service.generateLinkToken();
+    final alexaProvider = context.read<AlexaProvider>();
+    final bool success = await alexaProvider.connectAlexa();
     if (!mounted) return;
 
-    if (result != null && result['success'] == true) {
-      final String? token = result['token']?.toString();
-      final String? authorizeUrl = result['authorizeUrl']?.toString();
-      final String linkUrl =
-          authorizeUrl ??
-          (token != null
-              ? 'https://alexa.amazon.com/api/skill/link/smart_homez?token=$token'
-              : 'https://alexa.amazon.com');
-
-      final bool? proceed = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Row(
-            children: [
-              Icon(Icons.spatial_audio_off_rounded, color: AppColors.primary),
-              SizedBox(width: 10),
-              Text('Link Amazon Alexa'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Authorize Hasomi in the Alexa App or browser to control your lights, switches, and thermostats by voice.',
-                style: TextStyle(fontSize: 13, height: 1.5),
-              ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.primarySoft,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFD6F0EC)),
-                ),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Steps to Link:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: AppColors.primaryDark,
-                      ),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      '1. Tap "Open Alexa Authorization"',
-                      style: TextStyle(fontSize: 11),
-                    ),
-                    Text(
-                      '2. Log in with your Amazon Account',
-                      style: TextStyle(fontSize: 11),
-                    ),
-                    Text(
-                      '3. Grant Hasomi device permission',
-                      style: TextStyle(fontSize: 11),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Open Alexa Authorization'),
-            ),
-          ],
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Alexa authorization launched. Please complete authorization in browser.'),
+          backgroundColor: AppColors.success,
         ),
       );
-
-      if (proceed == true) {
-        final Uri alexaUri = Uri.parse(linkUrl);
-        try {
-          if (await canLaunchUrl(alexaUri)) {
-            await launchUrl(alexaUri, mode: LaunchMode.externalApplication);
-            if (!mounted) return;
-            setState(() => _voiceConnections['Amazon Alexa'] = true);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Alexa App / authorization page launched successfully.',
-                ),
-                backgroundColor: AppColors.success,
-              ),
-            );
-          } else {
-            if (!mounted) return;
-            setState(() => _voiceConnections['Amazon Alexa'] = true);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Opened Alexa portal at: $linkUrl')),
-            );
-          }
-        } catch (e) {
-          if (!mounted) return;
-          setState(() => _voiceConnections['Amazon Alexa'] = true);
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Alexa link initiated ($e).')));
-        }
-      } else {
-        setState(() => _voiceConnections['Amazon Alexa'] = false);
-      }
-    } else {
-      final String errorMsg =
-          result?['error']?.toString() ??
-          'Failed to generate Alexa link token. Check server connection.';
+    } else if (alexaProvider.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(errorMsg),
+          content: Text(alexaProvider.errorMessage!),
           backgroundColor: AppColors.danger,
-          duration: const Duration(seconds: 4),
         ),
       );
-      setState(() => _voiceConnections['Amazon Alexa'] = false);
+    }
+  }
+
+  Future<void> _unlinkAlexa() async {
+    final alexaProvider = context.read<AlexaProvider>();
+    final bool success = await alexaProvider.disconnectAlexa();
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Alexa disconnected successfully.'),
+        ),
+      );
     }
   }
 
@@ -357,6 +252,10 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
   }
 
   Widget _voiceTab() {
+    final alexaProvider = context.watch<AlexaProvider>();
+    final alexaConnected = alexaProvider.isConnected;
+    final alexaLinked = alexaProvider.isLinked;
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       children: [
@@ -368,30 +267,37 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
               'safety actions protected.',
         ),
         const SizedBox(height: 20),
-        ..._voiceConnections.entries.map(
-          (entry) => Padding(
-            padding: const EdgeInsets.only(bottom: 11),
-            child: _VoiceCard(
-              name: entry.key,
-              connected: entry.value,
-              onChanged: (value) {
-                if (entry.key == 'Amazon Alexa' && value) {
-                  _linkAlexa();
-                  return;
-                }
-
-                setState(() => _voiceConnections[entry.key] = value);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      value
-                          ? '${entry.key} is ready for provider authorization.'
-                          : '${entry.key} disconnected.',
-                    ),
-                  ),
-                );
-              },
-            ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 11),
+          child: _VoiceCard(
+            name: 'Google Home',
+            connected: _voiceConnections['Google Home'] ?? false,
+            onChanged: (val) => setState(() => _voiceConnections['Google Home'] = val),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 11),
+          child: _VoiceCard(
+            name: 'Amazon Alexa',
+            connected: alexaConnected || alexaLinked,
+            statusSubtitle: alexaConnected
+                ? 'Connected & Skill Active'
+                : (alexaLinked ? 'Linked (Pending Alexa Skill Discovery)' : 'Not connected'),
+            onChanged: (value) {
+              if (value) {
+                _linkAlexa();
+              } else {
+                _unlinkAlexa();
+              }
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 11),
+          child: _VoiceCard(
+            name: 'Siri Shortcuts',
+            connected: _voiceConnections['Siri Shortcuts'] ?? true,
+            onChanged: (val) => setState(() => _voiceConnections['Siri Shortcuts'] = val),
           ),
         ),
         const SizedBox(height: 16),
@@ -523,16 +429,22 @@ class _IntegrationHero extends StatelessWidget {
 class _VoiceCard extends StatelessWidget {
   final String name;
   final bool connected;
+  final String? statusSubtitle;
   final ValueChanged<bool> onChanged;
 
   const _VoiceCard({
     required this.name,
     required this.connected,
+    this.statusSubtitle,
     required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    final String subtitle =
+        statusSubtitle ??
+        (connected ? 'Connected · 6 rooms shared' : 'Not connected');
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(15),
@@ -561,7 +473,7 @@ class _VoiceCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    connected ? 'Connected · 6 rooms shared' : 'Not connected',
+                    subtitle,
                     style: TextStyle(
                       color: connected
                           ? AppColors.success
@@ -1167,7 +1079,7 @@ class _InviteFormModalState extends State<_InviteFormModal> {
 
               // Permission Level Dropdown
               DropdownButtonFormField<String>(
-                value: _accessLevel,
+                initialValue: _accessLevel,
                 decoration: const InputDecoration(
                   labelText: 'Permission Role',
                   prefixIcon: Icon(Icons.admin_panel_settings_outlined),

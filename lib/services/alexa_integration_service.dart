@@ -181,4 +181,33 @@ class AlexaIntegrationService {
 
     return cmdResult != null;
   }
+
+  /// Live Alexa link status for calling client from GET /api/integrations/alexa/status
+  Future<Map<String, dynamic>?> getStatus() async {
+    try {
+      final Response<dynamic> response = await _api.get(
+        ApiEndpoints.alexaStatus,
+      );
+      if (response.data is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(response.data);
+      }
+      return null;
+    } catch (error) {
+      debugPrint('[AlexaService] Get status error: $error');
+      return null;
+    }
+  }
+
+  /// Disconnect / unlink Alexa for calling client via POST /api/integrations/alexa/disconnect
+  Future<bool> disconnectAlexa() async {
+    try {
+      final Response<dynamic> response = await _api.post(
+        ApiEndpoints.alexaDisconnect,
+      );
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (error) {
+      debugPrint('[AlexaService] Disconnect error: $error');
+      return false;
+    }
+  }
 }

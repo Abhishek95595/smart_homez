@@ -132,8 +132,8 @@ abstract final class ApiEndpoints {
   static const String alexaDiscovery = '/api/integrations/alexa/discovery';
   static const String alexaState = '/api/integrations/alexa/state';
   static const String alexaCommands = '/api/integrations/alexa/commands';
-  static const String alexaConnect = '/integrations/alexa/connect';
-  static const String alexaStatus = '/integrations/alexa/status';
-  static const String alexaSync = '/integrations/alexa/sync';
-  static const String alexaDisconnect = '/integrations/alexa/disconnect';
+  static const String alexaConnect = '/api/integrations/alexa/connect';
+  static const String alexaStatus = '/api/integrations/alexa/status';
+  static const String alexaSync = '/api/integrations/alexa/sync';
+  static const String alexaDisconnect = '/api/integrations/alexa/disconnect';
 }
