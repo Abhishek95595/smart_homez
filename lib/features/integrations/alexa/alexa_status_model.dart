@@ -72,7 +72,7 @@ class AlexaStatus {
 
     return AlexaStatus(
       linked: isLinked,
-      connected: isConnected || isLinked,
+      connected: isConnected,
       deviceCount: devCountVal is num ? devCountVal.toInt() : 0,
       lastSyncedAt: parsedSync,
       errorMessage: data['errorMessage']?.toString(),
@@ -84,7 +84,8 @@ class AlexaStatus {
     );
   }
 
-  factory AlexaStatus.notConnected() => const AlexaStatus(linked: false, connected: false);
+  factory AlexaStatus.notConnected() =>
+      const AlexaStatus(linked: false, connected: false);
 
   AlexaStatus copyWith({
     bool? linked,

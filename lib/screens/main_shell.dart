@@ -6,6 +6,7 @@ import '../providers/alert_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/device_provider.dart';
 import '../providers/property_provider.dart';
+import '../providers/family_provider.dart';
 import 'automations/automations_screen.dart';
 import 'activity/activity_screen.dart';
 import 'dashboard/dashboard_screen.dart';
@@ -20,13 +21,32 @@ class MainShell extends StatefulWidget {
   const MainShell({super.key, this.initialIndex = 0});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  State<MainShell> createState() => MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class MainShellState extends State<MainShell> {
   late int _index;
+  bool _isDrawerOpen = false;
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
   final GlobalKey<HasomiBottomVoiceBarState> _voiceBarKey =
       GlobalKey<HasomiBottomVoiceBarState>();
+
+  void openDrawer() {
+    scaffoldKey.currentState?.openDrawer();
+  }
+
+  bool _isChildRouteActive = false;
+  late final _TabRouteObserver _tabObserver = _TabRouteObserver(
+    onChanged: () {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final canPop = _navigatorKeys[0].currentState?.canPop() ?? false;
+        if (_isChildRouteActive != canPop) {
+          setState(() => _isChildRouteActive = canPop);
+        }
+      });
+    },
+  );
 
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
     GlobalKey<NavigatorState>(),
@@ -46,6 +66,7 @@ class _MainShellState extends State<MainShell> {
     // We only trigger real-time features here.
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final auth = context.read<AuthProvider>();
       final deviceProvider = context.read<DeviceProvider>();
       final propertyProvider = context.read<PropertyProvider>();
@@ -56,6 +77,10 @@ class _MainShellState extends State<MainShell> {
       propertyProvider.syncFromApi(clientUuid);
       deviceProvider.syncFromApi(clientUuid);
       deviceProvider.startRealtimeSync(clientUuid);
+
+      final familyProvider = context.read<FamilyProvider>();
+      familyProvider.setClientId(clientUuid);
+      familyProvider.fetchMembers(silent: true);
 
       if (auth.token != null) {
         debugPrint('[MainShell] Activating real-time services...');
@@ -80,7 +105,7 @@ class _MainShellState extends State<MainShell> {
     super.dispose();
   }
 
-  void _onTabTapped(int index) {
+  void onTabTapped(int index) {
     if (_index == index) {
       _navigatorKeys[index].currentState?.popUntil((route) => route.isFirst);
     } else {
@@ -159,15 +184,20 @@ class _MainShellState extends State<MainShell> {
           final desktop = constraints.maxWidth >= 1100;
 
           return Scaffold(
+            key: scaffoldKey,
             drawer: desktop
                 ? null
-                : AppNavigationDrawer(onDashboard: () => _onTabTapped(0)),
+                : AppNavigationDrawer(
+                    onDashboard: () => onTabTapped(0),
+                    onTabSelected: (idx) => onTabTapped(idx),
+                  ),
             body: desktop
                 ? Row(
                     children: [
                       AppNavigationDrawer(
                         permanent: true,
-                        onDashboard: () => _onTabTapped(0),
+                        onDashboard: () => onTabTapped(0),
+                        onTabSelected: (idx) => onTabTapped(idx),
                       ),
                       Expanded(
                         child: IndexedStack(
@@ -181,40 +211,59 @@ class _MainShellState extends State<MainShell> {
                   )
                 : IndexedStack(
                     index: safeIndex,
-                    children: tabs.map((t) => _TabNavigator(tab: t)).toList(),
+                    children: tabs
+                        .asMap()
+                        .entries
+                        .map(
+                          (entry) => _TabNavigator(
+                            tab: entry.value,
+                            observers: entry.key == 0 ? [_tabObserver] : [],
+                          ),
+                        )
+                        .toList(),
                   ),
 
-            floatingActionButton: FloatingActionButton.extended(
-              heroTag: 'hasomi_voice_fab',
-              onPressed: () {
-                _voiceBarKey.currentState?.triggerVoiceListening();
-              },
-              backgroundColor: const Color(0xFF0F172A),
-              elevation: 4,
-              icon: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF00E5FF), Color(0xFF3B82F6)],
-                  ),
-                ),
-                child: const Icon(
-                  Icons.mic_rounded,
-                  color: Colors.white,
-                  size: 16,
-                ),
-              ),
-              label: const Text(
-                'HASOMI',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
+            onDrawerChanged: (isOpened) {
+              if (_isDrawerOpen != isOpened) {
+                setState(() => _isDrawerOpen = isOpened);
+              }
+            },
+            floatingActionButton: (safeIndex == 0 &&
+                    !_isDrawerOpen &&
+                    !desktop &&
+                    !_isChildRouteActive)
+                ? FloatingActionButton.extended(
+                    heroTag: 'hasomi_voice_fab',
+                    onPressed: () {
+                      _voiceBarKey.currentState?.triggerVoiceListening();
+                    },
+                    backgroundColor: const Color(0xFF0F172A),
+                    elevation: 4,
+                    icon: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF00E5FF), Color(0xFF3B82F6)],
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.mic_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                    label: const Text(
+                      'HASOMI',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  )
+                : null,
 
             bottomNavigationBar: desktop
                 ? null
@@ -248,7 +297,7 @@ class _MainShellState extends State<MainShell> {
 
                                 return Expanded(
                                   child: InkWell(
-                                    onTap: () => _onTabTapped(idx),
+                                    onTap: () => onTabTapped(idx),
                                     splashColor: AppColors.primarySoft,
                                     highlightColor: Colors.transparent,
                                     child: Column(
@@ -354,16 +403,47 @@ class _MainShellState extends State<MainShell> {
 
 class _TabNavigator extends StatelessWidget {
   final _Tab tab;
-  const _TabNavigator({required this.tab});
+  final List<NavigatorObserver> observers;
+  const _TabNavigator({required this.tab, this.observers = const []});
 
   @override
   Widget build(BuildContext context) {
     return Navigator(
       key: tab.navigatorKey,
+      observers: observers,
       onGenerateRoute: (settings) {
         return MaterialPageRoute(builder: (context) => tab.page);
       },
     );
+  }
+}
+
+class _TabRouteObserver extends NavigatorObserver {
+  final VoidCallback onChanged;
+  _TabRouteObserver({required this.onChanged});
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    onChanged();
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPop(route, previousRoute);
+    onChanged();
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didRemove(route, previousRoute);
+    onChanged();
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    onChanged();
   }
 }
 

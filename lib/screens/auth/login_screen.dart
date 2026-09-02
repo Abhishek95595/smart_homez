@@ -2,11 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/user_role.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/device_provider.dart';
-import '../../providers/property_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_logo.dart';
 import '../main_shell.dart';
 import 'register_screen.dart';
 
@@ -17,80 +15,70 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController(
-    text: 'admin@smarthomez.com',
-  );
-  final TextEditingController _passwordController = TextEditingController();
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _phoneOtpController = TextEditingController();
 
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final GlobalKey<FormState> _phoneFormKey = GlobalKey<FormState>();
 
-  bool _isObscured = true;
   bool _isLoggingIn = false;
-  bool _isPhoneLogin = false;
-
   int _secondsRemaining = 0;
   Timer? _cooldownTimer;
 
+  late final AnimationController _floatingController;
+  late final Animation<double> _floatingAnimation;
+  late final Animation<double> _shadowScaleAnimation;
+
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Floating levitation animation for robot
+    _floatingController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
+
+    _floatingAnimation = Tween<double>(begin: -8.0, end: 8.0).animate(
+      CurvedAnimation(
+        parent: _floatingController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _shadowScaleAnimation = Tween<double>(begin: 0.85, end: 1.15).animate(
+      CurvedAnimation(
+        parent: _floatingController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    // Glowing aura pulse animation
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3000),
+    )..repeat(reverse: true);
+
+    _pulseAnimation = Tween<double>(begin: 0.4, end: 0.85).animate(
+      CurvedAnimation(
+        parent: _pulseController,
+        curve: Curves.easeInOut,
+      ),
+    );
+  }
+
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
     _phoneController.dispose();
     _phoneOtpController.dispose();
     _cooldownTimer?.cancel();
+    _floatingController.dispose();
+    _pulseController.dispose();
     super.dispose();
-  }
-
-  Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoggingIn = true);
-
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    final propertyProvider = Provider.of<PropertyProvider>(
-      context,
-      listen: false,
-    );
-    final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
-
-    final identifier = _emailController.text.trim();
-    final secret = _passwordController.text.trim();
-
-    final error = await auth.loginWithApi(
-      identifier,
-      secret,
-      UserRole.resident,
-      propertyProvider: propertyProvider,
-      deviceProvider: deviceProvider,
-      customerEmail: identifier.contains('@')
-          ? identifier
-          : (identifier == 'anvyaaai_AEB3'
-                ? 'aditya.vikram.singh@anvyaai.com'
-                : 'admin@smarthomez.com'),
-    );
-
-    if (!mounted) return;
-    setState(() => _isLoggingIn = false);
-
-    if (error == null && auth.isLoggedIn) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MainShell()),
-        (route) => false,
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            error ?? 'Login failed. Please check your credentials.',
-          ),
-          backgroundColor: AppColors.danger,
-        ),
-      );
-    }
   }
 
   void _startResendTimer(int seconds) {
@@ -112,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
 
-    // Auto-prepend +91 if needed or format E.164
+    // Format phone to E.164
     String phone = _phoneController.text.trim().replaceAll(
       RegExp(r'\s+|-'),
       '',
@@ -130,13 +118,49 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     setState(() => _isLoggingIn = false);
 
-    if (auth.errorMessage == null) {
-      _startResendTimer(60); // 60 seconds cooldown for resend
-    } else {
+    if (auth.isOtpSent) {
+      _startResendTimer(60);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(auth.errorMessage!),
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'OTP sent successfully! Please enter the 6-digit code.',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF00A38E),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      );
+    } else if (auth.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  auth.errorMessage!,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
           backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       );
     }
@@ -146,9 +170,22 @@ class _LoginScreenState extends State<LoginScreen> {
     final otp = _phoneOtpController.text.trim();
     if (otp.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a 6-digit verification code.'),
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+              SizedBox(width: 10),
+              Text(
+                'Please enter the 6-digit verification code.',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
           backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       );
       return;
@@ -177,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (auth.errorMessage == null) {
       if (auth.sessionStatus == TenantSessionStatus.authenticated) {
-        Navigator.of(context).pushAndRemoveUntil(
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const MainShell()),
           (route) => false,
         );
@@ -191,25 +228,26 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(auth.errorMessage!),
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  auth.errorMessage!,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
           backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       );
     }
-  }
-
-  void _fillDemoEmail() {
-    setState(() {
-      _emailController.text = 'admin@smarthomez.com';
-      _passwordController.text = 'admin123';
-    });
-  }
-
-  void _fillClientApiCredentials() {
-    setState(() {
-      _emailController.text = 'anvyaaai_AEB3';
-      _passwordController.text = 'ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8';
-    });
   }
 
   @override
@@ -217,447 +255,123 @@ class _LoginScreenState extends State<LoginScreen> {
     final auth = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Navigator.canPop(context)
-            ? IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: AppColors.textPrimary,
-                  size: 20,
-                ),
-                onPressed: () => Navigator.maybePop(context),
-              )
-            : null,
-        title: const Text(
-          'Login',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Mascot & Branding Header
-                Center(
-                  child: Container(
-                    width: 90,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      color: AppColors.primarySoft,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFD6F0EC)),
-                    ),
-                    child: Image.asset(
-                      'assets/images/new_robot.png',
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Welcome to Hasomi',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.6,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _isPhoneLogin
-                      ? 'Verify your phone number with secure OTP'
-                      : 'Enter your email or API Client ID to log in',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Switch login type tabs
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ChoiceChip(
-                      label: const Text('Email / API Key'),
-                      selected: !_isPhoneLogin,
-                      selectedColor: AppColors.primarySoft,
-                      backgroundColor: Colors.transparent,
-                      labelStyle: TextStyle(
-                        color: !_isPhoneLogin
-                            ? AppColors.primaryDark
-                            : AppColors.textSecondary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                      onSelected: (val) {
-                        setState(() => _isPhoneLogin = false);
-                      },
-                    ),
-                    const SizedBox(width: 12),
-                    ChoiceChip(
-                      label: const Text('Phone Number'),
-                      selected: _isPhoneLogin,
-                      selectedColor: AppColors.primarySoft,
-                      backgroundColor: Colors.transparent,
-                      labelStyle: TextStyle(
-                        color: _isPhoneLogin
-                            ? AppColors.primaryDark
-                            : AppColors.textSecondary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                      onSelected: (val) {
-                        setState(() => _isPhoneLogin = true);
-                      },
-                    ),
+      backgroundColor: const Color(0xFFF4F9F8),
+      body: Stack(
+        children: [
+          // Background Light Gradient
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFE8F6F4),
+                    Color(0xFFF3FAF9),
+                    Color(0xFFF8FAFC),
                   ],
                 ),
-                const SizedBox(height: 20),
+              ),
+            ),
+          ),
 
-                // Main Login Card
-                Container(
-                  padding: const EdgeInsets.all(22),
+          // Top-right soft emerald glow
+          Positioned(
+            top: -90,
+            right: -70,
+            child: AnimatedBuilder(
+              animation: _pulseAnimation,
+              builder: (context, child) {
+                return Container(
+                  width: 300,
+                  height: 300,
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: AppColors.divider),
-                    boxShadow: [AppTheme.softShadow],
-                  ),
-                  child: AnimatedCrossFade(
-                    duration: const Duration(milliseconds: 200),
-                    crossFadeState: _isPhoneLogin
-                        ? CrossFadeState.showSecond
-                        : CrossFadeState.showFirst,
-                    firstChild: _buildRestLoginForm(),
-                    secondChild: _buildPhoneLoginForm(auth),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                if (!_isPhoneLogin)
-                  // Quick Fill Credentials Helper Box
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.primarySoft,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: const Color(0xFFD6F0EC)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(
-                              Icons.key_rounded,
-                              color: AppColors.primaryDark,
-                              size: 16,
-                            ),
-                            SizedBox(width: 6),
-                            Text(
-                              'Quick Demo Fill',
-                              style: TextStyle(
-                                color: AppColors.primaryDark,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: InkWell(
-                                onTap: _fillDemoEmail,
-                                borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: const Color(0xFFC7EBE5),
-                                    ),
-                                  ),
-                                  child: const Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Demo Admin',
-                                        style: TextStyle(
-                                          color: AppColors.textPrimary,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                      SizedBox(height: 2),
-                                      Text(
-                                        'admin@smarthomez.com',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 9.5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: InkWell(
-                                onTap: _fillClientApiCredentials,
-                                borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: const Color(0xFFC7EBE5),
-                                    ),
-                                  ),
-                                  child: const Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Client API Key',
-                                        style: TextStyle(
-                                          color: AppColors.textPrimary,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                      SizedBox(height: 2),
-                                      Text(
-                                        'anvyaaai_AEB3',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 9.5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        const Color(0xFF00A38E).withValues(alpha: _pulseAnimation.value * 0.18),
+                        const Color(0xFF00E5FF).withValues(alpha: _pulseAnimation.value * 0.08),
+                        Colors.transparent,
                       ],
                     ),
                   ),
-              ],
+                );
+              },
             ),
           ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildRestLoginForm() {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Email Address or Client ID',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            key: const Key('email_input'),
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.next,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-            decoration: InputDecoration(
-              hintText: 'name@example.com or anvyaaai_AEB3',
-              hintStyle: const TextStyle(
-                color: AppColors.textFaint,
-                fontSize: 13,
-              ),
-              prefixIcon: const Icon(
-                Icons.person_outline_rounded,
-                color: AppColors.primary,
-                size: 20,
-              ),
-              filled: true,
-              fillColor: AppColors.primarySoft,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: Color(0xFFE2EFEF)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  color: AppColors.primary,
-                  width: 1.5,
-                ),
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Please enter your email or Client ID';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 18),
-
-          const Text(
-            'Password or Secret Code',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            key: const Key('password_input'),
-            controller: _passwordController,
-            obscureText: _isObscured,
-            textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) => _login(),
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-            decoration: InputDecoration(
-              hintText: 'Enter password or client secret',
-              hintStyle: const TextStyle(
-                color: AppColors.textFaint,
-                fontSize: 13,
-              ),
-              prefixIcon: const Icon(
-                Icons.lock_outline_rounded,
-                color: AppColors.primary,
-                size: 20,
-              ),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _isObscured
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                  color: AppColors.textSecondary,
-                  size: 20,
-                ),
-                onPressed: () {
-                  setState(() => _isObscured = !_isObscured);
-                },
-              ),
-              filled: true,
-              fillColor: AppColors.primarySoft,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: Color(0xFFE2EFEF)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  color: AppColors.primary,
-                  width: 1.5,
-                ),
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Please enter password or client secret';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 24),
-
-          SizedBox(
-            height: 52,
-            child: ElevatedButton(
-              key: const Key('login_button'),
-              onPressed: _isLoggingIn ? null : _login,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              child: _isLoggingIn
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('Sign In'),
-                        SizedBox(width: 8),
-                        Icon(Icons.arrow_forward_rounded, size: 18),
+          // Bottom-left soft cyan glow
+          Positioned(
+            bottom: -70,
+            left: -70,
+            child: AnimatedBuilder(
+              animation: _pulseAnimation,
+              builder: (context, child) {
+                return Container(
+                  width: 280,
+                  height: 280,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        const Color(0xFF38BDF8).withValues(alpha: (1.0 - _pulseAnimation.value) * 0.15),
+                        const Color(0xFF00A38E).withValues(alpha: (1.0 - _pulseAnimation.value) * 0.06),
+                        Colors.transparent,
                       ],
                     ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // Main Scrollable Content
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Back Button if can pop
+                      if (Navigator.canPop(context))
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: Color(0xFF0F172A),
+                              size: 20,
+                            ),
+                            onPressed: () => Navigator.maybePop(context),
+                          ),
+                        ),
+
+                      const SizedBox(height: 8),
+
+                      // Animated Robot & Merged Logo Header
+                      _buildAnimatedRobotHeader(),
+
+                      const SizedBox(height: 26),
+
+                      // Modern Card for Login
+                      _buildLoginCard(auth),
+
+                      const SizedBox(height: 24),
+
+                      // Register Navigation Link
+                     
+                          
+                  
+              
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -665,208 +379,446 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildPhoneLoginForm(AuthProvider auth) {
-    return Form(
-      key: _phoneFormKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Phone Number',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            textInputAction: TextInputAction.next,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-            decoration: InputDecoration(
-              hintText: '9876543210',
-              hintStyle: const TextStyle(
-                color: AppColors.textFaint,
-                fontSize: 13,
-              ),
-              prefixIcon: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(width: 12),
-                  const Icon(
-                    Icons.phone_iphone_rounded,
-                    color: AppColors.primary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    '+91',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+  /// Merged Logo and Animated Robot Character
+  Widget _buildAnimatedRobotHeader() {
+    return Column(
+      children: [
+        // Merged Brand Logo Header Bar: [H]asomi
+        const AppBrandHeader(
+          fontSize: 50,
+          spacing: 0,
+        ),
+
+        const SizedBox(height: 18),
+
+        // Animated Levitation Robot with Soft Glow & Shadow
+        AnimatedBuilder(
+          animation: _floatingController,
+          builder: (context, child) {
+            return Column(
+              children: [
+                // Floating Robot
+                Transform.translate(
+                  offset: Offset(0, _floatingAnimation.value),
+                  child: Container(
+                    width: 116,
+                    height: 116,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF00A38E).withValues(alpha: 0.18),
+                          blurRadius: 24,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Image.asset(
+                        'assets/images/new_robot.png',
+                        width: 108,
+                        height: 108,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Container(height: 20, width: 1, color: AppColors.divider),
-                  const SizedBox(width: 8),
-                ],
-              ),
-              filled: true,
-              fillColor: AppColors.primarySoft,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: Color(0xFFE2EFEF)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  color: AppColors.primary,
-                  width: 1.5,
                 ),
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Please enter your phone number';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 18),
 
-          if (auth.isOtpSent) ...[
+                const SizedBox(height: 4),
+
+                // Pulsing Floor Shadow underneath Robot
+                Transform.scale(
+                  scaleX: _shadowScaleAnimation.value,
+                  scaleY: 0.4,
+                  child: Container(
+                    width: 60,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.12),
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+
+        const SizedBox(height: 14),
+
+        // Tagline
+        const Text(
+          'Connect. Control. Comfort',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.1,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Modern Elevated Card for Phone OTP Login
+  Widget _buildLoginCard(AuthProvider auth) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+          BoxShadow(
+            color: const Color(0xFF00A38E).withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Form(
+        key: _phoneFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Section Header
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE6F7F5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.phone_android_rounded,
+                    color: Color(0xFF00A38E),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Phone Login',
+                        style: TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        auth.isOtpSent
+                            ? 'Enter the 6-digit OTP code sent to your phone'
+                            : 'Enter your registered mobile number',
+                        style: const TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 22),
+
+            // Phone Number Input
             const Text(
-              '6-Digit OTP Code',
+              'Mobile Number',
               style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 12.5,
-                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 8),
             TextFormField(
-              controller: _phoneOtpController,
-              keyboardType: TextInputType.number,
+              controller: _phoneController,
+              enabled: !_isLoggingIn && !auth.isOtpSent,
+              keyboardType: TextInputType.phone,
               textInputAction: TextInputAction.done,
-              maxLength: 6,
+              onFieldSubmitted: (_) {
+                if (!auth.isOtpSent) _requestPhoneOtp();
+              },
               style: const TextStyle(
-                color: AppColors.textPrimary,
+                color: Color(0xFF0F172A),
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
-                letterSpacing: 4,
+                letterSpacing: 0.5,
               ),
               decoration: InputDecoration(
-                counterText: '',
-                hintText: '******',
+                hintText: '9876543210',
                 hintStyle: const TextStyle(
-                  color: AppColors.textFaint,
-                  fontSize: 13,
+                  color: Color(0xFF94A3B8),
+                  fontSize: 14,
                 ),
-                prefixIcon: const Icon(
-                  Icons.vpn_key_outlined,
-                  color: AppColors.primary,
-                  size: 20,
+                prefixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(width: 14),
+                    const Icon(
+                      Icons.dialpad_rounded,
+                      color: Color(0xFF00A38E),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      '+91',
+                      style: TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      height: 22,
+                      width: 1,
+                      color: const Color(0xFFCBD5E1),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                 ),
                 filled: true,
-                fillColor: AppColors.primarySoft,
+                fillColor: const Color(0xFFF8FAFC),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 14,
+                  vertical: 16,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFE2EFEF)),
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: const BorderSide(
-                    color: AppColors.primary,
-                    width: 1.5,
+                    color: Color(0xFF00A38E),
+                    width: 1.8,
                   ),
+                ),
+                disabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Color(0xFFF1F5F9)),
                 ),
               ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter your mobile number';
+                }
+                if (value.trim().replaceAll(RegExp(r'\D'), '').length < 10) {
+                  return 'Please enter a valid 10-digit mobile number';
+                }
+                return null;
+              },
             ),
-            const SizedBox(height: 14),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _secondsRemaining > 0
-                      ? 'Resend in ${_secondsRemaining}s'
-                      : 'Didn\'t receive code?',
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                TextButton(
-                  onPressed: _secondsRemaining > 0 ? null : _requestPhoneOtp,
-                  child: Text(
-                    'Resend OTP',
+
+            // OTP Section when sent
+            if (auth.isOtpSent) ...[
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '6-Digit OTP Code',
                     style: TextStyle(
-                      color: _secondsRemaining > 0
-                          ? AppColors.textFaint
-                          : AppColors.primary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      auth.resetOtpState();
+                      _phoneOtpController.clear();
+                      setState(() {});
+                    },
+                    child: const Text(
+                      'Change Number',
+                      style: TextStyle(
+                        color: Color(0xFF00A38E),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _phoneOtpController,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                maxLength: 6,
+                onFieldSubmitted: (_) => _verifyPhoneOtp(),
+                style: const TextStyle(
+                  color: Color(0xFF0F172A),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 8,
+                ),
+                decoration: InputDecoration(
+                  counterText: '',
+                  hintText: '******',
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 16,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.security_rounded,
+                    color: Color(0xFF00A38E),
+                    size: 20,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF00A38E),
+                      width: 1.8,
                     ),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 24),
-          ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _secondsRemaining > 0
+                        ? 'Resend code in ${_secondsRemaining}s'
+                        : "Didn't receive code?",
+                    style: const TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _secondsRemaining > 0 ? null : _requestPhoneOtp,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      'Resend OTP',
+                      style: TextStyle(
+                        color: _secondsRemaining > 0
+                            ? const Color(0xFFCBD5E1)
+                            : const Color(0xFF00A38E),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
 
-          SizedBox(
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _isLoggingIn
-                  ? null
-                  : (auth.isOtpSent ? _verifyPhoneOtp : _requestPhoneOtp),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
+            const SizedBox(height: 24),
+
+            // Submit Button with Gradient
+            SizedBox(
+              height: 54,
+              child: Container(
+                decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFF00A38E),
+                      Color(0xFF028090),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF00A38E).withValues(alpha: 0.35),
+                      blurRadius: 14,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
                 ),
-                textStyle: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
+                child: ElevatedButton(
+                  onPressed: _isLoggingIn
+                      ? null
+                      : (auth.isOtpSent ? _verifyPhoneOtp : _requestPhoneOtp),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: _isLoggingIn
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              auth.isOtpSent ? 'Verify & Continue' : 'Get OTP Code',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ],
+                        ),
                 ),
               ),
-              child: _isLoggingIn
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : Text(auth.isOtpSent ? 'Verify OTP' : 'Request OTP'),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

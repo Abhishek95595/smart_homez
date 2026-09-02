@@ -22,8 +22,12 @@
           }
         },
         {
-          "client_id": "280979635008-gq62p26um5pabh72l9l0q0gf3u15p5i8.apps.googleusercontent.com",
-          "client_type": 3
+          "client_id": "280979635008-r260egn4d1vg1eir7cj09vvgff49ef49.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.smartbuildingmanager.flutter_app",
+            "certificate_hash": "68df4e836cd38c97948520bbd3c52ee031e7b08c"
+          }
         }
       ],
       "api_key": [
@@ -33,12 +37,7 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "280979635008-gq62p26um5pabh72l9l0q0gf3u15p5i8.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

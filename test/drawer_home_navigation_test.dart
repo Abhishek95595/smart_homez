@@ -6,13 +6,20 @@ import 'package:smart_homez/providers/alert_provider.dart';
 import 'package:smart_homez/providers/auth_provider.dart';
 import 'package:smart_homez/providers/automation_provider.dart';
 import 'package:smart_homez/providers/client_dashboard_provider.dart';
+import 'package:smart_homez/providers/client_notification_provider.dart';
 import 'package:smart_homez/providers/device_provider.dart';
 import 'package:smart_homez/providers/energy_provider.dart';
+import 'package:smart_homez/providers/family_provider.dart';
+import 'package:smart_homez/providers/profile_provider.dart';
+import 'package:smart_homez/providers/subscription_provider.dart';
+import 'package:smart_homez/providers/tariff_provider.dart';
 import 'package:smart_homez/providers/routine_provider.dart';
+import 'package:smart_homez/providers/theme_provider.dart';
 import 'package:smart_homez/providers/ticket_provider.dart';
 import 'package:smart_homez/providers/water_provider.dart';
 import 'package:smart_homez/screens/dashboard/dashboard_screen.dart';
 import 'package:smart_homez/widgets/app_navigation_drawer.dart';
+import 'package:smart_homez/widgets/app_logo.dart';
 
 import 'test_helpers.dart';
 
@@ -34,9 +41,15 @@ Widget _buildTestApp({required Widget child}) {
         },
       ),
       ChangeNotifierProvider(create: (_) => EnergyProvider()),
+      ChangeNotifierProvider(create: (_) => TariffProvider()),
+      ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
       ChangeNotifierProvider(create: (_) => WaterProvider()),
       ChangeNotifierProvider(create: (_) => TicketProvider()),
       ChangeNotifierProvider(create: (_) => AlexaProvider()),
+      ChangeNotifierProvider(create: (_) => FamilyProvider()),
+      ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ChangeNotifierProvider(create: (_) => ProfileProvider()),
+      ChangeNotifierProvider(create: (_) => ClientNotificationProvider()),
     ],
     child: MaterialApp(home: child),
   );
@@ -72,7 +85,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify all 6 H-A-S-O-M-I section headers and badges are in the drawer
-      expect(find.text('Hasomi'), findsOneWidget);
+      expect(find.byType(AppBrandHeader), findsOneWidget);
       expect(find.text('Your Home. Smarter.'), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Automations'), findsWidgets);
@@ -108,7 +121,7 @@ void main() {
       await tester.drag(find.byType(Scrollable).first, const Offset(0, 600));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Hasomi'));
+      await tester.tap(find.byType(AppBrandHeader));
       await tester.pumpAndSettle();
 
       expect(dashboardCalled, isTrue);
@@ -138,10 +151,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify Brand Header is in the drawer
-      expect(find.text('Hasomi'), findsOneWidget);
+      expect(find.byType(AppBrandHeader), findsOneWidget);
 
       // Tap Brand Header
-      await tester.tap(find.text('Hasomi'));
+      await tester.tap(find.byType(AppBrandHeader));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 

@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_navigation_drawer.dart';
 import '../../widgets/app_state_widgets.dart';
 import '../../widgets/property_management_widgets.dart';
 import '../properties/floors_screen.dart';
@@ -173,6 +174,8 @@ class DevicesScreen extends StatelessWidget {
         ? null
         : propertyProvider.propertyById(propertyId!);
 
+    final canPop = Navigator.canPop(context);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -180,6 +183,19 @@ class DevicesScreen extends StatelessWidget {
         elevation: 0,
         scrolledUnderElevation: 1,
         centerTitle: false,
+        leading: canPop
+            ? null
+            : Builder(
+                builder: (ctx) => IconButton(
+                  icon: const Icon(
+                    Icons.menu_rounded,
+                    color: Color(0xFF0F172A),
+                    size: 28,
+                  ),
+                  tooltip: 'Menu',
+                  onPressed: () => openAppDrawer(ctx),
+                ),
+              ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -203,39 +219,6 @@ class DevicesScreen extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF00C9A7), Color(0xFF00A38E)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x3500A38E),
-              blurRadius: 16,
-              offset: Offset(0, 6),
-            ),
-          ],
-        ),
-        child: FloatingActionButton.extended(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          highlightElevation: 0,
-          onPressed: () => _addDevice(context),
-          icon: const Icon(Icons.add_rounded, color: Colors.white),
-          label: const Text(
-            'Add Device',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
-              letterSpacing: 0.2,
-            ),
-          ),
         ),
       ),
       body: SafeArea(

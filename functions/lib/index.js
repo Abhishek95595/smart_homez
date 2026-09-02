@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.syncDevices = exports.getDashboard = exports.sendDeviceCommand = exports.getDevice = exports.getDevices = exports.getRooms = exports.getFloors = exports.getHomes = exports.resendTenantRegistrationOtp = exports.verifyTenantClient = exports.registerTenantClient = exports.getTenantSession = void 0;
+exports.disconnectAlexa = exports.getAlexaStatus = exports.getAlexaLinkToken = exports.syncDevices = exports.getDashboard = exports.sendDeviceCommand = exports.getDevice = exports.getDevices = exports.getRooms = exports.getFloors = exports.getHomes = exports.resendTenantRegistrationOtp = exports.verifyTenantClient = exports.registerTenantClient = exports.getTenantSession = void 0;
 const app_1 = require("firebase-admin/app");
 const firestore_1 = require("firebase-admin/firestore");
 const messaging_1 = require("firebase-admin/messaging");
@@ -947,6 +947,77 @@ exports.syncDevices = (0, https_1.onCall)({
     }
     catch (error) {
         throw new https_1.HttpsError("internal", error.message || "Failed to sync devices.");
+    }
+});
+/**
+ * 13. getAlexaLinkToken (Callable)
+ * Generates an Alexa App-to-App account linking SSO token & authorize URL for the authenticated user.
+ */
+exports.getAlexaLinkToken = (0, https_1.onCall)({
+    region: "asia-south1",
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    enforceAppCheck: false,
+}, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Authentication required.");
+    }
+    const clientId = await getMappedClientId(request.auth.uid, request.auth);
+    const token = await getTenantToken();
+    const redirectUri = request.data?.redirectUri || "hasomi.com.homeautomation://alexa-callback";
+    const state = request.data?.state || "any";
+    try {
+        const response = await axios_1.default.post(`${TENANT_BASE_URL}/api/integrations/alexa/link-token`, {
+            clientId: clientId,
+            redirectUri: redirectUri,
+            state: state,
+        }, { headers: { Authorization: `Bearer ${token}` } });
+        return response.data;
+    }
+    catch (error) {
+        console.error("[BFF] getAlexaLinkToken error:", error.response?.data || error.message || error);
+        throw new https_1.HttpsError("internal", error.response?.data?.error || error.message || "Failed to generate Alexa link token.");
+    }
+});
+/**
+ * 14. getAlexaStatus (Callable)
+ */
+exports.getAlexaStatus = (0, https_1.onCall)({
+    region: "asia-south1",
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    enforceAppCheck: false,
+}, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Authentication required.");
+    }
+    const token = await getTenantToken();
+    try {
+        const response = await axios_1.default.get(`${TENANT_BASE_URL}/api/integrations/alexa/status`, { headers: { Authorization: `Bearer ${token}` } });
+        return response.data;
+    }
+    catch (error) {
+        console.error("[BFF] getAlexaStatus error:", error.response?.data || error.message || error);
+        return { linked: false, connected: false };
+    }
+});
+/**
+ * 15. disconnectAlexa (Callable)
+ */
+exports.disconnectAlexa = (0, https_1.onCall)({
+    region: "asia-south1",
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    enforceAppCheck: false,
+}, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Authentication required.");
+    }
+    const token = await getTenantToken();
+    try {
+        const response = await axios_1.default.post(`${TENANT_BASE_URL}/api/integrations/alexa/disconnect`, {}, { headers: { Authorization: `Bearer ${token}` } });
+        return response.data;
+    }
+    catch (error) {
+        console.error("[BFF] disconnectAlexa error:", error.response?.data || error.message || error);
+        return { success: true };
     }
 });
 //# sourceMappingURL=index.js.map

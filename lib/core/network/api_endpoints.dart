@@ -29,14 +29,17 @@ abstract final class ApiEndpoints {
   static String toggleAutomation(String automationId) =>
       '${automation(automationId)}/toggle';
 
-  // Scenes
-  static const String scenes = '/api/v1/scenes';
+  // Scenes (Client-scoped)
+  static String clientScenes(String clientId) => '${client(clientId)}/scenes';
 
-  static String scene(String sceneId) => '$scenes/$sceneId';
+  static String clientScene(String clientId, String sceneId) =>
+      '${clientScenes(clientId)}/$sceneId';
 
-  static String activateScene(String sceneId) => '${scene(sceneId)}/activate';
+  static String activateClientScene(String clientId, String sceneId) =>
+      '${clientScene(clientId, sceneId)}/activate';
 
-  static String sceneStatus(String sceneId) => '${scene(sceneId)}/status';
+  static String clientSceneStatus(String clientId, String sceneId) =>
+      '${clientScene(clientId, sceneId)}/status';
 
   // Clients
   static const String clients = '/api/v1/clients';
@@ -136,4 +139,79 @@ abstract final class ApiEndpoints {
   static const String alexaStatus = '/api/integrations/alexa/status';
   static const String alexaSync = '/api/integrations/alexa/sync';
   static const String alexaDisconnect = '/api/integrations/alexa/disconnect';
+
+  // Client Family Endpoints
+  static String clientFamilyMembers(String clientId) =>
+      '${client(clientId)}/family/members';
+  static String clientFamilyInvite(String clientId) =>
+      '${client(clientId)}/family/invite';
+  static String clientFamilyMember(String clientId, String memberId) =>
+      '${clientFamilyMembers(clientId)}/$memberId';
+  static String clientFamilyMemberRole(String clientId, String memberId) =>
+      '${clientFamilyMember(clientId, memberId)}/role';
+  static String clientFamilyDevicePermissions(
+    String clientId,
+    String memberId,
+  ) => '${clientFamilyMember(clientId, memberId)}/device-permissions';
+  static String clientFamilyJoinLink(String clientId, String memberId) =>
+      '${clientFamilyMember(clientId, memberId)}/join-link';
+  static String clientFamilyResendInvite(String clientId) =>
+      '${client(clientId)}/family/invites/resend';
+
+  // Client Notifications Endpoints
+  static String clientNotifications(
+    String clientId, {
+    int page = 1,
+    int pageSize = 20,
+    bool? unreadOnly,
+  }) {
+    final queryParams = <String>[
+      'page=$page',
+      'pageSize=$pageSize',
+      if (unreadOnly != null) 'unreadOnly=$unreadOnly',
+    ].join('&');
+    return '${client(clientId)}/notifications?$queryParams';
+  }
+
+  static String clientNotificationsBase(String clientId) =>
+      '${client(clientId)}/notifications';
+
+  static String clientNotificationsUnreadCount(String clientId) =>
+      '${client(clientId)}/notifications/unread-count';
+
+  static String clientNotificationRead(String clientId, String id) =>
+      '${client(clientId)}/notifications/$id/read';
+
+  static String clientNotificationsReadAll(String clientId) =>
+      '${client(clientId)}/notifications/read-all';
+
+  static String clientNotificationDelete(String clientId, String id) =>
+      '${client(clientId)}/notifications/$id';
+
+  static String clientNotificationsClear(String clientId) =>
+      '${client(clientId)}/notifications/clear';
+
+  static String clientNotificationPushTokens(String clientId) =>
+      '${client(clientId)}/notifications/push-tokens';
+
+  // Client Subscription Endpoints
+  static String clientSubscription(String clientId) =>
+      '${client(clientId)}/subscription';
+  static const String subscriptionPlans = '/api/v1/subscription/plans';
+  static String upgradeSubscription(String clientId) =>
+      '${client(clientId)}/subscription/upgrade';
+  static String cancelSubscription(String clientId) =>
+      '${client(clientId)}/subscription/cancel';
+  static String subscriptionInvoices(String clientId) =>
+      '${client(clientId)}/subscription/invoices';
+  static String subscriptionInvoiceDownload(String clientId, String invoiceId) =>
+      '${subscriptionInvoices(clientId)}/$invoiceId/download';
+  static String subscriptionRefund(String clientId) =>
+      '${client(clientId)}/subscription/refund';
+  static String subscriptionCheckout(String clientId) =>
+      '${client(clientId)}/subscription/checkout';
+  static String subscriptionPaymentMethods(String clientId) =>
+      '${client(clientId)}/subscription/payment-methods';
+  static String subscriptionToggleAutoRenew(String clientId) =>
+      '${client(clientId)}/subscription/auto-renew';
 }

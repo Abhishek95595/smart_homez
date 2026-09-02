@@ -13,6 +13,8 @@ analyzer:
   exclude:
     - dummy_app/**
     - android_old/**
+    - scenes_backup/**
+    - lib/smart_homz_profile_module/**
     - build/**
 
 linter:

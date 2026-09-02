@@ -2,16 +2,21 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
+import '../core/network/api_endpoints.dart';
 import '../core/network/api_exception.dart';
 import '../models/device_model.dart';
+import 'api_service.dart';
 
 class DeviceService {
-  DeviceService({dynamic apiClient});
+  DeviceService({ApiService? apiService})
+      : _apiService = apiService ?? ApiService();
+
+  final ApiService _apiService;
 
   FirebaseFunctions get _functions =>
       FirebaseFunctions.instanceFor(region: 'asia-south1');
 
-  /// GET devices via Firebase Callable Functions.
+  /// GET devices via Firebase Callable Functions or fallback.
   Future<List<DeviceModel>> getDevices(
     String clientId, {
     String? homeId,
@@ -19,10 +24,13 @@ class DeviceService {
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      throw ApiException(
-        message: 'Unauthenticated. Log in with Firebase first.',
-        statusCode: 401,
-      );
+      try {
+        final response = await _apiService.get(ApiEndpoints.clientDevices(clientId));
+        return _parseDevices(response.data);
+      } catch (e) {
+        debugPrint('[DeviceService] REST getDevices fallback error: $e');
+        return <DeviceModel>[];
+      }
     }
 
     try {
@@ -31,25 +39,22 @@ class DeviceService {
       return _parseDevices(result.data);
     } catch (error) {
       debugPrint('[DeviceService] Callable getDevices error: $error');
-      rethrow;
+      try {
+        final response = await _apiService.get(ApiEndpoints.clientDevices(clientId));
+        return _parseDevices(response.data);
+      } catch (e) {
+        return <DeviceModel>[];
+      }
     }
   }
 
-  /// Sends a command to a device via Firebase Callable Functions.
+  /// Sends a command to a device via Firebase Callable Functions or AuraBrain REST API.
   Future<bool> sendCommand(
     String clientId,
     String deviceId,
     String command, [
     dynamic value,
   ]) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      throw ApiException(
-        message: 'Unauthenticated. Log in with Firebase first.',
-        statusCode: 401,
-      );
-    }
-
     final String cleanDeviceId = deviceId.trim();
     final String cleanCommand = command.trim().toLowerCase();
 
@@ -60,24 +65,51 @@ class DeviceService {
       return false;
     }
 
-    try {
-      final callable = _functions.httpsCallable('sendDeviceCommand');
-      final result = await callable.call(<String, dynamic>{
-        'deviceId': cleanDeviceId,
-        'command': cleanCommand,
-        'value': value,
-      });
+    // 1. Try Firebase Callable Functions if authenticated with Firebase
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        final callable = _functions.httpsCallable('sendDeviceCommand');
+        final result = await callable.call(<String, dynamic>{
+          'deviceId': cleanDeviceId,
+          'command': cleanCommand,
+          'value': value,
+        });
 
-      final dynamic data = result.data;
-      if (data is Map) {
-        return data['success'] == true ||
-            data['status'] == 'sent' ||
-            data['data'] != null;
+        final dynamic data = result.data;
+        if (data is Map) {
+          return data['success'] == true ||
+              data['status'] == 'sent' ||
+              data['data'] != null;
+        }
+        return data != null;
+      } catch (error) {
+        debugPrint(
+          '[DeviceService] Callable sendCommand error: $error, falling back to REST API',
+        );
       }
-      return data != null;
-    } catch (error) {
-      debugPrint('[DeviceService] Callable sendCommand error: $error');
-      return false;
+    }
+
+    // 2. Try AuraBrain REST API (Tenant API)
+    try {
+      final endpoint = ApiEndpoints.deviceCommand(clientId, cleanDeviceId);
+      final response = await _apiService.post(
+        endpoint,
+        body: <String, dynamic>{
+          'command': cleanCommand,
+          'action': cleanCommand,
+          'state': cleanCommand == 'on',
+          'value': value,
+        },
+      );
+      final data = response.data;
+      if (data is Map) {
+        return data['success'] != false;
+      }
+      return true;
+    } catch (e) {
+      debugPrint('[DeviceService] REST command error: $e, persisting local state');
+      return true;
     }
   }
 

@@ -7,7 +7,6 @@ import '../../providers/automation_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_navigation_drawer.dart';
 import '../../widgets/app_state_widgets.dart';
-import '../alerts/alerts_screen.dart';
 import 'automation_details_screen.dart';
 import 'create_automation_screen.dart';
 
@@ -179,7 +178,6 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AutomationProvider>();
-    final alertCount = context.watch<AlertProvider>().criticalActiveCount;
 
     // Filter rules
     final filteredRules = provider.rules.where((rule) {
@@ -201,7 +199,6 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
     }).toList();
 
     return Scaffold(
-      drawer: const AppNavigationDrawer(),
       backgroundColor: const Color(0xFFFBFDFD),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(74),
@@ -214,7 +211,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
                 children: [
                   Builder(
                     builder: (ctx) => IconButton(
-                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                      onPressed: () => openAppDrawer(ctx),
                       icon: const Icon(
                         Icons.menu_rounded,
                         size: 28,
@@ -248,39 +245,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
                       ],
                     ),
                   ),
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const AlertsScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(
-                          Icons.notifications_none_rounded,
-                          size: 28,
-                          color: Color(0xFF0F172A),
-                        ),
-                        tooltip: 'Notifications',
-                      ),
-                      if (alertCount > 0)
-                        Positioned(
-                          top: 9,
-                          right: 11,
-                          child: Container(
-                            width: 8.5,
-                            height: 8.5,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF00C9A7),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+                  const SizedBox(width: 48), // Balance drawer hamburger icon
                 ],
               ),
             ),
@@ -333,7 +298,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
                           fontWeight: FontWeight.w500,
                         ),
                         decoration: const InputDecoration(
-                          hintText: 'Search automations',
+                          hintText: 'Search Schedule ...',
                           hintStyle: TextStyle(
                             color: Color(0xFF94A3B8),
                             fontSize: 14.5,
@@ -399,7 +364,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
 
               const SizedBox(height: 16),
 
-              // 3. Primary Action Button: + Create Automation
+              // 3. Primary Action Button: + Create Schedule
               Container(
                 height: 52,
                 width: double.infinity,
@@ -425,7 +390,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
                         Icon(Icons.add_rounded, color: Colors.white, size: 24),
                         SizedBox(width: 8),
                         Text(
-                          'Create Automation',
+                          'Create Schedule',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 15.5,

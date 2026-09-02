@@ -98,6 +98,7 @@ class AuthService {
       }
 
       await _storage.write(key: platformUserJwtKey, value: token);
+      await _storage.write(key: clientApiJwtKey, value: token);
       await _storage.delete(key: 'jwt_token');
 
       if (auth.clientId != null && auth.clientId!.isNotEmpty) {
@@ -106,7 +107,9 @@ class AuthService {
       await _storage.write(key: 'login_email', value: email.trim());
       await _storage.write(key: 'login_password', value: password);
 
-      debugPrint('[AuthService] Tenant user login successful.');
+      debugPrint(
+        '[AuthService] Tenant user login successful with mapped client token.',
+      );
 
       return auth;
     } catch (error) {
@@ -148,6 +151,15 @@ class AuthService {
       if (!auth.success) {
         throw Exception(auth.error ?? 'OTP verification failed');
       }
+
+      if (auth.token != null && auth.token!.isNotEmpty) {
+        await _storage.write(key: clientApiJwtKey, value: auth.token);
+        await _storage.write(key: platformUserJwtKey, value: auth.token);
+      }
+      if (auth.clientId != null && auth.clientId!.isNotEmpty) {
+        await _storage.write(key: _apiClientIdKey, value: auth.clientId);
+      }
+
       return auth;
     } catch (error) {
       debugPrint('[AuthService] verifyOtp failed: $error');
@@ -155,9 +167,8 @@ class AuthService {
     }
   }
 
-  FirebaseFunctions get _functions => FirebaseFunctions.instanceFor(
-        region: 'asia-south1',
-      );
+  FirebaseFunctions get _functions =>
+      FirebaseFunctions.instanceFor(region: 'asia-south1');
 
   /// Calls the getTenantSession Firebase Callable Function.
   Future<Map<String, dynamic>> getTenantSession({String? fcmToken}) async {
@@ -268,6 +279,19 @@ class AuthService {
     return _storage.read(key: 'login_password');
   }
 
+  Future<String?> getUserId() {
+    return _storage.read(key: 'user_id');
+  }
+
+  Future<void> saveUserId(String userId) async {
+    await _storage.write(key: 'user_id', value: userId);
+  }
+
+  Future<void> savePlatformUserJwt(String token) async {
+    await _storage.write(key: platformUserJwtKey, value: token);
+    await _storage.write(key: 'jwt_token', value: token);
+  }
+
   Future<String?> getResolvedClientUuid() {
     return _storage.read(key: _resolvedClientUuidKey);
   }
@@ -276,11 +300,14 @@ class AuthService {
     await _storage.write(key: _resolvedClientUuidKey, value: clientUuid);
   }
 
+  Future<void> clearSession() => logout();
+
   Future<void> logout() async {
     await Future.wait([
       _storage.delete(key: platformUserJwtKey),
       _storage.delete(key: clientApiJwtKey),
       _storage.delete(key: 'jwt_token'),
+      _storage.delete(key: 'user_id'),
       _storage.delete(key: _resolvedClientUuidKey),
       _storage.delete(key: _apiClientIdKey),
       _storage.delete(key: 'api_client_secret'),

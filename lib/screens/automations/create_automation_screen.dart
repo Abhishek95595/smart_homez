@@ -292,7 +292,7 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
       );
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text('Automation updated successfully.')),
+        const SnackBar(content: Text('Schedule updated successfully.')),
       );
     } else {
       await provider.addRule(
@@ -305,7 +305,7 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
       );
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text('Automation created successfully.')),
+        const SnackBar(content: Text('Schedule created successfully.')),
       );
     }
 
@@ -338,8 +338,8 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
                     child: Center(
                       child: Text(
                         widget.existingRule != null
-                            ? 'Edit Automation'
-                            : 'Create Automation',
+                            ? 'Edit Schedule'
+                            : 'Create Schedule',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -374,7 +374,7 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
                             _IconContainer(icon: Icons.local_offer_outlined),
                             SizedBox(width: 12),
                             Text(
-                              'Automation Name',
+                              'Schedule Name',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w800,
@@ -427,7 +427,7 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
                         const SizedBox(width: 12),
                         const Expanded(
                           child: Text(
-                            'Enable Automation',
+                            'Enable Schedule',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
@@ -780,7 +780,7 @@ class _CreateAutomationScreenState extends State<CreateAutomationScreen> {
                   ),
                   onPressed: _saveAutomation,
                   child: const Text(
-                    'Save Automation',
+                    'Save Schedule',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,

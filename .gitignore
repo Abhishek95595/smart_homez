@@ -33,3 +33,5 @@ linux/flutter/ephemeral/
 .claude-flow/logs/
 .claude-flow/sessions/
 node_modules/
+scenes_backup/
+

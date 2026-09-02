@@ -6,6 +6,7 @@ import '../../models/alert.dart';
 import '../../providers/alert_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_navigation_drawer.dart';
 import '../../widgets/severity_badge.dart';
 
 class ActivityScreen extends StatefulWidget {
@@ -32,6 +33,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
     final currentUserName = auth.currentUser?.name ?? 'Operator';
     final activities = _filteredActivities(alertProvider.alerts);
 
+    final canPop = Navigator.canPop(context);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -39,6 +42,19 @@ class _ActivityScreenState extends State<ActivityScreen> {
         elevation: 0,
         scrolledUnderElevation: 1,
         centerTitle: false,
+        leading: canPop
+            ? null
+            : Builder(
+                builder: (ctx) => IconButton(
+                  icon: const Icon(
+                    Icons.menu_rounded,
+                    color: Color(0xFF0F172A),
+                    size: 28,
+                  ),
+                  tooltip: 'Menu',
+                  onPressed: () => openAppDrawer(ctx),
+                ),
+              ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

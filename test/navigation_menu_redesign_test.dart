@@ -10,6 +10,8 @@ import 'package:smart_homez/providers/automation_provider.dart';
 import 'package:smart_homez/providers/client_dashboard_provider.dart';
 import 'package:smart_homez/providers/device_provider.dart';
 import 'package:smart_homez/providers/energy_provider.dart';
+import 'package:smart_homez/providers/tariff_provider.dart';
+import 'package:smart_homez/providers/subscription_provider.dart';
 import 'package:smart_homez/providers/routine_provider.dart';
 import 'package:smart_homez/providers/ticket_provider.dart';
 import 'package:smart_homez/providers/water_provider.dart';
@@ -59,6 +61,8 @@ Widget _buildTestApp({
         },
       ),
       ChangeNotifierProvider(create: (_) => EnergyProvider()),
+      ChangeNotifierProvider(create: (_) => TariffProvider()),
+      ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
       ChangeNotifierProvider(create: (_) => WaterProvider()),
       ChangeNotifierProvider(create: (_) => TicketProvider()),
       ChangeNotifierProvider(create: (_) => AlexaProvider()),

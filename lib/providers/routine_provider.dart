@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/device.dart';
 import '../models/routine_model.dart';
@@ -39,6 +39,7 @@ class RoutineProvider extends ChangeNotifier {
 
   Timer? _schedulerTimer;
   final Set<String> _triggeredKeys = {};
+  final Set<String> _savingRoutineKeys = {};
 
   void setDeviceProvider(DeviceProvider? dp) {
     _deviceProvider = dp;
@@ -90,7 +91,11 @@ class RoutineProvider extends ChangeNotifier {
           id: '${types[i]}_routine_${DateTime.now().millisecondsSinceEpoch}',
           name: defaultNames[i],
           isEnabled: true,
+          localKey: types[i],
         );
+        if (loaded.localKey == null) {
+          loaded = loaded.copyWith(localKey: types[i]);
+        }
         _routines[types[i]] = loaded;
       }
 
@@ -218,6 +223,29 @@ class RoutineProvider extends ChangeNotifier {
   // MASTER TOGGLE
   // ══════════════════════════════════════════════
 
+  Future<Routine> _saveRoutineHelper(
+    Routine targetRoutine,
+    String routineType,
+  ) async {
+    final String key = targetRoutine.localKey ?? routineType;
+    if (_savingRoutineKeys.contains(key)) {
+      return targetRoutine;
+    }
+
+    _savingRoutineKeys.add(key);
+    try {
+      final saved = await _service.saveRoutine(targetRoutine, routineType);
+      if (kDebugMode) {
+        debugPrint(
+          '[RoutineProvider] persisted backend automation id ${saved.id}',
+        );
+      }
+      return saved;
+    } finally {
+      _savingRoutineKeys.remove(key);
+    }
+  }
+
   Future<void> toggleRoutineEnabled(
     bool isEnabled, {
     DeviceProvider? deviceProvider,
@@ -228,30 +256,17 @@ class RoutineProvider extends ChangeNotifier {
 
     try {
       // 1. Save and toggle first to ensure backend has the latest configured devices
-      await _service.saveRoutine(routine!, _activeRoutineId);
-      await _service.toggleRoutine(routine!.id, isEnabled, _activeRoutineId);
+      final saved = await _saveRoutineHelper(routine!, _activeRoutineId);
+      _routines[_activeRoutineId] = saved;
+      notifyListeners();
+
+      await _service.toggleRoutine(saved.id, isEnabled, _activeRoutineId);
 
       final dp = deviceProvider ?? _deviceProvider;
 
-      if (isEnabled) {
-        // 2. Trigger the Quick Scene API directly on the backend!
-        // This avoids concurrent request race conditions that cause devices to "oof" (turn off)
-        final success = await _service.activateScene(routine!.id);
-
-        if (success && dp != null) {
-          // Optimistically update the UI to show the new device states instantly
-          for (final ds in routine!.daySchedules.values) {
-            for (final entry in ds.entries) {
-              if (entry.isEnabled) {
-                final isTurnOn = entry.startAction == 'on';
-                dp.setDevicePowerLocally(entry.deviceId, isTurnOn);
-              }
-            }
-          }
-        } else if (!success && dp != null) {
-          // Fallback to local execution if backend API fails or is unavailable
-          await _executeRoutineHardware(dp);
-        }
+      if (isEnabled && dp != null) {
+        // Fallback to local execution as routing automations to scene activation is removed
+        await _executeRoutineHardware(dp);
       } else if (dp != null) {
         // Turn OFF locally since there's no deactivated scene endpoint
         await _turnOffAllDevicesHardware(dp);
@@ -273,7 +288,7 @@ class RoutineProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final saved = await _service.saveRoutine(routine!, _activeRoutineId);
+      final saved = await _saveRoutineHelper(routine!, _activeRoutineId);
       _routines[_activeRoutineId] = saved;
       _state = RoutineState.success;
       notifyListeners();
@@ -297,7 +312,9 @@ class RoutineProvider extends ChangeNotifier {
   Future<void> _autoSave() async {
     if (routine == null) return;
     try {
-      await _service.saveRoutine(routine!, _activeRoutineId);
+      final saved = await _saveRoutineHelper(routine!, _activeRoutineId);
+      _routines[_activeRoutineId] = saved;
+      notifyListeners();
     } catch (e) {
       debugPrint('[RoutineProvider] Auto-save error: $e');
     }

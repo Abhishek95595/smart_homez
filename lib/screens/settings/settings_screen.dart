@@ -7,8 +7,10 @@ import '../../theme/app_theme.dart';
 import '../../widgets/app_navigation_drawer.dart';
 import '../alerts/alerts_screen.dart';
 import '../auth/login_screen.dart';
+import '../integrations/integrations_screen.dart';
 import '../privacy/privacy_policy_screen.dart';
 import '../services_module/services_screen.dart';
+import 'notification_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -20,9 +22,9 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  bool _pushEnabled = true;
-  bool _criticalOnly = false;
-  bool _emailAlerts = true;
+  final bool _pushEnabled = true;
+  final bool _criticalOnly = false;
+  final bool _emailAlerts = true;
   bool _soundEffects = true;
 
   String _themeMode = 'Light';
@@ -132,6 +134,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             setState(() => _soundEffects = value);
                           },
                         ),
+                      ),
+                      _SettingRow(
+                        icon: Icons.speaker_rounded,
+                        title: 'Voice Assistants & Alexa',
+                        subtitle: 'Amazon Alexa, Google Home & Siri',
+                        trailing: const Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppColors.textSecondary,
+                        ),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const IntegrationsScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _SettingRow(
                         icon: Icons.grid_view_rounded,
@@ -333,63 +351,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showNotificationPreferences() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, modalSetState) {
-            void update(VoidCallback action) {
-              setState(action);
-              modalSetState(() {});
-            }
-
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Notification Preferences',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'These are the notification controls already available in your app.',
-                      style: TextStyle(color: AppColors.textSecondary),
-                    ),
-                    const SizedBox(height: 12),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Push Notifications'),
-                      value: _pushEnabled,
-                      onChanged: (value) => update(() => _pushEnabled = value),
-                    ),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Critical Alerts Only'),
-                      value: _criticalOnly,
-                      onChanged: (value) => update(() => _criticalOnly = value),
-                    ),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Email Alerts'),
-                      value: _emailAlerts,
-                      onChanged: (value) => update(() => _emailAlerts = value),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
     );
   }
 
@@ -413,7 +376,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _logout() {
     context.read<AuthProvider>().logout();
-    Navigator.of(context).pushAndRemoveUntil(
+    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
     );

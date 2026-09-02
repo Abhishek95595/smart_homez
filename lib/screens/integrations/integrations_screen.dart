@@ -4,8 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../features/integrations/alexa/alexa_provider.dart';
+import '../../features/integrations/alexa/alexa_webview_screen.dart';
+import '../../features/integrations/alexa/alexa_wifi_discovery_modal.dart';
+import '../../providers/family_provider.dart';
 import '../../services/alexa_integration_service.dart';
 import '../../theme/app_theme.dart';
+import '../family/family_invite_screen.dart';
 
 class IntegrationsScreen extends StatefulWidget {
   final int initialTab;
@@ -140,27 +144,23 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
   }
 
   Future<void> _addInvite() async {
-    final draft = await showModalBottomSheet<_InviteUser>(
+    final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const _InviteFormModal(),
+      builder: (_) => const FamilyInviteBottomSheet(),
     );
-    if (draft == null || !mounted) return;
-    setState(() => _invites.add(draft));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Opening SMS app for ${draft.name} (${draft.phoneNumber})...',
+    if (result == true && mounted) {
+      context.read<FamilyProvider>().fetchMembers();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Family member invited and device permissions granted!',
+          ),
+          backgroundColor: AppColors.success,
         ),
-        backgroundColor: AppColors.success,
-      ),
-    );
-    await _sendSmsInvite(
-      draft.phoneNumber,
-      draft.name,
-      draft.grantedDeviceNames,
-    );
+      );
+    }
   }
 
   Future<void> _editInvite(_InviteUser invite, int index) async {
@@ -182,16 +182,22 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
 
   Future<void> _linkAlexa() async {
     final alexaProvider = context.read<AlexaProvider>();
-    final bool success = await alexaProvider.connectAlexa();
+    final navigator = Navigator.of(context);
+    final result = await alexaProvider.connectAlexa();
     if (!mounted) return;
 
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Alexa authorization launched. Please complete authorization in browser.'),
-          backgroundColor: AppColors.success,
+    if (result != null) {
+      final returnedUri = await navigator.push<Uri>(
+        MaterialPageRoute(
+          builder: (_) => AlexaWebViewScreen(
+            authorizeUri: result.uri,
+            bearerToken: result.token,
+          ),
         ),
       );
+      if (returnedUri != null) {
+        await alexaProvider.handleCallbackUri(returnedUri);
+      }
     } else if (alexaProvider.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -203,15 +209,39 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
   }
 
   Future<void> _unlinkAlexa() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Disconnect Alexa?'),
+        content: const Text(
+          'Are you sure you want to disconnect Alexa integration? Voice commands from your Alexa devices will no longer control your smart home devices.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Disconnect'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
     final alexaProvider = context.read<AlexaProvider>();
     final bool success = await alexaProvider.disconnectAlexa();
     if (!mounted) return;
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Alexa disconnected successfully.'),
-        ),
+        const SnackBar(content: Text('Alexa disconnected successfully.')),
       );
     }
   }
@@ -255,6 +285,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
     final alexaProvider = context.watch<AlexaProvider>();
     final alexaConnected = alexaProvider.isConnected;
     final alexaLinked = alexaProvider.isLinked;
+    final guidanceMessage = alexaProvider.statusGuidanceMessage;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -266,30 +297,97 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
               'Link an assistant, choose allowed rooms, and keep sensitive '
               'safety actions protected.',
         ),
+        if (guidanceMessage != null) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.info_outline_rounded,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    guidanceMessage,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        if (alexaProvider.errorMessage != null) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.danger.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppColors.danger.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.error_outline_rounded,
+                  color: AppColors.danger,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    alexaProvider.errorMessage!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.danger,
+                    ),
+                  ),
+                ),
+                TextButton(onPressed: _linkAlexa, child: const Text('Retry')),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 20),
+        _AlexaIntegrationCard(
+          isConnected: alexaConnected,
+          isLinked: alexaLinked,
+          isConnecting: alexaProvider.isConnecting,
+          onConnect: _linkAlexa,
+          onDisconnect: _unlinkAlexa,
+          onViewDevices: () {
+            showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => const AlexaWifiDiscoveryModal(),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
         Padding(
           padding: const EdgeInsets.only(bottom: 11),
           child: _VoiceCard(
             name: 'Google Home',
             connected: _voiceConnections['Google Home'] ?? false,
-            onChanged: (val) => setState(() => _voiceConnections['Google Home'] = val),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 11),
-          child: _VoiceCard(
-            name: 'Amazon Alexa',
-            connected: alexaConnected || alexaLinked,
-            statusSubtitle: alexaConnected
-                ? 'Connected & Skill Active'
-                : (alexaLinked ? 'Linked (Pending Alexa Skill Discovery)' : 'Not connected'),
-            onChanged: (value) {
-              if (value) {
-                _linkAlexa();
-              } else {
-                _unlinkAlexa();
-              }
-            },
+            onChanged: (val) =>
+                setState(() => _voiceConnections['Google Home'] = val),
           ),
         ),
         Padding(
@@ -297,7 +395,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
           child: _VoiceCard(
             name: 'Siri Shortcuts',
             connected: _voiceConnections['Siri Shortcuts'] ?? true,
-            onChanged: (val) => setState(() => _voiceConnections['Siri Shortcuts'] = val),
+            onChanged: (val) =>
+                setState(() => _voiceConnections['Siri Shortcuts'] = val),
           ),
         ),
         const SizedBox(height: 16),
@@ -421,6 +520,295 @@ class _IntegrationHero extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AlexaIntegrationCard extends StatelessWidget {
+  final bool isConnected;
+  final bool isLinked;
+  final bool isConnecting;
+  final VoidCallback onConnect;
+  final VoidCallback onDisconnect;
+  final VoidCallback onViewDevices;
+
+  const _AlexaIntegrationCard({
+    required this.isConnected,
+    required this.isLinked,
+    required this.isConnecting,
+    required this.onConnect,
+    required this.onDisconnect,
+    required this.onViewDevices,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool active = isConnected || isLinked;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(
+          color: active
+              ? const Color(0xFF00CAFF).withValues(alpha: 0.5)
+              : AppColors.divider,
+          width: active ? 1.5 : 1.0,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F7FE),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.graphic_eq_rounded,
+                    color: Color(0xFF0090B8),
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Amazon Alexa',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _buildStatusPill(),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        active
+                            ? (isConnected
+                                ? 'Account linked & smart home skill active'
+                                : 'Account linked • Say "Alexa, discover devices"')
+                            : (isConnecting
+                                ? 'Authenticating with Alexa account...'
+                                : 'Link with Echo & Alexa smart home skill'),
+                        style: TextStyle(
+                          color: active
+                              ? AppColors.success
+                              : AppColors.textSecondary,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Control your rooms, lighting, air conditioning, and fans hands-free with Amazon Echo and the Alexa app.',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 14),
+            if (!active) ...[
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: isConnecting ? null : onConnect,
+                  icon: isConnecting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.link_rounded, size: 18),
+                  label: Text(
+                    isConnecting
+                        ? 'Opening Alexa Authorization...'
+                        : 'Link Amazon Alexa Account',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF0090B8),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ] else ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onViewDevices,
+                      icon: const Icon(Icons.devices_other_rounded, size: 16),
+                      label: const Text(
+                        'Synced Devices',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0090B8),
+                        side: const BorderSide(color: Color(0xFF0090B8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onDisconnect,
+                      icon: const Icon(Icons.link_off_rounded, size: 16),
+                      label: const Text(
+                        'Disconnect',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.danger,
+                        side: const BorderSide(color: AppColors.danger),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.tips_and_updates_outlined,
+                    color: Color(0xFF0090B8),
+                    size: 16,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Voice Utterances: "Alexa, turn on Living Room Light" or "Alexa, discover my devices"',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusPill() {
+    if (isConnecting) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE0F2FE),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Text(
+          'CONNECTING',
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF0284C7),
+          ),
+        ),
+      );
+    }
+
+    if (isConnected) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE6F7F5),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Text(
+          'CONNECTED',
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF00A38E),
+          ),
+        ),
+      );
+    }
+
+    if (isLinked) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF3C7),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Text(
+          'LINKED',
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFFD97706),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Text(
+        'NOT LINKED',
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+          color: Color(0xFF64748B),
+        ),
       ),
     );
   }

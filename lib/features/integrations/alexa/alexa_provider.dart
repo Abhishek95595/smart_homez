@@ -1,15 +1,26 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:app_links/app_links.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:url_launcher/url_launcher.dart';
+
 
 import '../../../core/network/api_exception.dart';
 import '../../../models/device.dart';
 import 'alexa_link_response.dart';
 import 'alexa_service.dart';
 import 'alexa_status_model.dart';
+
+class AlexaWebViewData {
+  final Uri uri;
+  final String token;
+
+  AlexaWebViewData({
+    required this.uri,
+    required this.token,
+  });
+}
 
 class AlexaProvider extends ChangeNotifier {
   final AlexaService _service;
@@ -20,27 +31,75 @@ class AlexaProvider extends ChangeNotifier {
     initAppLinks();
   }
 
-  /// Initializes deep-link handler for app1:// schemes
+  /// Initializes deep-link handler for hasomi.com.homeautomation://alexa-callback
   void initAppLinks() {
     _appLinkSubscription?.cancel();
     try {
       final AppLinks appLinks = AppLinks();
-      _appLinkSubscription = appLinks.uriLinkStream.listen((Uri uri) {
-        debugPrint('[AlexaProvider] Deep link received: $uri');
-        if (uri.scheme == 'app1') {
-          if (uri.host == 'alexa-link') {
-            final String redirectUri =
-                uri.queryParameters['redirect_uri'] ?? 'app1://alexa-callback';
-            final String state = uri.queryParameters['state'] ?? 'any';
-            connectAlexa(redirectUri: redirectUri, state: state);
-          } else if (uri.host == 'alexa-callback' ||
-              uri.path.contains('alexa')) {
-            fetchStatus();
-          }
-        }
-      });
+
+      // Check cold-start / initial deep link
+      appLinks
+          .getInitialLink()
+          .then((Uri? uri) {
+            if (uri != null) {
+              _handleDeepLink(uri);
+            }
+          })
+          .catchError((e) {
+            debugPrint('[AlexaProvider] Error getting initial deep link: $e');
+          });
+
+      // Listen for stream of deep links while app is running
+      _appLinkSubscription = appLinks.uriLinkStream.listen(
+        _handleDeepLink,
+        onError: (e) {
+          debugPrint('[AlexaProvider] AppLinks stream error: $e');
+        },
+      );
     } catch (e) {
       debugPrint('[AlexaProvider] AppLinks initialization error: $e');
+    }
+  }
+
+  String? _successMessage;
+  String? get successMessage => _successMessage;
+  void clearSuccessMessage() {
+    _successMessage = null;
+    notifyListeners();
+  }
+
+  Future<void> handleCallbackUri(Uri uri) => _handleDeepLink(uri);
+
+  Future<void> _handleDeepLink(Uri uri) async {
+    debugPrint(
+      '[AlexaProvider] Deep link received: ${uri.scheme}://${uri.host}${uri.path}',
+    );
+
+    final bool isCallback = (uri.scheme == 'hasomi.com.homeautomation' ||
+            uri.scheme == 'app1') &&
+        (uri.host == 'alexa-callback' || uri.path.contains('alexa-callback'));
+
+    if (isCallback) {
+      final String? state = uri.queryParameters['state'];
+      final bool isValidState = await _service.validateCallbackState(state);
+
+      if (!isValidState) {
+        _errorMessage =
+            'Security verification failed: State mismatch or invalid callback.';
+        _state = AlexaConnectionState.error;
+        notifyListeners();
+        return;
+      }
+
+      // Valid callback: show success and update state
+      _status = _status.copyWith(linked: true);
+      _state = AlexaConnectionState.connected;
+      _successMessage = 'Alexa account linked successfully';
+      _errorMessage = null;
+      notifyListeners();
+
+      // Refresh live server status
+      await fetchStatus();
     }
   }
 
@@ -67,11 +126,19 @@ class AlexaProvider extends ChangeNotifier {
   bool get isScanningWifi => _isScanningWifi;
   bool get isConnecting => _state == AlexaConnectionState.connecting;
   bool get isLinked => _status.linked;
-  bool get isConnected =>
-      (_status.connected || _status.linked) &&
-      _state != AlexaConnectionState.notConnected;
+  bool get isConnected => _status.connected;
   String? get errorMessage => _errorMessage;
   AlexaLinkResponse? get lastLinkResponse => _lastLinkResponse;
+
+  /// User-friendly guidance message based on exact linking state
+  String? get statusGuidanceMessage {
+    if (_status.linked && !_status.connected) {
+      return 'Now open the Alexa app, search for your skill, tap Enable, and say "Alexa, discover devices" to finish connecting.';
+    } else if (_status.linked && _status.connected) {
+      return 'Alexa account is fully linked and active.';
+    }
+    return null;
+  }
 
   /// Fetches live status from GET /api/integrations/alexa/status
   Future<AlexaStatus> fetchStatus() async {
@@ -84,6 +151,7 @@ class AlexaProvider extends ChangeNotifier {
       } else {
         _state = AlexaConnectionState.notConnected;
       }
+      _errorMessage = null;
     } catch (e) {
       debugPrint('[AlexaProvider] fetchStatus error: $e');
     } finally {
@@ -93,9 +161,15 @@ class AlexaProvider extends ChangeNotifier {
     return _status;
   }
 
-  /// Connect Alexa flow: Calls POST /api/integrations/alexa/link-token & launches authorizeUrl
-  Future<bool> connectAlexa({String? redirectUri, String? state}) async {
-    if (_state == AlexaConnectionState.connecting) return false;
+  /// Connect Alexa flow: Calls POST /api/integrations/alexa/link-token & returns authorizeUri and token
+  /// for the caller to open in the in-app WebView screen.
+  /// Returns the authorize data on success, or null on failure.
+  Future<AlexaWebViewData?> connectAlexa({
+    String? clientId,
+    String? redirectUri,
+    String? state,
+  }) async {
+    if (_state == AlexaConnectionState.connecting) return null;
 
     _state = AlexaConnectionState.connecting;
     _errorMessage = null;
@@ -103,108 +177,97 @@ class AlexaProvider extends ChangeNotifier {
 
     try {
       final AlexaLinkResponse result = await _service.createLinkToken(
-        redirectUri: redirectUri ?? 'app1://alexa-callback',
+        clientId: clientId,
+        redirectUri:
+            redirectUri ?? 'hasomi.com.homeautomation://alexa-callback',
         state: state,
       );
       _lastLinkResponse = result;
 
-      if (result.authorizeUrl.trim().isEmpty) {
-        _errorMessage = 'Unable to start Alexa connection. Please try again.';
+      final String rawUrl = result.authorizeUrl.trim();
+      final Uri? tempUri = Uri.tryParse(rawUrl);
+
+      if (rawUrl.isEmpty || tempUri == null || !tempUri.hasScheme || tempUri.host.isEmpty) {
+        _errorMessage =
+            'Invalid backend response: Authorize URL is not an absolute URL.';
         _state = AlexaConnectionState.error;
         notifyListeners();
-        return false;
+        return null;
       }
 
-      final Uri uri = Uri.parse(result.authorizeUrl);
-      bool launched = false;
+      final Uri uri = Uri(
+        scheme: tempUri.scheme,
+        host: tempUri.host,
+        port: tempUri.port,
+        path: tempUri.path,
+        query: tempUri.query,
+      );
 
-      try {
-        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } catch (e) {
-        debugPrint(
-          '[AlexaProvider] Launch externalApplication failed: $e, trying platformDefault',
-        );
-        try {
-          launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
-        } catch (_) {}
-      }
+      debugPrint(
+        '[Alexa] Authorize URL ready: '
+        'scheme=${uri.scheme}, '
+        'host=${uri.host}, '
+        'path=${uri.path}',
+      );
 
-      if (!launched) {
-        try {
-          launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
-        } catch (_) {}
-      }
+      final platformToken = await _service.getPlatformUserJwt();
 
-      debugPrint('[AlexaProvider] Alexa URL launched: $launched');
-
-      if (!launched) {
-        _errorMessage = 'Unable to start Alexa connection. Please try again.';
+      if (platformToken == null || platformToken.trim().isEmpty) {
+        _errorMessage =
+            'Unable to start Alexa linking because the user authentication token is missing.';
         _state = AlexaConnectionState.error;
         notifyListeners();
-        return false;
+        return null;
       }
 
-      // After launching system browser for Amazon authorization, reset connecting state
+      if (!_validateJwt(platformToken.trim())) {
+        _errorMessage =
+            'Unable to start Alexa linking because the user authentication token is invalid or expired.';
+        _state = AlexaConnectionState.error;
+        notifyListeners();
+        return null;
+      }
+
+      debugPrint('[Alexa] Platform JWT available: ${platformToken.trim().isNotEmpty}');
+
+      // Reset connecting state — caller will navigate to WebView
       _state = AlexaConnectionState.notConnected;
       _errorMessage = null;
       notifyListeners();
-      return true;
-    } on DioException catch (e) {
-      debugPrint('[AlexaProvider] Dio error: ${e.message}');
-      debugPrint('[AlexaProvider] Status: ${e.response?.statusCode}');
-      debugPrint('[AlexaProvider] Response: ${e.response?.data}');
-      if (e.response?.statusCode == 401) {
-        final dynamic resData = e.response?.data;
-        final String? detail = resData is Map
-            ? (resData['detail'] ?? resData['title'] ?? resData['message'])
-                ?.toString()
-            : null;
-        _errorMessage =
-            detail ??
-            'User identity claim (sub) missing or invalid token. Please log in with a valid account.';
-      } else if (e.response?.statusCode == 503 ||
-          e.response?.statusCode == 500) {
-        _errorMessage =
-            'Alexa connection service is temporarily unavailable. Please try again later.';
-      } else {
-        _errorMessage = 'Unable to start Alexa connection. Please try again.';
-      }
-      _state = AlexaConnectionState.error;
-      notifyListeners();
-      return false;
+      return AlexaWebViewData(uri: uri, token: platformToken.trim());
     } on ApiException catch (e) {
       debugPrint('[AlexaProvider] Api error: ${e.message}');
-      if (e.statusCode == 401) {
+      _errorMessage = e.message;
+      _state = AlexaConnectionState.error;
+      notifyListeners();
+      return null;
+    } on DioException catch (e) {
+      debugPrint('[AlexaProvider] Dio error: ${e.message}');
+      final int? code = e.response?.statusCode;
+      if (code == 401) {
         _errorMessage =
-            'User identity claim (sub) missing or invalid token. Please log in with a valid account.';
-      } else if (e.statusCode == 503 || e.statusCode == 500) {
+            'Client API authentication failed. Please verify API credentials.';
+      } else if (code == 403) {
         _errorMessage =
-            'Alexa connection service is temporarily unavailable. Please try again later.';
-      } else if (e.message.toLowerCase().contains('socket') ||
-          e.message.toLowerCase().contains('network') ||
-          e.message.toLowerCase().contains('connection')) {
+            'Client does not have the required read-write permission for Alexa.';
+      } else if (code == 404) {
+        _errorMessage = 'Matching client was not found on the server.';
+      } else if (code == 503) {
         _errorMessage =
-            'No internet connection. Please check your network and try again.';
+            'Alexa linking service is temporarily unavailable. Please try again later.';
       } else {
-        _errorMessage = 'Unable to start Alexa connection. Please try again.';
+        _errorMessage =
+            'Unable to start Alexa connection. Please check network and try again.';
       }
       _state = AlexaConnectionState.error;
       notifyListeners();
-      return false;
+      return null;
     } catch (e) {
       debugPrint('[AlexaProvider] Error: $e');
-      final String msg = e.toString().toLowerCase();
-      if (msg.contains('socket') ||
-          msg.contains('network') ||
-          msg.contains('connection')) {
-        _errorMessage =
-            'No internet connection. Please check your network and try again.';
-      } else {
-        _errorMessage = 'Unable to start Alexa connection. Please try again.';
-      }
+      _errorMessage = e.toString();
       _state = AlexaConnectionState.error;
       notifyListeners();
-      return false;
+      return null;
     }
   }
 
@@ -280,5 +343,55 @@ class AlexaProvider extends ChangeNotifier {
     _isLoading = false;
     notifyListeners();
     return true;
+  }
+
+  Future<String?> getBearerToken() async {
+    final String? userToken = await _service.getPlatformUserJwt();
+    if (userToken != null && userToken.isNotEmpty) {
+      return userToken;
+    }
+    return _service.getOrFetchApplicationBearerToken();
+  }
+
+  bool _validateJwt(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) {
+        debugPrint('[Alexa] JWT Validation Failed: Not a 3-part JWT structure.');
+        return false;
+      }
+
+      String payloadStr = parts[1];
+      final int mod = payloadStr.length % 4;
+      String padded = payloadStr;
+      if (mod > 0) {
+        padded += '=' * (4 - mod);
+      }
+
+      final String decoded = utf8.decode(base64Url.decode(padded));
+      final Map<String, dynamic> payload = jsonDecode(decoded);
+
+      if (payload.containsKey('exp')) {
+        final int expSec = payload['exp'] as int;
+        final DateTime expTime = DateTime.fromMillisecondsSinceEpoch(expSec * 1000);
+        if (DateTime.now().isAfter(expTime)) {
+          debugPrint('[Alexa] JWT Validation Failed: Token is expired.');
+          return false;
+        }
+      }
+
+      if (payload.containsKey('sub')) {
+        debugPrint('[Alexa] JWT Validation: Sub/User ID is present.');
+      }
+
+      if (payload.containsKey('iss')) {
+        debugPrint('[Alexa] JWT Validation: Issuer is ${payload['iss']}.');
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('[Alexa] JWT Validation Error: $e');
+      return false;
+    }
   }
 }

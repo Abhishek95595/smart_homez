@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../providers/device_provider.dart';
 import 'alexa_provider.dart';
+import 'alexa_webview_screen.dart';
 
 class AlexaWifiDiscoveryModal extends StatefulWidget {
   const AlexaWifiDiscoveryModal({super.key});
@@ -182,9 +183,22 @@ class _AlexaWifiDiscoveryModalState extends State<AlexaWifiDiscoveryModal> {
             child: FilledButton.icon(
               onPressed: alexaProvider.isConnecting
                   ? null
-                  : () {
+                  : () async {
                       Navigator.pop(context);
-                      alexaProvider.connectAlexa();
+                      final result = await alexaProvider.connectAlexa();
+                      if (result != null && context.mounted) {
+                        final returnedUri = await Navigator.of(context).push<Uri>(
+                          MaterialPageRoute(
+                            builder: (_) => AlexaWebViewScreen(
+                              authorizeUri: result.uri,
+                              bearerToken: result.token,
+                            ),
+                          ),
+                        );
+                        if (returnedUri != null) {
+                          await alexaProvider.handleCallbackUri(returnedUri);
+                        }
+                      }
                     },
               icon: const Icon(Icons.link_rounded, size: 20),
               label: Text(

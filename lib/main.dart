@@ -18,6 +18,13 @@ import 'providers/water_provider.dart';
 import 'features/home_setup/providers/home_setup_provider.dart';
 import 'features/home_setup/screens/home_setup_screen.dart';
 import 'features/integrations/alexa/alexa_provider.dart';
+import 'providers/client_notification_provider.dart';
+import 'providers/family_provider.dart';
+import 'providers/notification_settings_provider.dart';
+import 'providers/profile_provider.dart';
+import 'providers/tariff_provider.dart';
+import 'providers/subscription_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/splash/splash_screen.dart';
 import 'theme/app_theme.dart';
 
@@ -28,14 +35,16 @@ Future<void> main() async {
   // machine-specific Firebase desktop configuration.
   if (defaultTargetPlatform != TargetPlatform.windows) {
     await Firebase.initializeApp();
-    await FirebaseAppCheck.instance.activate(
-      providerAndroid: kDebugMode
-          ? const AndroidDebugProvider()
-          : const AndroidPlayIntegrityProvider(),
-      providerApple: kDebugMode
-          ? const AppleDebugProvider()
-          : const AppleDeviceCheckProvider(),
-    );
+    try {
+      if (!kDebugMode) {
+        await FirebaseAppCheck.instance.activate(
+          providerAndroid: const AndroidPlayIntegrityProvider(),
+          providerApple: const AppleDeviceCheckProvider(),
+        );
+      }
+    } catch (appCheckError) {
+      debugPrint('[FirebaseAppCheck] Notice: $appCheckError');
+    }
   }
   await Hive.initFlutter();
   runApp(const SmartBuildingApp());
@@ -67,6 +76,15 @@ class SmartBuildingApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TicketProvider()),
         ChangeNotifierProvider(create: (_) => AlexaProvider()),
         ChangeNotifierProvider(create: (_) => HomeSetupProvider()),
+        ChangeNotifierProvider(create: (_) => FamilyProvider()),
+        ChangeNotifierProvider(
+          create: (_) => ThemeProvider()..loadThemePreference(),
+        ),
+        ChangeNotifierProvider(create: (_) => ProfileProvider()),
+        ChangeNotifierProvider(create: (_) => TariffProvider()),
+        ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationSettingsProvider()),
+        ChangeNotifierProvider(create: (_) => ClientNotificationProvider()),
       ],
       child: MaterialApp(
         title: 'Hasomi',

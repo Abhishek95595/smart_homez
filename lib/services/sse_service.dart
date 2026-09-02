@@ -103,6 +103,15 @@ class SseService {
         );
 
         await response.stream.drain<void>();
+        if (response.statusCode == 401 || response.statusCode == 403) {
+          debugPrint(
+            '[SSE] Stopping reconnect due to unauthorized/expired token.',
+          );
+          _shouldReconnect = false;
+          client.close();
+          _client = null;
+          return;
+        }
         _handleReconnect(token);
         return;
       }

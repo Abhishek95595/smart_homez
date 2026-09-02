@@ -1,3 +1,5 @@
+import '../core/utils/command_utils.dart';
+
 class SceneActionModel {
   final String deviceId;
   final String command;
@@ -8,13 +10,14 @@ class SceneActionModel {
 
   SceneActionModel({
     required this.deviceId,
-    required this.command,
+    required String command,
     dynamic commandValue,
     dynamic value,
     this.toggleOnActivate = false,
     this.sortOrder = 0,
     this.delaySeconds = 0,
-  }) : commandValue = commandValue ?? value;
+  }) : command = normalizeDeviceCommand(command),
+       commandValue = commandValue ?? value;
 
   /// Backwards-compatible getter for legacy value field
   dynamic get value => commandValue;
@@ -39,10 +42,8 @@ class SceneActionModel {
   Map<String, dynamic> toJson() {
     return {
       'deviceId': deviceId,
-      'device_id': deviceId,
-      'command': command,
+      'command': normalizeDeviceCommand(command),
       'commandValue': commandValue?.toString(),
-      'value': commandValue,
       'toggleOnActivate': toggleOnActivate,
       'sortOrder': sortOrder,
       'delaySeconds': delaySeconds,
@@ -59,6 +60,10 @@ class SceneModel {
   final String? icon;
   final bool isFavorite;
   final List<SceneActionModel> actions;
+  final int recurrenceDays;
+  final String? scheduledTime;
+  final int timezoneOffsetMinutes;
+  final bool isScheduleEnabled;
 
   SceneModel({
     required this.id,
@@ -69,6 +74,10 @@ class SceneModel {
     this.icon,
     this.isFavorite = false,
     this.actions = const [],
+    this.recurrenceDays = 0,
+    this.scheduledTime,
+    this.timezoneOffsetMinutes = 330,
+    this.isScheduleEnabled = false,
   });
 
   factory SceneModel.fromJson(Map<String, dynamic> json) {
@@ -93,21 +102,41 @@ class SceneModel {
       icon: json['icon']?.toString(),
       isFavorite: json['isFavorite'] ?? json['is_favorite'] ?? false,
       actions: parsedActions,
+      recurrenceDays:
+          (json['recurrenceDays'] ?? json['recurrence_days'] ?? 0) is num
+          ? (json['recurrenceDays'] ?? json['recurrence_days'] ?? 0).toInt()
+          : 0,
+      scheduledTime:
+          json['scheduledTime']?.toString() ??
+          json['scheduled_time']?.toString(),
+      timezoneOffsetMinutes:
+          (json['timezoneOffsetMinutes'] ??
+                  json['timezone_offset_minutes'] ??
+                  330)
+              is num
+          ? (json['timezoneOffsetMinutes'] ??
+                    json['timezone_offset_minutes'] ??
+                    330)
+                .toInt()
+          : 330,
+      isScheduleEnabled:
+          json['isScheduleEnabled'] ?? json['is_schedule_enabled'] ?? false,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       if (tenantId != null) 'tenantId': tenantId,
       if (clientId != null) 'clientId': clientId,
-      if (clientId != null) 'client_id': clientId,
       'name': name,
       if (description != null) 'description': description,
       if (icon != null) 'icon': icon,
       'isFavorite': isFavorite,
-      'is_favorite': isFavorite,
       'actions': actions.map((a) => a.toJson()).toList(),
+      'recurrenceDays': recurrenceDays,
+      'scheduledTime': scheduledTime,
+      'timezoneOffsetMinutes': timezoneOffsetMinutes,
+      'isScheduleEnabled': isScheduleEnabled,
     };
   }
 }

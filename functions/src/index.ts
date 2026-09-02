@@ -1116,3 +1116,102 @@ export const syncDevices = onCall(
     }
   }
 );
+
+/**
+ * 13. getAlexaLinkToken (Callable)
+ * Generates an Alexa App-to-App account linking SSO token & authorize URL for the authenticated user.
+ */
+export const getAlexaLinkToken = onCall(
+  {
+    region: "asia-south1",
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Authentication required.");
+    }
+
+    const clientId = await getMappedClientId(request.auth.uid, request.auth);
+    const token = await getTenantToken();
+
+    const redirectUri = request.data?.redirectUri || "hasomi.com.homeautomation://alexa-callback";
+    const state = request.data?.state || "any";
+
+    try {
+      const response = await axios.post(
+        `${TENANT_BASE_URL}/api/integrations/alexa/link-token`,
+        {
+          clientId: clientId,
+          redirectUri: redirectUri,
+          state: state,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("[BFF] getAlexaLinkToken error:", error.response?.data || error.message || error);
+      throw new HttpsError("internal", error.response?.data?.error || error.message || "Failed to generate Alexa link token.");
+    }
+  }
+);
+
+/**
+ * 14. getAlexaStatus (Callable)
+ */
+export const getAlexaStatus = onCall(
+  {
+    region: "asia-south1",
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Authentication required.");
+    }
+
+    const token = await getTenantToken();
+
+    try {
+      const response = await axios.get(
+        `${TENANT_BASE_URL}/api/integrations/alexa/status`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("[BFF] getAlexaStatus error:", error.response?.data || error.message || error);
+      return { linked: false, connected: false };
+    }
+  }
+);
+
+/**
+ * 15. disconnectAlexa (Callable)
+ */
+export const disconnectAlexa = onCall(
+  {
+    region: "asia-south1",
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Authentication required.");
+    }
+
+    const token = await getTenantToken();
+
+    try {
+      const response = await axios.post(
+        `${TENANT_BASE_URL}/api/integrations/alexa/disconnect`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("[BFF] disconnectAlexa error:", error.response?.data || error.message || error);
+      return { success: true };
+    }
+  }
+);
+

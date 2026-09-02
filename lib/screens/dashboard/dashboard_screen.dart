@@ -8,17 +8,20 @@ import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
 import '../../providers/energy_provider.dart';
 import '../../providers/property_provider.dart';
-import '../alerts/alerts_screen.dart';
-import '../automations/automations_screen.dart';
+import '../../providers/automation_provider.dart';
 import '../energy/energy_screen.dart';
 import '../properties/floors_screen.dart';
 import '../properties/homes_screen.dart';
-import '../scenes/routine_scene_screen.dart';
+import '../automations/automations_screen.dart';
+import '../main_shell.dart';
 import '../../theme/app_theme.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../services/alexa_integration_service.dart';
-import '../../widgets/hasomi_bottom_voice_bar.dart';
+import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/notification_bell_button.dart';
 import '../../features/integrations/alexa/alexa_provider.dart';
+import '../../features/integrations/alexa/alexa_webview_screen.dart';
+import '../../widgets/app_logo.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -28,8 +31,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _activeSceneIndex = 0;
-
   @override
   void initState() {
     super.initState();
@@ -64,7 +65,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final propertyProvider = context.watch<PropertyProvider>();
     final deviceProvider = context.watch<DeviceProvider>();
     final energyProvider = context.watch<EnergyProvider>();
-    final userName = user?.name.split(' ').first ?? 'Ayesha';
+    final rawName = user?.name.trim() ?? '';
+    final firstName = rawName.split(' ').first;
+    final userName =
+        (firstName.isNotEmpty && !firstName.toLowerCase().contains('otp'))
+            ? firstName
+            : 'Friend';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -73,91 +79,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         toolbarHeight: 68,
-        centerTitle: true,
+        centerTitle: false,
+        titleSpacing: 0,
         leading: Builder(
-          builder: (_) => IconButton(
+          builder: (btnCtx) => IconButton(
             icon: const Icon(
               Icons.menu_rounded,
               color: Color(0xFF0F172A),
               size: 28,
             ),
-            onPressed: () => Scaffold.of(context).openDrawer(),
+            onPressed: () => openAppDrawer(btnCtx),
           ),
         ),
-        title: const Text(
-          'Hasomi',
-          style: TextStyle(
-            color: Color(0xFF00A38E),
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.3,
-          ),
+        title: const AppBrandHeader(
+          fontSize: 24,
+          spacing: 0,
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Talk to HASOMI',
-            icon: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [Color(0xFF00E5FF), Color(0xFF3B82F6)],
-                ),
-              ),
-              child: const Icon(
-                Icons.mic_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-            onPressed: () {
-              final barState = context
-                  .findAncestorStateOfType<HasomiBottomVoiceBarState>();
-              if (barState != null) {
-                barState.triggerVoiceListening();
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Tap HASOMI mic at the bottom of the screen...',
-                    ),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              }
-            },
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.notifications_none_rounded,
-                    color: Color(0xFF0F172A),
-                    size: 28,
-                  ),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AlertsScreen()),
-                  ),
-                ),
-                Positioned(
-                  top: 13,
-                  right: 13,
-                  child: Container(
-                    width: 7.5,
-                    height: 7.5,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF00C9A7),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        actions: const [
+          NotificationBellButton(),
         ],
       ),
       body: SafeArea(
@@ -165,45 +104,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 90),
           children: [
-            // 1. Robot Room Hero Banner
-            _HeroGreetingBanner(greeting: _getGreeting(), userName: userName),
-            const SizedBox(height: 24),
-
-            // 2. Quick Scenes Section
-            _SectionHeader(
-              title: 'Quick Scenes',
-              actionLabel: 'View All',
-              onAction: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AutomationsScreen()),
+            // 1. Robot Room Hero Banner (Isolated raster layer)
+            RepaintBoundary(
+              child: _HeroGreetingBanner(
+                greeting: _getGreeting(),
+                userName: userName,
               ),
             ),
-            const SizedBox(height: 16),
-            _QuickScenesRow(
-              selectedIndex: _activeSceneIndex,
-              onSelect: (index, sceneName) async {
-                setState(() => _activeSceneIndex = index);
+            const SizedBox(height: 24),
 
-                final routineKeys = [
-                  'good_morning',
-                  'good_night',
-                  'movie_time',
-                  'away_mode',
-                ];
-                final routineKey = routineKeys[index.clamp(0, 3)];
-                final themeData = kAllRoutineThemes[routineKey]!;
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => RoutineSceneScreen(themeData: themeData),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 26),
-
-            // 3. Your Properties Section with Overall Energy Matrix Card
+            // 2. Your Properties Section with Overall Energy Matrix Card
             _SectionHeader(
               title: 'Your Properties',
               actionLabel: 'View All',
@@ -213,12 +123,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            _PropertiesAndEnergySection(
-              properties: propertyProvider.properties,
-              energyProvider: energyProvider,
-              deviceProvider: deviceProvider,
+            RepaintBoundary(
+              child: _PropertiesAndEnergySection(
+                properties: propertyProvider.properties,
+                energyProvider: energyProvider,
+                deviceProvider: deviceProvider,
+              ),
             ),
             const SizedBox(height: 20),
+
+            // 3. Schedules Section
+            _SectionHeader(
+              title: 'Schedules',
+              actionLabel: 'View All',
+              onAction: () {
+                final mainShellState = context.findAncestorStateOfType<MainShellState>();
+                if (mainShellState != null) {
+                  mainShellState.onTabTapped(2);
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AutomationsScreen()),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            RepaintBoundary(
+              child: _AutomationsSection(
+                automationProvider: context.watch<AutomationProvider>(),
+              ),
+            ),
+            const SizedBox(height: 24),
 
             // 4. Smart Assistant Floating Voice Banner
             _SmartAssistantVoiceBanner(
@@ -397,149 +333,6 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _QuickScenesRow extends StatelessWidget {
-  final int selectedIndex;
-  final void Function(int index, String sceneName) onSelect;
-
-  const _QuickScenesRow({required this.selectedIndex, required this.onSelect});
-
-  @override
-  Widget build(BuildContext context) {
-    final scenes = [
-      {
-        'title': 'Good\nMorning',
-        'rawName': 'Good Morning',
-        'image': 'assets/images/scene_morning_ref.png',
-      },
-      {
-        'title': 'Good\nNight',
-        'rawName': 'Good Night',
-        'image': 'assets/images/scene_night_ref.png',
-      },
-      {
-        'title': 'Movie\nTime',
-        'rawName': 'Movie Time',
-        'image': 'assets/images/scene_movie_ref.png',
-      },
-      {
-        'title': 'Away\nMode',
-        'rawName': 'Away Mode',
-        'image': 'assets/images/scene_away_ref.png',
-      },
-    ];
-
-    return SizedBox(
-      height: 124,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: List.generate(scenes.length, (idx) {
-          final scene = scenes[idx];
-          return Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                right: idx == scenes.length - 1 ? 0 : 10,
-              ),
-              child: _SceneCard(
-                title: scene['title']!,
-                imagePath: scene['image']!,
-                isSelected: selectedIndex == idx,
-                onTap: () => onSelect(idx, scene['rawName']!),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-}
-
-class _SceneCard extends StatelessWidget {
-  final String title;
-  final String imagePath;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _SceneCard({
-    required this.title,
-    required this.imagePath,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final background = isSelected ? const Color(0xFFDDF7F3) : Colors.white;
-    final border = isSelected
-        ? const Color(0xFF86DDD1)
-        : const Color(0xFFEAF0F2);
-    final labelColor = isSelected
-        ? const Color(0xFF00796B)
-        : const Color(0xFF111827);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(24),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.fromLTRB(6, 10, 6, 9),
-          decoration: BoxDecoration(
-            color: background,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: border, width: isSelected ? 1.2 : 1),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0B0F172A),
-                blurRadius: 14,
-                offset: Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 52,
-                height: 52,
-                child: Image.asset(
-                  imagePath,
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
-                  errorBuilder: (_, _, _) => Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 38,
-                    color: isSelected
-                        ? const Color(0xFF00A38E)
-                        : const Color(0xFF64748B),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 7),
-              Flexible(
-                child: Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12.2,
-                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-                    color: labelColor,
-                    height: 1.08,
-                    letterSpacing: -0.15,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -969,7 +762,7 @@ class _AddPropertyFullCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(26),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             child: Row(
               children: [
                 Container(
@@ -990,6 +783,7 @@ class _AddPropertyFullCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: const [
                       Text(
                         'Add Your First Property',
@@ -1368,10 +1162,22 @@ class _SmartAssistantVoiceBanner extends StatelessWidget {
     AlexaProvider alexaProvider,
   ) async {
     final messenger = ScaffoldMessenger.of(context);
-    final success = await alexaProvider.connectAlexa();
+    final navigator = Navigator.of(context);
+    final result = await alexaProvider.connectAlexa();
 
-    if (!success &&
-        alexaProvider.errorMessage != null &&
+    if (result != null) {
+      final returnedUri = await navigator.push<Uri>(
+        MaterialPageRoute(
+          builder: (_) => AlexaWebViewScreen(
+            authorizeUri: result.uri,
+            bearerToken: result.token,
+          ),
+        ),
+      );
+      if (returnedUri != null) {
+        await alexaProvider.handleCallbackUri(returnedUri);
+      }
+    } else if (alexaProvider.errorMessage != null &&
         alexaProvider.errorMessage!.isNotEmpty) {
       messenger.showSnackBar(
         SnackBar(
@@ -1774,6 +1580,214 @@ class _VoiceAssistantModalState extends State<_VoiceAssistantModal> {
             fontSize: 13,
             fontWeight: FontWeight.w700,
             color: Color(0xFF334155),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AutomationsSection extends StatelessWidget {
+  final AutomationProvider automationProvider;
+
+  const _AutomationsSection({required this.automationProvider});
+
+  @override
+  Widget build(BuildContext context) {
+    final rules = automationProvider.rules;
+
+    if (rules.isEmpty) {
+      return Container(
+        height: 100,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: const Color(0xFFF1F5F9)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x06000000),
+              blurRadius: 10,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: Text(
+            'No active routines found.',
+            style: TextStyle(
+              fontSize: 13,
+              color: Color(0xFF64748B),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 120,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: rules.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          final rule = rules[index];
+          final colorIndex = index % 3;
+          final List<Color> bgColors = [
+            const Color(0xFFE8F5E9), // Light Green
+            const Color(0xFFE8F0FE), // Light Blue
+            const Color(0xFFFFF8E1), // Light Yellow
+          ];
+          final List<Color> accentColors = [
+            const Color(0xFF2E7D32),
+            const Color(0xFF1565C0),
+            const Color(0xFFF57F17),
+          ];
+
+          return Container(
+            width: 185,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(26),
+              border: Border.all(color: const Color(0xFFF1F5F9)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x06000000),
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: bgColors[colorIndex],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.bolt_rounded,
+                          color: accentColors[colorIndex],
+                          size: 20,
+                        ),
+                      ),
+                      // Modern visible toggle switch
+                      _ScheduleToggleSwitch(
+                        value: rule.isActive,
+                        onChanged: (val) {
+                          automationProvider.toggleRule(
+                            automationId: rule.id,
+                            isActive: val,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        rule.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0F172A),
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        rule.description ?? 'Active Routine',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Modern high-contrast toggle switch for dashboard schedule cards.
+class _ScheduleToggleSwitch extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _ScheduleToggleSwitch({
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeInOutCubic,
+        width: 44,
+        height: 25,
+        padding: const EdgeInsets.all(2.5),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          gradient: value
+              ? const LinearGradient(
+                  colors: [Color(0xFF00C9A7), Color(0xFF00A38E)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: value ? null : const Color(0xFFE2E8F0),
+          boxShadow: [
+            if (value)
+              const BoxShadow(
+                color: Color(0x3500A38E),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+          ],
+        ),
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOutCubic,
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            width: 20,
+            height: 20,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x33000000),
+                  blurRadius: 4,
+                  offset: Offset(0, 1.5),
+                ),
+              ],
+            ),
           ),
         ),
       ),

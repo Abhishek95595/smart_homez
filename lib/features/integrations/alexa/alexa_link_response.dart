@@ -29,7 +29,7 @@ class AlexaLinkResponse {
         map['linkToken']?.toString() ??
         '';
 
-    String authUrl =
+    final String authUrl =
         map['authorizeUrl']?.toString() ??
         map['authorizationUrl']?.toString() ??
         map['authorization_url']?.toString() ??
@@ -38,20 +38,12 @@ class AlexaLinkResponse {
         map['url']?.toString() ??
         '';
 
-    if (authUrl.isEmpty && ssoToken.isNotEmpty) {
-      authUrl =
-          'https://alexa.amazon.com/oauth/authorize?client_id=smart_homez&token=$ssoToken';
-    } else if (authUrl.isEmpty) {
-      authUrl =
-          'https://alexa.amazon.com/oauth/authorize?client_id=smart_homez';
-    }
-
     return AlexaLinkResponse(
       ssoToken: ssoToken,
       expiresInSeconds: expiresVal is num
           ? expiresVal.toInt()
           : (int.tryParse(expiresVal?.toString() ?? '') ?? 0),
-      authorizeUrl: authUrl,
+      authorizeUrl: authUrl.trim(),
     );
   }
 }

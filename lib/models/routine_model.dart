@@ -208,6 +208,7 @@ class Routine {
   final String id;
   final String name;
   final String type;
+  final String? localKey;
   bool isEnabled;
   String timezone;
   Map<String, DaySchedule> daySchedules; // 'MON' -> DaySchedule
@@ -219,6 +220,7 @@ class Routine {
     required this.id,
     required this.name,
     this.type = 'morning_routine',
+    this.localKey,
     this.isEnabled = true,
     this.timezone = 'UTC',
     Map<String, DaySchedule>? daySchedules,
@@ -258,6 +260,7 @@ class Routine {
     String? id,
     String? name,
     String? type,
+    String? localKey,
     bool? isEnabled,
     String? timezone,
     Map<String, DaySchedule>? daySchedules,
@@ -269,6 +272,7 @@ class Routine {
       id: id ?? this.id,
       name: name ?? this.name,
       type: type ?? this.type,
+      localKey: localKey ?? this.localKey,
       isEnabled: isEnabled ?? this.isEnabled,
       timezone: timezone ?? this.timezone,
       daySchedules:
@@ -285,6 +289,7 @@ class Routine {
       'id': id,
       'name': name,
       'type': type,
+      'localKey': localKey,
       'isEnabled': isEnabled,
       'timezone': timezone,
       'daySchedules': daySchedules.map((k, v) => MapEntry(k, v.toJson())),
@@ -313,6 +318,7 @@ class Routine {
         id: json['id']?.toString() ?? 'good_morning_routine_1',
         name: json['name']?.toString() ?? 'Good Morning Routine',
         type: json['type']?.toString() ?? 'morning_routine',
+        localKey: json['localKey']?.toString(),
         isEnabled: json['isEnabled'] as bool? ?? true,
         timezone: json['timezone']?.toString() ?? 'UTC',
         daySchedules: schedules,

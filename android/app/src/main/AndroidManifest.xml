@@ -29,7 +29,17 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="app1" />
+                <data
+                    android:scheme="hasomi.com.homeautomation"
+                    android:host="alexa-callback" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="app1"
+                    android:host="alexa-callback" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

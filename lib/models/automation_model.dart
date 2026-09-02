@@ -1,3 +1,5 @@
+import '../core/utils/command_utils.dart';
+
 class AutomationConditionModel {
   final String? conditionType;
   final String? operator;
@@ -79,7 +81,9 @@ class AutomationActionModel {
     return AutomationActionModel(
       actionType: json['actionType']?.toString(),
       targetDeviceId: json['targetDeviceId']?.toString(),
-      command: json['command']?.toString(),
+      command: json['command'] != null
+          ? normalizeDeviceCommand(json['command'].toString())
+          : null,
       commandValue: json['commandValue']?.toString(),
       delaySeconds: _toInt(json['delaySeconds']),
       activateSceneId: json['activateSceneId']?.toString(),
@@ -97,7 +101,7 @@ class AutomationActionModel {
   Map<String, dynamic> toJson() => {
     if (actionType != null) 'actionType': actionType,
     if (targetDeviceId != null) 'targetDeviceId': targetDeviceId,
-    if (command != null) 'command': command,
+    if (command != null) 'command': normalizeDeviceCommand(command!),
     if (commandValue != null) 'commandValue': commandValue,
     if (delaySeconds != null) 'delaySeconds': delaySeconds,
     if (activateSceneId != null) 'activateSceneId': activateSceneId,
