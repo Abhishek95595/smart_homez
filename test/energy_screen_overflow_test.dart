@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_homez/providers/auth_provider.dart';
-import 'package:smart_homez/providers/device_provider.dart';
 import 'package:smart_homez/providers/energy_provider.dart';
-import 'package:smart_homez/providers/property_provider.dart';
 import 'package:smart_homez/providers/tariff_provider.dart';
 import 'package:smart_homez/screens/energy/energy_screen.dart';
 

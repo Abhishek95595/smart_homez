@@ -10,6 +10,8 @@ import '../../widgets/app_state_widgets.dart';
 import 'automation_details_screen.dart';
 import 'create_automation_screen.dart';
 
+import '../../models/robot_avatar.dart';
+import '../../widgets/robot_avatar.dart';
 import '../scenes/scenes_screen.dart';
 
 enum _AutomationFilter { all, active, disabled }
@@ -222,7 +224,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
                 children: [
                   Builder(
                     builder: (ctx) => AppNavigationLeading.drawer(
-                        color: colorScheme.onSurface,
+                      color: colorScheme.onSurface,
                       onPressed: () => Scaffold.of(ctx).openDrawer(),
                     ),
                   ),
@@ -1015,18 +1017,11 @@ class _EmptyAutomationsState extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE6F7F5),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Icon(
-              Icons.auto_awesome_rounded,
-              color: Color(0xFF00897B),
-              size: 30,
-            ),
+          RobotAvatar(
+            type: hasFilter
+                ? RobotAvatarType.concerned
+                : RobotAvatarType.pointing,
+            size: 75,
           ),
           const SizedBox(height: 16),
           Text(

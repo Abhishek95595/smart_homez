@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/client_profile.dart';
+import '../models/robot_avatar.dart';
 import '../models/home_model.dart';
 import '../services/profile_service.dart';
 
@@ -25,44 +26,16 @@ class ProfileProvider extends ChangeNotifier {
   static const String avatarPrefKey = 'smart_homz_avatar_id';
   static const String defaultAvatarId = 'smart_robot';
 
-  static const List<AvatarOption> availableAvatars = [
-    AvatarOption(
-      id: 'smart_robot',
-      name: 'Neo',
-      description: 'Intelligent Automation Core',
-      assetPath: 'assets/images/smart_robot.png',
-    ),
-    AvatarOption(
-      id: 'new_robot',
-      name: 'Aura',
-      description: 'Futuristic Home Assistant',
-      assetPath: 'assets/images/new_robot.png',
-    ),
-    AvatarOption(
-      id: 'fire_safety',
-      name: 'Pyro',
-      description: 'Fire & Thermal Guardian',
-      assetPath: 'assets/images/fire_safety_robot_ref.png',
-    ),
-    AvatarOption(
-      id: 'water_robot',
-      name: 'Aqua',
-      description: 'Water Flow Sentinel',
-      assetPath: 'assets/images/water_robot_ref.png',
-    ),
-    AvatarOption(
-      id: 'fire_assistant',
-      name: 'Spark',
-      description: 'Emergency Dispatch Unit',
-      assetPath: 'assets/images/fire_assistant_robot_ref.png',
-    ),
-    AvatarOption(
-      id: 'water_assistant',
-      name: 'Hydro',
-      description: 'Hydro-Pressure Engine',
-      assetPath: 'assets/images/water_assistant_robot_ref.png',
-    ),
-  ];
+  static final List<AvatarOption> availableAvatars = RobotAvatarType.values.map(
+    (type) {
+      return AvatarOption(
+        id: type.storageId,
+        name: type.displayName,
+        description: type.description,
+        assetPath: type.assetPath,
+      );
+    },
+  ).toList();
 
   ClientProfile? _profile;
   List<HomeModel> _homes = [];
@@ -84,9 +57,15 @@ class ProfileProvider extends ChangeNotifier {
   String? get error => _error;
   String get selectedAvatarId => _selectedAvatarId;
 
+  RobotAvatarType get currentRobotAvatar =>
+      RobotAvatarTypeX.fromStorageId(_selectedAvatarId);
+
   AvatarOption get currentAvatar {
+    final effectiveId = RobotAvatarTypeX.fromStorageId(
+      _selectedAvatarId,
+    ).storageId;
     return availableAvatars.firstWhere(
-      (a) => a.id == _selectedAvatarId,
+      (a) => a.id == effectiveId,
       orElse: () => availableAvatars.first,
     );
   }

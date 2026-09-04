@@ -90,9 +90,9 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
         centerTitle: true,
         leading: Builder(
           builder: (ctx) => AppNavigationLeading.drawer(
-                color: AppColors.textPrimary,
+            color: AppColors.textPrimary,
             onPressed: () => Scaffold.of(ctx).openDrawer(),
-              ),
+          ),
         ),
         title: const Column(
           mainAxisSize: MainAxisSize.min,

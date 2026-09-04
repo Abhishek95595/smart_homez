@@ -383,7 +383,7 @@ class _SettingsHeader extends StatelessWidget {
       child: Row(
         children: [
           AppNavigationLeading.drawer(
-                color: AppColors.textPrimary,
+            color: AppColors.textPrimary,
             onPressed: onMenu,
           ),
           const Spacer(),

@@ -499,8 +499,8 @@ class _ModernEnergyHeader extends StatelessWidget {
             builder: (ctx) => AppNavigationLeading.drawer(
               color: const Color(0xFF0F172A),
               onPressed: () => Scaffold.of(ctx).openDrawer(),
-              ),
             ),
+          ),
           const SizedBox(width: 4),
           Expanded(
             child: Column(
@@ -550,7 +550,7 @@ class _ModernEnergyHeader extends StatelessWidget {
                   border: Border.all(
                     color: const Color(
                       0xFF00A38E,
-                    ).withOpacity(0.3 + (pulseAnimation.value * 0.4)),
+                    ).withValues(alpha: 0.3 + (pulseAnimation.value * 0.4)),
                     width: 1,
                   ),
                 ),
@@ -565,9 +565,9 @@ class _ModernEnergyHeader extends StatelessWidget {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(
-                              0xFF00A38E,
-                            ).withOpacity(0.5 + (pulseAnimation.value * 0.4)),
+                            color: const Color(0xFF00A38E).withValues(
+                              alpha: 0.5 + (pulseAnimation.value * 0.4),
+                            ),
                             blurRadius: 6,
                             spreadRadius: 1,
                           ),
@@ -705,7 +705,9 @@ class _ModernTopControls extends StatelessWidget {
                     boxShadow: [
                       if (isSelected)
                         BoxShadow(
-                          color: const Color(0xFF00A38E).withOpacity(0.25),
+                          color: const Color(
+                            0xFF00A38E,
+                          ).withValues(alpha: 0.25),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -989,9 +991,9 @@ class _ModernMetricTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         decoration: BoxDecoration(
-          color: bgColor.withOpacity(0.5),
+          color: bgColor.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1392,8 +1394,8 @@ class _ModernChartCard extends StatelessWidget {
                       show: true,
                       gradient: LinearGradient(
                         colors: [
-                          primaryLineColor.withOpacity(0.2),
-                          primaryLineColor.withOpacity(0.0),
+                          primaryLineColor.withValues(alpha: 0.2),
+                          primaryLineColor.withValues(alpha: 0.0),
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -1578,7 +1580,7 @@ class _UserDeviceBreakdownCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: itemColor.withOpacity(0.12),
+                            color: itemColor.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(itemIcon, color: itemColor, size: 18),

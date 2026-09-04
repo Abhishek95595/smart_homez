@@ -842,7 +842,6 @@ class _SmartDrawerMenuCard extends StatelessWidget {
   final bool isExpanded;
   final VoidCallback onToggle;
   final List<Widget> children;
-  final Color backgroundColor;
 
   const _SmartDrawerMenuCard({
     this.letter,
@@ -858,14 +857,13 @@ class _SmartDrawerMenuCard extends StatelessWidget {
     required this.isExpanded,
     required this.onToggle,
     required this.children,
-    this.backgroundColor = Colors.white,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isExpanded
@@ -1261,7 +1259,7 @@ class _DrawerChildItem extends StatelessWidget {
                 ),
               ),
 
-              if (trailingBadge != null) trailingBadge!,
+              ?trailingBadge,
             ],
           ),
         ),

@@ -257,10 +257,10 @@ class _ProfileTariffCardState extends State<ProfileTariffCard> {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE6F7F5).withOpacity(0.5),
+                      color: const Color(0xFFE6F7F5).withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color(0xFF00A38E).withOpacity(0.2),
+                        color: const Color(0xFF00A38E).withValues(alpha: 0.2),
                       ),
                     ),
                     child: Column(
@@ -325,10 +325,10 @@ class _ProfileTariffCardState extends State<ProfileTariffCard> {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE0F2FE).withOpacity(0.5),
+                      color: const Color(0xFFE0F2FE).withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color(0xFF0284C7).withOpacity(0.2),
+                        color: const Color(0xFF0284C7).withValues(alpha: 0.2),
                       ),
                     ),
                     child: Column(

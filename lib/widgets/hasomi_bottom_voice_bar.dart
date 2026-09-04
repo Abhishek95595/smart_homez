@@ -7,6 +7,8 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../providers/auth_provider.dart';
 import '../providers/device_provider.dart';
 import '../services/hasomi_voice_service.dart';
+import '../utils/robot_avatar_mapper.dart';
+import 'robot_avatar.dart';
 
 enum HasomiVoiceBarState {
   idle,
@@ -36,6 +38,7 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
 
   HasomiVoiceBarState _barState = HasomiVoiceBarState.idle;
   bool _isSpeechAvailable = false;
+  bool _isSpeaking = false;
 
   String _spokenText = '';
   String _assistantGreeting = '';
@@ -124,7 +127,9 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
     });
 
     // Speak dynamic greeting aloud and await completion before opening mic
+    if (mounted) setState(() => _isSpeaking = true);
     await HasomiVoiceService.instance.speak(_assistantGreeting);
+    if (mounted) setState(() => _isSpeaking = false);
 
     if (mounted && _barState == HasomiVoiceBarState.listeningForCommand) {
       setState(() {
@@ -269,7 +274,9 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
     });
 
     // Speak confirmation result aloud and await sentence completion
+    if (mounted) setState(() => _isSpeaking = true);
     await HasomiVoiceService.instance.speak(result.spokenResponse);
+    if (mounted) setState(() => _isSpeaking = false);
 
     // After completing sentence, automatically start listening for next command again!
     if (mounted && _barState != HasomiVoiceBarState.idle) {
@@ -326,13 +333,12 @@ class HasomiBottomVoiceBarState extends State<HasomiBottomVoiceBar>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _getBarColor(),
+                    RobotAvatar(
+                      type: RobotAvatarMapper.mapVoiceBarState(
+                        _barState,
+                        isSpeaking: _isSpeaking,
                       ),
+                      size: 22,
                     ),
                     const SizedBox(width: 6),
                     Flexible(

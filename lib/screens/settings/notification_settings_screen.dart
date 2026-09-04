@@ -29,7 +29,7 @@ class NotificationSettingsScreen extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Builder(
                     builder: (ctx) => AppNavigationLeading.drawer(
-                            color: const Color(0xFF0F172A),
+                      color: const Color(0xFF0F172A),
                       onPressed: () => Scaffold.of(ctx).openDrawer(),
                     ),
                   ),
@@ -426,7 +426,7 @@ class _ChannelCard extends StatelessWidget {
               children: [
                 Switch.adaptive(
                   value: value,
-                  activeColor: Colors.white,
+                  activeThumbColor: Colors.white,
                   activeTrackColor: activeSwitchColor,
                   inactiveThumbColor: Colors.white,
                   inactiveTrackColor: const Color(0xFFE2E8F0),

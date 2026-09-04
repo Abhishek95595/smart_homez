@@ -122,9 +122,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         scrolledUnderElevation: 0,
         centerTitle: false,
         leading: AppNavigationLeading.drawer(
-                    color: colors.textPrimary,
+          color: colors.textPrimary,
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-              ),
+        ),
         title: Text(
           'Profile',
           style: TextStyle(

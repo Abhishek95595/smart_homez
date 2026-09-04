@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:smart_homez/core/network/api_client.dart';
+import 'package:smart_homez/core/network/api_endpoints.dart';
 import 'package:smart_homez/models/scene_model.dart';
 import 'package:smart_homez/services/scene_service.dart';
 
@@ -27,11 +28,16 @@ void main() {
     test(
       '1. GET /api/v1/clients/{clientId}/scenes: List all scenes for authenticated client',
       () async {
-        when(mockApi.get('/api/v1/clients/$testClientId/scenes')).thenAnswer(
+        final expectedPath = ApiEndpoints.clientScenes(testClientId);
+        when(
+          mockApi.get(
+            expectedPath,
+            queryParameters: anyNamed('queryParameters'),
+            options: anyNamed('options'),
+          ),
+        ).thenAnswer(
           (_) async => Response(
-            requestOptions: RequestOptions(
-              path: '/api/v1/clients/$testClientId/scenes',
-            ),
+            requestOptions: RequestOptions(path: expectedPath),
             statusCode: 200,
             data: {
               'success': true,
@@ -74,7 +80,7 @@ void main() {
         expect(s.actions.first.deviceId, 'dev_light_1');
         expect(s.actions.first.command, 'brightness');
         expect(s.actions.first.commandValue, '20');
-        verify(mockApi.get('/api/v1/clients/$testClientId/scenes')).called(1);
+        verify(mockApi.get(expectedPath)).called(1);
       },
     );
 
@@ -82,16 +88,17 @@ void main() {
     test(
       '2. POST /api/v1/clients/{clientId}/scenes: Create a new scene with device actions',
       () async {
+        final expectedPath = ApiEndpoints.clientScenes(testClientId);
         when(
           mockApi.post(
-            '/api/v1/clients/$testClientId/scenes',
+            expectedPath,
             data: anyNamed('data'),
+            queryParameters: anyNamed('queryParameters'),
+            options: anyNamed('options'),
           ),
         ).thenAnswer(
           (_) async => Response(
-            requestOptions: RequestOptions(
-              path: '/api/v1/clients/$testClientId/scenes',
-            ),
+            requestOptions: RequestOptions(path: expectedPath),
             statusCode: 201,
             data: {
               'success': true,
@@ -141,7 +148,7 @@ void main() {
         expect(created.actions.first.deviceId, 'dev_light_ext');
         verify(
           mockApi.post(
-            '/api/v1/clients/$testClientId/scenes',
+            expectedPath,
             data: {
               'clientId': testClientId,
               'name': 'Night Secure',
@@ -172,13 +179,19 @@ void main() {
     test(
       '3. GET /api/v1/clients/{clientId}/scenes/{id}: Get a single scene by its ID',
       () async {
+        final expectedPath = ApiEndpoints.clientScene(
+          testClientId,
+          testSceneId,
+        );
         when(
-          mockApi.get('/api/v1/clients/$testClientId/scenes/$testSceneId'),
+          mockApi.get(
+            expectedPath,
+            queryParameters: anyNamed('queryParameters'),
+            options: anyNamed('options'),
+          ),
         ).thenAnswer(
           (_) async => Response(
-            requestOptions: RequestOptions(
-              path: '/api/v1/clients/$testClientId/scenes/$testSceneId',
-            ),
+            requestOptions: RequestOptions(path: expectedPath),
             statusCode: 200,
             data: {
               'success': true,
@@ -203,9 +216,7 @@ void main() {
         expect(scene!.id, testSceneId);
         expect(scene.name, 'Morning Boost');
         expect(scene.actions.first.command, 'brew');
-        verify(
-          mockApi.get('/api/v1/clients/$testClientId/scenes/$testSceneId'),
-        ).called(1);
+        verify(mockApi.get(expectedPath)).called(1);
       },
     );
 
@@ -213,16 +224,20 @@ void main() {
     test(
       '4. PUT /api/v1/clients/{clientId}/scenes/{id}: Update a scene name or device actions',
       () async {
+        final expectedPath = ApiEndpoints.clientScene(
+          testClientId,
+          testSceneId,
+        );
         when(
           mockApi.put(
-            '/api/v1/clients/$testClientId/scenes/$testSceneId',
+            expectedPath,
             data: anyNamed('data'),
+            queryParameters: anyNamed('queryParameters'),
+            options: anyNamed('options'),
           ),
         ).thenAnswer(
           (_) async => Response(
-            requestOptions: RequestOptions(
-              path: '/api/v1/clients/$testClientId/scenes/$testSceneId',
-            ),
+            requestOptions: RequestOptions(path: expectedPath),
             statusCode: 200,
             data: {
               'success': true,
@@ -262,10 +277,7 @@ void main() {
         expect(updated!.name, 'Updated Morning Boost');
         expect(updated.isFavorite, true);
         verify(
-          mockApi.put(
-            '/api/v1/clients/$testClientId/scenes/$testSceneId',
-            data: argThat(isA<Map>(), named: 'data'),
-          ),
+          mockApi.put(expectedPath, data: argThat(isA<Map>(), named: 'data')),
         ).called(1);
       },
     );
@@ -274,13 +286,20 @@ void main() {
     test(
       '5. DELETE /api/v1/clients/{clientId}/scenes/{id}: Permanently delete a scene (204 Deleted)',
       () async {
+        final expectedPath = ApiEndpoints.clientScene(
+          testClientId,
+          testSceneId,
+        );
         when(
-          mockApi.delete('/api/v1/clients/$testClientId/scenes/$testSceneId'),
+          mockApi.delete(
+            expectedPath,
+            data: anyNamed('data'),
+            queryParameters: anyNamed('queryParameters'),
+            options: anyNamed('options'),
+          ),
         ).thenAnswer(
           (_) async => Response(
-            requestOptions: RequestOptions(
-              path: '/api/v1/clients/$testClientId/scenes/$testSceneId',
-            ),
+            requestOptions: RequestOptions(path: expectedPath),
             statusCode: 204,
           ),
         );
@@ -291,9 +310,7 @@ void main() {
         );
 
         expect(success, isTrue);
-        verify(
-          mockApi.delete('/api/v1/clients/$testClientId/scenes/$testSceneId'),
-        ).called(1);
+        verify(mockApi.delete(expectedPath)).called(1);
       },
     );
 
@@ -301,16 +318,20 @@ void main() {
     test(
       '6. POST /api/v1/clients/{clientId}/scenes/{id}/activate: Activate a scene immediately',
       () async {
+        final expectedPath = ApiEndpoints.activateClientScene(
+          testClientId,
+          testSceneId,
+        );
         when(
           mockApi.post(
-            '/api/v1/clients/$testClientId/scenes/$testSceneId/activate',
+            expectedPath,
+            data: anyNamed('data'),
+            queryParameters: anyNamed('queryParameters'),
+            options: anyNamed('options'),
           ),
         ).thenAnswer(
           (_) async => Response(
-            requestOptions: RequestOptions(
-              path:
-                  '/api/v1/clients/$testClientId/scenes/$testSceneId/activate',
-            ),
+            requestOptions: RequestOptions(path: expectedPath),
             statusCode: 200,
             data: {'success': true, 'message': 'Scene activated'},
           ),
@@ -322,11 +343,7 @@ void main() {
         );
 
         expect(success, isTrue);
-        verify(
-          mockApi.post(
-            '/api/v1/clients/$testClientId/scenes/$testSceneId/activate',
-          ),
-        ).called(1);
+        verify(mockApi.post(expectedPath)).called(1);
       },
     );
 
@@ -335,15 +352,19 @@ void main() {
       '7. GET /api/v1/clients/{clientId}/scenes/{id}/status: Phase 3 sequential scene execution progress & deterministic idle shape',
       () async {
         // Active execution status
+        final expectedActivePath = ApiEndpoints.clientSceneStatus(
+          testClientId,
+          testSceneId,
+        );
         when(
           mockApi.get(
-            '/api/v1/clients/$testClientId/scenes/$testSceneId/status',
+            expectedActivePath,
+            queryParameters: anyNamed('queryParameters'),
+            options: anyNamed('options'),
           ),
         ).thenAnswer(
           (_) async => Response(
-            requestOptions: RequestOptions(
-              path: '/api/v1/clients/$testClientId/scenes/$testSceneId/status',
-            ),
+            requestOptions: RequestOptions(path: expectedActivePath),
             statusCode: 200,
             data: {
               'success': true,
@@ -369,16 +390,19 @@ void main() {
         expect(active.status, 'executing');
 
         // Idle shape
+        final expectedIdlePath = ApiEndpoints.clientSceneStatus(
+          testClientId,
+          testIdleSceneId,
+        );
         when(
           mockApi.get(
-            '/api/v1/clients/$testClientId/scenes/$testIdleSceneId/status',
+            expectedIdlePath,
+            queryParameters: anyNamed('queryParameters'),
+            options: anyNamed('options'),
           ),
         ).thenAnswer(
           (_) async => Response(
-            requestOptions: RequestOptions(
-              path:
-                  '/api/v1/clients/$testClientId/scenes/$testIdleSceneId/status',
-            ),
+            requestOptions: RequestOptions(path: expectedIdlePath),
             statusCode: 200,
             data: {
               'success': true,

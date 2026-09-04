@@ -215,11 +215,10 @@ class SceneService {
           'isFavorite': isFavorite,
           if (actions != null)
             'actions': actions.map((a) => a.toJson()).toList(),
-          if (recurrenceDays != null) 'recurrenceDays': recurrenceDays,
-          if (scheduledTime != null) 'scheduledTime': scheduledTime,
-          if (timezoneOffsetMinutes != null)
-            'timezoneOffsetMinutes': timezoneOffsetMinutes,
-          if (isScheduleEnabled != null) 'isScheduleEnabled': isScheduleEnabled,
+          'recurrenceDays': ?recurrenceDays,
+          'scheduledTime': ?scheduledTime,
+          'timezoneOffsetMinutes': ?timezoneOffsetMinutes,
+          'isScheduleEnabled': ?isScheduleEnabled,
         },
       );
 

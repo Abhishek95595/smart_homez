@@ -6,6 +6,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../providers/scene_provider.dart';
 import '../../widgets/app_navigation_drawer.dart';
+import '../../models/robot_avatar.dart';
+import '../../widgets/robot_avatar.dart';
 import 'scene_editor_screen.dart';
 
 class ScenesScreen extends StatefulWidget {
@@ -133,10 +135,10 @@ class _ScenesScreenState extends State<ScenesScreen> {
         backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-            icon: Icon(Icons.menu_rounded, color: colorScheme.onSurface),
+          icon: Icon(Icons.menu_rounded, color: colorScheme.onSurface),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-            tooltip: 'Menu',
-          ),
+          tooltip: 'Menu',
+        ),
         title: Text(
           'Scenes',
           style: TextStyle(
@@ -227,22 +229,38 @@ class _ScenesScreenState extends State<ScenesScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Your home, set in one tap.',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Create simple scenes by choosing devices and the state you want.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: colorScheme.onSurfaceVariant,
-                              height: 1.4,
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Your home, set in one tap.',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Create simple scenes by choosing devices and the state you want.',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: colorScheme.onSurfaceVariant,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              const RobotAvatar(
+                                type: RobotAvatarType.pointing,
+                                size: 56,
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 10),
                           Row(

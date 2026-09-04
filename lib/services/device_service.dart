@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
 import '../core/network/api_endpoints.dart';
-import '../core/network/api_exception.dart';
 import '../models/device_model.dart';
 import 'api_service.dart';
 

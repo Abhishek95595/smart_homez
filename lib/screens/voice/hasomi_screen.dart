@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
+import '../../utils/robot_avatar_mapper.dart';
+import '../../widgets/robot_avatar.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
 import '../../services/hasomi_voice_service.dart';
@@ -32,6 +34,7 @@ class _HasomiScreenState extends State<HasomiScreen>
 
   HasomiState _currentState = HasomiState.ready;
   bool _isSpeechAvailable = false;
+  bool _isSpeaking = false;
 
   String _spokenText = '';
   String _assistantGreeting = '';
@@ -160,7 +163,9 @@ class _HasomiScreenState extends State<HasomiScreen>
     }
 
     // Speak dynamic greeting aloud: "Hi {name}, what can I help you with?"
+    if (mounted) setState(() => _isSpeaking = true);
     await HasomiVoiceService.instance.speak(_assistantGreeting);
+    if (mounted) setState(() => _isSpeaking = false);
 
     // Transition to listening for user's command after sentence completion
     if (!mounted) return;
@@ -243,7 +248,9 @@ class _HasomiScreenState extends State<HasomiScreen>
     });
 
     // Speak result confirmation out loud and await sentence completion
+    if (mounted) setState(() => _isSpeaking = true);
     await HasomiVoiceService.instance.speak(result.spokenResponse);
+    if (mounted) setState(() => _isSpeaking = false);
 
     // Automatically hear / listen for user's next command after sentence completion!
     if (mounted) {
@@ -364,11 +371,14 @@ class _HasomiScreenState extends State<HasomiScreen>
                               ],
                             ),
                             child: Center(
-                              child: Image.asset(
-                                'assets/images/new_robot.png',
-                                width: 75,
-                                height: 75,
-                                fit: BoxFit.contain,
+                              child: RobotAvatar(
+                                type: RobotAvatarMapper.mapHasomiState(
+                                  _currentState,
+                                  overallSuccess:
+                                      _lastResult?.overallSuccess ?? true,
+                                  isSpeaking: _isSpeaking,
+                                ),
+                                size: 85,
                               ),
                             ),
                           ),

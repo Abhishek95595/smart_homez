@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../providers/profile_provider.dart';
+import '../../../models/robot_avatar.dart';
+import '../../../widgets/robot_avatar.dart';
 import '../profile_theme.dart';
 
 /// Modal bottom sheet allowing the user to select from available Smart Homz companion avatars.
@@ -96,10 +98,10 @@ class AvatarPickerSheet extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: avatars.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.15,
+                crossAxisCount: 3,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 0.82,
               ),
               itemBuilder: (context, index) {
                 final avatar = avatars[index];
@@ -134,31 +136,9 @@ class AvatarPickerSheet extends StatelessWidget {
                         Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: colors.panel,
-                              ),
-                              child: ClipOval(
-                                child: Image.asset(
-                                  avatar.assetPath,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Center(
-                                      child: Text(
-                                        avatar.name.substring(0, 1),
-                                        style: TextStyle(
-                                          color: colors.accent,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
+                            RobotAvatar(
+                              type: RobotAvatarTypeX.fromStorageId(avatar.id),
+                              size: 56,
                             ),
                             const SizedBox(height: 8),
                             Text(

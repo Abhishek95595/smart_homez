@@ -831,21 +831,19 @@ class _AlexaIntegrationCard extends StatelessWidget {
 class _VoiceCard extends StatelessWidget {
   final String name;
   final bool connected;
-  final String? statusSubtitle;
   final ValueChanged<bool> onChanged;
 
   const _VoiceCard({
     required this.name,
     required this.connected,
-    this.statusSubtitle,
     required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    final String subtitle =
-        statusSubtitle ??
-        (connected ? 'Connected · 6 rooms shared' : 'Not connected');
+    final String subtitle = connected
+        ? 'Connected · 6 rooms shared'
+        : 'Not connected';
 
     return Card(
       child: Padding(

@@ -193,8 +193,8 @@ class DevicesScreen extends StatelessWidget {
           builder: (ctx) => AppNavigationLeading.drawer(
             color: primaryText,
             onPressed: () => Scaffold.of(ctx).openDrawer(),
-                ),
-              ),
+          ),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

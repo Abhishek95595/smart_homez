@@ -8,6 +8,7 @@ import 'package:smart_homez/core/network/api_endpoints.dart';
 import 'package:smart_homez/models/app_user.dart';
 import 'package:smart_homez/models/client_profile.dart';
 import 'package:smart_homez/models/home_model.dart';
+import 'package:smart_homez/models/robot_avatar.dart';
 import 'package:smart_homez/models/user_role.dart';
 import 'package:smart_homez/providers/auth_provider.dart';
 import 'package:smart_homez/providers/device_provider.dart';
@@ -277,7 +278,11 @@ void main() {
         await profileProvider.selectAvatar('fire_safety');
 
         expect(profileProvider.selectedAvatarId, equals('fire_safety'));
-        expect(profileProvider.currentAvatar.name, equals('Pyro'));
+        expect(profileProvider.currentAvatar.name, equals('Alert'));
+        expect(
+          profileProvider.currentRobotAvatar,
+          equals(RobotAvatarType.alert),
+        );
 
         final prefs = await SharedPreferences.getInstance();
         expect(prefs.getString('smart_homz_avatar_id'), equals('fire_safety'));

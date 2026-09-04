@@ -2,6 +2,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../providers/profile_provider.dart';
+import '../../../models/robot_avatar.dart';
+import '../../../widgets/robot_avatar.dart';
 import '../profile_theme.dart';
 
 /// Animated circular progress ring showing the online devices ratio around the user's avatar,
@@ -72,35 +74,12 @@ class AvatarProgressRing extends StatelessWidget {
           // Avatar Image or Fallback Initials
           GestureDetector(
             onTap: onEdit,
-            child: Container(
-              width: avatarSize,
-              height: avatarSize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: colors.raised,
-                border: Border.all(color: colors.background, width: 3.0),
-              ),
-              child: ClipOval(
-                child: Image.asset(
-                  avatar.assetPath,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: colors.panel,
-                      alignment: Alignment.center,
-                      child: Text(
-                        fallbackInitials.isNotEmpty ? fallbackInitials : 'SH',
-                        style: TextStyle(
-                          color: colors.accent,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+            child: RobotAvatar(
+              type: RobotAvatarTypeX.fromStorageId(avatar.id),
+              size: avatarSize,
+              useContainer: true,
+              backgroundColor: colors.raised,
+              borderColor: colors.background,
             ),
           ),
 

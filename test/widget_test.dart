@@ -1,9 +1,15 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 
+import 'package:provider/provider.dart';
 import 'package:smart_homez/main.dart';
+import 'package:smart_homez/providers/auth_provider.dart';
+import 'package:smart_homez/screens/auth/login_screen.dart';
+import 'package:smart_homez/screens/landing/landing_screen.dart';
+import 'package:smart_homez/screens/splash/splash_screen.dart';
 
 void main() {
   late Directory hiveDirectory;
@@ -27,10 +33,23 @@ void main() {
     }
   });
 
-  testWidgets('App launches landing page and opens login', (
+  testWidgets('SmartBuildingApp launches splash screen flow', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const SmartBuildingApp());
+    await tester.pump();
+    expect(find.byType(VideoSplashScreen), findsOneWidget);
+  });
+
+  testWidgets('Landing page opens and navigates to login', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => AuthProvider(),
+        child: const MaterialApp(home: LandingScreen()),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Hasomi'), findsWidgets);
@@ -38,19 +57,20 @@ void main() {
 
     final startButton = find.text('Start').evaluate().isNotEmpty
         ? find.text('Start')
-        : find.text('Get started');
+        : find.text('Get started free');
 
     expect(startButton, findsWidgets);
     await tester.tap(startButton.first);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Login'), findsWidgets);
+    expect(find.byType(LoginScreen), findsOneWidget);
   });
 
   testWidgets('Landing page opens the interactive product demo', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const SmartBuildingApp());
+    await tester.pumpWidget(const MaterialApp(home: LandingScreen()));
     await tester.pumpAndSettle();
 
     final demoButton = find.text('See how it works');

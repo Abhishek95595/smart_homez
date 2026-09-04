@@ -49,10 +49,10 @@ class _ActivityScreenState extends State<ActivityScreen> {
         centerTitle: false,
         leading: Builder(
           builder: (ctx) => AppNavigationLeading.drawer(
-                    color: colors.textPrimary,
+            color: colors.textPrimary,
             onPressed: () => Scaffold.of(ctx).openDrawer(),
-                ),
-              ),
+          ),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

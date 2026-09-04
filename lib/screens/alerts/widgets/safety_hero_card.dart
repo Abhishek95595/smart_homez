@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../utils/robot_avatar_mapper.dart';
+import '../../../widgets/robot_avatar.dart';
 import '../alerts_theme.dart';
 
 /// Hasomi-style Critical Incident Hero Status Card.
@@ -37,17 +39,12 @@ class SafetyHeroCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(9),
-            decoration: BoxDecoration(
-              color: colors.criticalBg,
-              shape: BoxShape.circle,
+          RobotAvatar(
+            type: RobotAvatarMapper.mapAlertSeverity(
+              activeAlertCount: count,
+              maxSeverity: 'CRITICAL',
             ),
-            child: Icon(
-              Icons.warning_rounded,
-              color: colors.criticalText,
-              size: 22,
-            ),
+            size: 44,
           ),
           const SizedBox(width: 12),
           Expanded(
