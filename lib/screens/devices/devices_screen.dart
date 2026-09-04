@@ -8,6 +8,7 @@ import '../../providers/device_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 import '../../widgets/app_state_widgets.dart';
 import '../../widgets/property_management_widgets.dart';
 import '../properties/floors_screen.dart';
@@ -175,8 +176,6 @@ class DevicesScreen extends StatelessWidget {
         ? null
         : propertyProvider.propertyById(propertyId!);
 
-    final canPop = Navigator.canPop(context);
-
     const scaffoldBg = AppColors.background;
     const appBarBg = Colors.white;
     const primaryText = AppColors.textPrimary;
@@ -184,18 +183,16 @@ class DevicesScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: scaffoldBg,
+      drawer: const AppNavigationDrawer(),
       appBar: AppBar(
         backgroundColor: appBarBg,
         elevation: 0,
         scrolledUnderElevation: 1,
         centerTitle: false,
-        leading: canPop
-            ? null
-            : Builder(
-                builder: (ctx) => IconButton(
-                  icon: Icon(Icons.menu_rounded, color: primaryText, size: 28),
-                  tooltip: 'Menu',
-                  onPressed: () => openAppDrawer(ctx),
+        leading: Builder(
+          builder: (ctx) => AppNavigationLeading.drawer(
+            color: primaryText,
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
                 ),
               ),
         title: Column(

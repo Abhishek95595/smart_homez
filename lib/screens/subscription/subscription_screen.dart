@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../../models/subscription_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/subscription_provider.dart';
+import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -62,19 +64,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      drawer: const AppNavigationDrawer(),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 1,
         shadowColor: const Color(0x10000000),
-        leading: IconButton(
-          tooltip: 'Back',
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Color(0xFF0F172A),
-            size: 20,
+        leading: Builder(
+          builder: (ctx) => AppNavigationLeading.drawer(
+            color: const Color(0xFF0F172A),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
           ),
-          onPressed: () => Navigator.maybePop(context),
         ),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -5,6 +5,7 @@ import '../../models/alert.dart';
 import '../../providers/alert_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 import 'activity_theme.dart';
 import 'widgets/activity_detail_modal.dart';
 import 'widgets/activity_empty_state.dart';
@@ -38,26 +39,18 @@ class _ActivityScreenState extends State<ActivityScreen> {
     final currentUserName = auth.currentUser?.name ?? 'Operator';
     final activities = _filteredActivities(alertProvider.alerts);
 
-    final canPop = Navigator.canPop(context);
-
     return Scaffold(
       backgroundColor: colors.background,
+      drawer: const AppNavigationDrawer(),
       appBar: AppBar(
         backgroundColor: colors.panel,
         elevation: 0,
         scrolledUnderElevation: 1,
         centerTitle: false,
-        leading: canPop
-            ? null
-            : Builder(
-                builder: (ctx) => IconButton(
-                  icon: Icon(
-                    Icons.menu_rounded,
+        leading: Builder(
+          builder: (ctx) => AppNavigationLeading.drawer(
                     color: colors.textPrimary,
-                    size: 28,
-                  ),
-                  tooltip: 'Menu',
-                  onPressed: () => openAppDrawer(ctx),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
                 ),
               ),
         title: Column(

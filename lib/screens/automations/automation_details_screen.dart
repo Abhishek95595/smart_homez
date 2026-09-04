@@ -288,8 +288,8 @@ class _AutomationDetailsScreenState extends State<AutomationDetailsScreen> {
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      size: 20,
+                      Icons.arrow_back_rounded,
+                      size: 24,
                       color: Color(0xFF0F172A),
                     ),
                     tooltip: 'Back',

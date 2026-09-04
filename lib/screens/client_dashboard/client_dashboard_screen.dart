@@ -15,6 +15,7 @@ import '../../providers/property_provider.dart';
 import '../../providers/water_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 import '../../widgets/app_state_widgets.dart';
 import '../alerts/alerts_screen.dart';
 import '../devices/devices_screen.dart';
@@ -88,29 +89,10 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
         elevation: 0,
         centerTitle: true,
         leading: Builder(
-          builder: (context) {
-            final canPop = Navigator.canPop(context);
-            if (canPop) {
-              return IconButton(
-                tooltip: 'Back',
-                onPressed: () => Navigator.maybePop(context),
-                icon: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  size: 21,
-                  color: AppColors.textPrimary,
-                ),
-              );
-            }
-            return IconButton(
-              tooltip: 'Menu',
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              icon: const Icon(
-                Icons.menu_rounded,
-                size: 28,
+          builder: (ctx) => AppNavigationLeading.drawer(
                 color: AppColors.textPrimary,
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
               ),
-            );
-          },
         ),
         title: const Column(
           mainAxisSize: MainAxisSize.min,
@@ -136,17 +118,6 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           ],
         ),
         actions: [
-          Builder(
-            builder: (context) => IconButton(
-              tooltip: 'Menu',
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              icon: const Icon(
-                Icons.menu_rounded,
-                size: 26,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
           Stack(
             clipBehavior: Clip.none,
             children: [

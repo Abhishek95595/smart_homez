@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_homez/models/device.dart';
 import 'package:smart_homez/models/scene_model.dart';
+import 'package:smart_homez/providers/alert_provider.dart';
 import 'package:smart_homez/providers/auth_provider.dart';
 import 'package:smart_homez/providers/device_provider.dart';
 import 'package:smart_homez/providers/property_provider.dart';
@@ -12,6 +13,7 @@ import 'package:smart_homez/services/device_repository.dart';
 import 'package:smart_homez/services/property_repository.dart';
 import 'package:smart_homez/services/scene_service.dart';
 import 'package:smart_homez/theme/app_theme.dart';
+import 'package:smart_homez/widgets/app_navigation_drawer.dart';
 
 import 'package:smart_homez/models/property_hierarchy.dart';
 
@@ -217,6 +219,7 @@ void main() {
             create: (_) =>
                 PropertyProvider(repository: FakePropertyRepository()),
           ),
+          ChangeNotifierProvider<AlertProvider>(create: (_) => AlertProvider()),
           ChangeNotifierProvider<DeviceProvider>.value(value: deviceProvider),
           ChangeNotifierProvider<SceneProvider>.value(value: sceneProvider),
         ],
@@ -279,6 +282,22 @@ void main() {
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
       expect(scaffold.backgroundColor, isNotNull);
       expect(find.text('Movie Night'), findsOneWidget);
+    });
+
+    testWidgets('tapping hamburger menu icon opens AppNavigationDrawer', (
+      tester,
+    ) async {
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      final menuButton = find.byTooltip('Menu');
+      expect(menuButton, findsOneWidget);
+
+      await tester.tap(menuButton);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AppNavigationDrawer), findsOneWidget);
+      expect(find.text('Your Home. Smarter.'), findsOneWidget);
     });
   });
 }

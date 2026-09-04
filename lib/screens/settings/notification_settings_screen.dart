@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/notification_settings_provider.dart';
 import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 
 class NotificationSettingsScreen extends StatelessWidget {
   const NotificationSettingsScreen({super.key});
@@ -10,7 +11,6 @@ class NotificationSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final notifProvider = context.watch<NotificationSettingsProvider>();
-    final canPop = Navigator.canPop(context);
 
     return Scaffold(
       drawer: const AppNavigationDrawer(),
@@ -24,44 +24,13 @@ class NotificationSettingsScreen extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Left Circular Back / Menu Button
+                // Left Menu Button
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(22),
-                        onTap: () {
-                          if (canPop) {
-                            Navigator.of(context).pop();
-                          } else {
-                            Scaffold.of(context).openDrawer();
-                          }
-                        },
-                        child: Center(
-                          child: Icon(
-                            canPop
-                                ? Icons.chevron_left_rounded
-                                : Icons.menu_rounded,
+                  child: Builder(
+                    builder: (ctx) => AppNavigationLeading.drawer(
                             color: const Color(0xFF0F172A),
-                            size: 26,
-                          ),
-                        ),
-                      ),
+                      onPressed: () => Scaffold.of(ctx).openDrawer(),
                     ),
                   ),
                 ),

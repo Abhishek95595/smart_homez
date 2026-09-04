@@ -6,6 +6,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 import '../../widgets/app_state_widgets.dart';
 import 'homes_screen.dart';
 import 'management_dialogs.dart';
@@ -88,7 +90,13 @@ class _FloorsScreenState extends State<FloorsScreen> {
     final floors = provider.floorsFor(currentPropertyId);
 
     return Scaffold(
+      drawer: const AppNavigationDrawer(),
       appBar: AppBar(
+        leading: Builder(
+          builder: (ctx) => AppNavigationLeading.drawer(
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
         title: Text(currentProperty?.name ?? 'Floors'),
         actions: [
           if (currentPropertyId.isNotEmpty)

@@ -6,6 +6,7 @@ import '../../providers/device_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 import 'profile_theme.dart';
 import 'widgets/profile_details_card.dart';
 import 'widgets/profile_hero.dart';
@@ -26,6 +27,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   void initState() {
     super.initState();
@@ -107,35 +110,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final colors = ProfileTheme.of(context);
     final profileProvider = Provider.of<ProfileProvider?>(context);
-    final canPop = Navigator.canPop(context);
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: colors.background,
+      drawer: const AppNavigationDrawer(),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        leading: canPop
-            ? IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: colors.textPrimary,
-                  size: 18,
-                ),
-              )
-            : Builder(
-                builder: (ctx) => IconButton(
-                  icon: Icon(
-                    Icons.menu_rounded,
+        leading: AppNavigationLeading.drawer(
                     color: colors.textPrimary,
-                    size: 26,
-                  ),
-                  tooltip: 'Menu',
-                  onPressed: () => openAppDrawer(ctx),
-                ),
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
               ),
         title: Text(
           'Profile',

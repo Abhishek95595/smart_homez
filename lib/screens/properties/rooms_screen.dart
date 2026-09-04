@@ -7,6 +7,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 import '../../widgets/app_state_widgets.dart';
 import '../devices/devices_screen.dart';
 import 'floors_screen.dart';
@@ -122,7 +124,13 @@ class _RoomsScreenState extends State<RoomsScreen> {
     final String titleText = currentFloor?.name ?? resolvedHomeName ?? 'Rooms';
 
     return Scaffold(
+      drawer: const AppNavigationDrawer(),
       appBar: AppBar(
+        leading: Builder(
+          builder: (ctx) => AppNavigationLeading.drawer(
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
         title: Text(titleText),
         actions: [
           if (currentFloor != null)

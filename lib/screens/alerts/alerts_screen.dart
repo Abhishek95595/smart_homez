@@ -6,6 +6,8 @@ import '../../models/app_user.dart';
 import '../../models/user_role.dart';
 import '../../providers/alert_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 import 'alerts_theme.dart';
 import 'widgets/alert_details_sheet.dart';
 import 'widgets/alert_filter_scroller.dart';
@@ -59,14 +61,18 @@ class _AlertsScreenState extends State<AlertsScreen> {
 
     return Scaffold(
       backgroundColor: colors.background,
+      drawer: const AppNavigationDrawer(),
       appBar: AppBar(
         backgroundColor: colors.panel,
         elevation: 0,
         scrolledUnderElevation: 1,
         centerTitle: false,
-        leading: Navigator.canPop(context)
-            ? BackButton(color: colors.textPrimary)
-            : null,
+        leading: Builder(
+          builder: (ctx) => AppNavigationLeading.drawer(
+            color: colors.textPrimary,
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

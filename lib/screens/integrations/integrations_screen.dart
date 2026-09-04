@@ -9,6 +9,8 @@ import '../../features/integrations/alexa/alexa_wifi_discovery_modal.dart';
 import '../../providers/family_provider.dart';
 import '../../services/alexa_integration_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 import '../family/family_invite_screen.dart';
 
 class IntegrationsScreen extends StatefulWidget {
@@ -249,7 +251,13 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppNavigationDrawer(),
       appBar: AppBar(
+        leading: Builder(
+          builder: (ctx) => AppNavigationLeading.drawer(
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
         title: const Text('Integrations'),
         bottom: TabBar(
           controller: _controller,

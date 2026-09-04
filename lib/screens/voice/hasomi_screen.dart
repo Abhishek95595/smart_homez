@@ -279,9 +279,9 @@ class _HasomiScreenState extends State<HasomiScreen>
         elevation: 0,
         leading: IconButton(
           icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
+            Icons.arrow_back_rounded,
             color: Colors.white,
-            size: 20,
+            size: 24,
           ),
           onPressed: () => Navigator.pop(context),
         ),

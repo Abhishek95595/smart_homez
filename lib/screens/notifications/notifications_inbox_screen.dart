@@ -167,8 +167,8 @@ class _NotificationsInboxScreenState extends State<NotificationsInboxScreen> {
                               ),
                             ),
                             child: const Icon(
-                              Icons.arrow_back_ios_new_rounded,
-                              size: 17,
+                              Icons.arrow_back_rounded,
+                              size: 22,
                               color: Color(0xFF0F172A),
                             ),
                           ),

@@ -12,6 +12,7 @@ import '../../providers/energy_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../providers/tariff_provider.dart';
 import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 
 class EnergyScreen extends StatefulWidget {
   const EnergyScreen({super.key});
@@ -373,16 +374,14 @@ class _EnergyScreenState extends State<EnergyScreen>
               ? energyProvider.liveTelemetryWatts
               : 0.0);
 
-    final canPop = Navigator.canPop(context);
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Modern clean canvas
+      drawer: const AppNavigationDrawer(),
       body: SafeArea(
         child: Column(
           children: [
             // 1. Modern Light Header
             _ModernEnergyHeader(
-              canPop: canPop,
               liveWatts: currentLiveWatts,
               pulseAnimation: _pulseController,
             ),
@@ -481,12 +480,10 @@ class _EnergyScreenState extends State<EnergyScreen>
 // TOP LIGHT HEADER
 // ============================================================================
 class _ModernEnergyHeader extends StatelessWidget {
-  final bool canPop;
   final double liveWatts;
   final Animation<double> pulseAnimation;
 
   const _ModernEnergyHeader({
-    required this.canPop,
     required this.liveWatts,
     required this.pulseAnimation,
   });
@@ -498,24 +495,10 @@ class _ModernEnergyHeader extends StatelessWidget {
       color: Colors.white,
       child: Row(
         children: [
-          if (canPop)
-            IconButton(
-              tooltip: 'Back',
-              onPressed: () => Navigator.maybePop(context),
-              icon: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 20,
-                color: Color(0xFF0F172A),
-              ),
-            )
-          else
-            IconButton(
-              tooltip: 'Menu',
-              onPressed: () => openAppDrawer(context),
-              icon: const Icon(
-                Icons.menu_rounded,
-                size: 26,
-                color: Color(0xFF0F172A),
+          Builder(
+            builder: (ctx) => AppNavigationLeading.drawer(
+              color: const Color(0xFF0F172A),
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
               ),
             ),
           const SizedBox(width: 4),

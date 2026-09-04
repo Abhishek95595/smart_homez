@@ -8,6 +8,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
 import '../../providers/family_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 
 class FamilyInviteScreen extends StatefulWidget {
   const FamilyInviteScreen({super.key});
@@ -148,18 +150,17 @@ class _FamilyInviteScreenState extends State<FamilyInviteScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      drawer: const AppNavigationDrawer(),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: Color(0xFF0F172A),
-            size: 24,
+        leading: Builder(
+          builder: (ctx) => AppNavigationLeading.drawer(
+            color: const Color(0xFF0F172A),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
           ),
-          onPressed: () => Navigator.maybePop(context),
         ),
         title: const Text(
           'Family & Device Access',

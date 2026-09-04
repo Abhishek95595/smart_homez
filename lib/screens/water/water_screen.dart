@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/water_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 import '../alerts/alerts_screen.dart';
 
 class WaterScreen extends StatefulWidget {
@@ -203,26 +204,14 @@ class _WaterHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canPop = Navigator.canPop(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 3),
       child: Row(
         children: [
-          if (canPop)
-            IconButton(
-              tooltip: 'Back',
-              onPressed: () => Navigator.maybePop(context),
-              icon: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 21,
-                color: AppColors.textPrimary,
-              ),
-            ),
           Builder(
-            builder: (context) => IconButton(
-              tooltip: 'Menu',
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              icon: const Icon(Icons.menu_rounded, size: 28),
+            builder: (ctx) => AppNavigationLeading.drawer(
+              color: AppColors.textPrimary,
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
             ),
           ),
           Expanded(

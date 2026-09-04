@@ -8,6 +8,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../services/hierarchy_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 import '../properties/management_dialogs.dart';
 
 class VendorNodesScreen extends StatefulWidget {
@@ -277,7 +279,15 @@ class _VendorNodesScreenState extends State<VendorNodesScreen> {
     final auth = context.watch<AuthProvider>();
     if (!auth.role.canAdminister) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Vendor Nodes')),
+        drawer: const AppNavigationDrawer(),
+        appBar: AppBar(
+          leading: Builder(
+            builder: (ctx) => AppNavigationLeading.drawer(
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+            ),
+          ),
+          title: const Text('Vendor Nodes'),
+        ),
         body: const Center(
           child: Padding(
             padding: EdgeInsets.all(24.0),
@@ -292,7 +302,13 @@ class _VendorNodesScreenState extends State<VendorNodesScreen> {
     }
 
     return Scaffold(
+      drawer: const AppNavigationDrawer(),
       appBar: AppBar(
+        leading: Builder(
+          builder: (ctx) => AppNavigationLeading.drawer(
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
         title: const Text('Vendor Nodes'),
         actions: [
           IconButton(

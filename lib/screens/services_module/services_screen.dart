@@ -8,6 +8,8 @@ import '../../models/user_role.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/ticket_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 
 class ServicesScreen extends StatefulWidget {
   const ServicesScreen({super.key});
@@ -41,7 +43,13 @@ class _ServicesScreenState extends State<ServicesScreen>
     final canManageTickets = role.canManageTickets;
 
     return Scaffold(
+      drawer: const AppNavigationDrawer(),
       appBar: AppBar(
+        leading: Builder(
+          builder: (ctx) => AppNavigationLeading.drawer(
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
         title: const Text('Society Services'),
         bottom: TabBar(
           controller: _tabController,

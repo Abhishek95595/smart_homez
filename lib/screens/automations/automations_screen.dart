@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/automation_model.dart';
-import '../../providers/alert_provider.dart';
 import '../../providers/automation_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 import '../../widgets/app_state_widgets.dart';
 import 'automation_details_screen.dart';
 import 'create_automation_screen.dart';
@@ -210,6 +210,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      drawer: const AppNavigationDrawer(),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(74),
         child: Container(
@@ -220,14 +221,9 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
               child: Row(
                 children: [
                   Builder(
-                    builder: (ctx) => IconButton(
-                      onPressed: () => openAppDrawer(ctx),
-                      icon: Icon(
-                        Icons.menu_rounded,
-                        size: 28,
+                    builder: (ctx) => AppNavigationLeading.drawer(
                         color: colorScheme.onSurface,
-                      ),
-                      tooltip: 'Menu',
+                      onPressed: () => Scaffold.of(ctx).openDrawer(),
                     ),
                   ),
                   Expanded(

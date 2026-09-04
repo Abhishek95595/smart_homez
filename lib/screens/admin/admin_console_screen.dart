@@ -9,6 +9,8 @@ import '../../providers/device_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../providers/ticket_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 
 /// Admin Console — Super Admin / Facility Manager only.
 /// Building/Tower/Flat hierarchy + user roster + device registry summary,
@@ -51,7 +53,15 @@ class _AdminConsoleScreenState extends State<AdminConsoleScreen>
     final auth = context.watch<AuthProvider>();
     if (!auth.role.canAccessAdminConsole) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Admin Console')),
+        drawer: const AppNavigationDrawer(),
+        appBar: AppBar(
+          leading: Builder(
+            builder: (ctx) => AppNavigationLeading.drawer(
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+            ),
+          ),
+          title: const Text('Admin Console'),
+        ),
         body: const Center(
           child: Padding(
             padding: EdgeInsets.all(24.0),
@@ -66,7 +76,13 @@ class _AdminConsoleScreenState extends State<AdminConsoleScreen>
     }
 
     return Scaffold(
+      drawer: const AppNavigationDrawer(),
       appBar: AppBar(
+        leading: Builder(
+          builder: (ctx) => AppNavigationLeading.drawer(
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
         title: const Text('Admin Console'),
         bottom: TabBar(
           controller: _tabController,

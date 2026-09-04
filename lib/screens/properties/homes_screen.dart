@@ -6,6 +6,8 @@ import '../../models/device.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
 import '../../providers/property_provider.dart';
+import '../../widgets/app_navigation_drawer.dart';
+import '../../widgets/app_navigation_leading.dart';
 import '../../widgets/app_state_widgets.dart';
 import '../../widgets/property_summary_card.dart';
 import '../devices/device_history_screen.dart';
@@ -59,7 +61,13 @@ class _HomesScreenState extends State<HomesScreen> {
     final propertyProvider = context.watch<PropertyProvider>();
 
     return Scaffold(
+      drawer: const AppNavigationDrawer(),
       appBar: AppBar(
+        leading: Builder(
+          builder: (ctx) => AppNavigationLeading.drawer(
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
         title: const Text('Properties & Homes'),
         actions: [
           IconButton(

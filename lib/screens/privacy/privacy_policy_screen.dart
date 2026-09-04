@@ -21,9 +21,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
           tooltip: 'Back',
           onPressed: () => Navigator.maybePop(context),
           icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
+            Icons.arrow_back_rounded,
             color: AppColors.textPrimary,
-            size: 21,
+            size: 24,
           ),
         ),
         centerTitle: true,

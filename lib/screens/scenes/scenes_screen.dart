@@ -16,6 +16,7 @@ class ScenesScreen extends StatefulWidget {
 }
 
 class _ScenesScreenState extends State<ScenesScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
   String? _currentClientId;
 
@@ -125,17 +126,17 @@ class _ScenesScreenState extends State<ScenesScreen> {
     final clientId = _getClientId();
 
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: const AppNavigationDrawer(),
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: colorScheme.surface,
         elevation: 0,
-        leading: Builder(
-          builder: (ctx) => IconButton(
+        leading: IconButton(
             icon: Icon(Icons.menu_rounded, color: colorScheme.onSurface),
-            onPressed: () => openAppDrawer(ctx),
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
             tooltip: 'Menu',
           ),
-        ),
         title: Text(
           'Scenes',
           style: TextStyle(
