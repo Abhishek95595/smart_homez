@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.disconnectAlexa = exports.getAlexaStatus = exports.getAlexaLinkToken = exports.syncDevices = exports.getDashboard = exports.sendDeviceCommand = exports.getDevice = exports.getDevices = exports.getRooms = exports.getFloors = exports.getHomes = exports.resendTenantRegistrationOtp = exports.verifyTenantClient = exports.registerTenantClient = exports.getTenantSession = void 0;
+exports.getTenantApiToken = exports.disconnectAlexa = exports.getAlexaStatus = exports.getAlexaLinkToken = exports.syncDevices = exports.getDashboard = exports.sendDeviceCommand = exports.getDevice = exports.getDevices = exports.getRooms = exports.getFloors = exports.getHomes = exports.resendTenantRegistrationOtp = exports.verifyTenantClient = exports.registerTenantClient = exports.getTenantSession = void 0;
 const app_1 = require("firebase-admin/app");
 const firestore_1 = require("firebase-admin/firestore");
 const messaging_1 = require("firebase-admin/messaging");
@@ -56,10 +56,14 @@ axios_1.default.defaults.timeout = 8000; // 8s global timeout for all AuraBrain 
 (0, app_1.initializeApp)();
 const db = (0, firestore_1.getFirestore)();
 // Load Environment Configurations
-const TENANT_BASE_URL = process.env.TENANT_BASE_URL || "https://tenant-api-qa.omnihome.in";
+const TENANT_BASE_URL = process.env.TENANT_BASE_URL || "https://tenant-api.omnihome.in";
+const ALEXA_BASE_URL = process.env.ALEXA_BASE_URL || "https://tenant-api.omnihome.in";
+const ALEXA_REDIRECT_URI = process.env.ALEXA_REDIRECT_URI || "hasomi.com.homeautomation://alexa-callback";
 // Secure Secrets from Google Cloud Secret Manager
 const TENANT_CLIENT_ID = (0, params_1.defineSecret)("TENANT_CLIENT_ID");
 const TENANT_CLIENT_SECRET = (0, params_1.defineSecret)("TENANT_CLIENT_SECRET");
+const AURABRAIN_CLIENT_ID = (0, params_1.defineSecret)("AURABRAIN_CLIENT_ID");
+const AURABRAIN_CLIENT_SECRET = (0, params_1.defineSecret)("AURABRAIN_CLIENT_SECRET");
 const tokenCache = {
     token: null,
     expiresAt: 0,
@@ -81,9 +85,34 @@ async function getTenantToken() {
     inFlightTokenPromise = (async () => {
         try {
             console.log("[BFF] Fetching new Tenant JWT token from AuraBrain...");
+            let cId = "";
+            let cSecret = "";
+            try {
+                if (AURABRAIN_CLIENT_ID.value())
+                    cId = AURABRAIN_CLIENT_ID.value();
+                else if (TENANT_CLIENT_ID.value())
+                    cId = TENANT_CLIENT_ID.value();
+                if (AURABRAIN_CLIENT_SECRET.value())
+                    cSecret = AURABRAIN_CLIENT_SECRET.value();
+                else if (TENANT_CLIENT_SECRET.value())
+                    cSecret = TENANT_CLIENT_SECRET.value();
+            }
+            catch (_) {
+                if (process.env.AURABRAIN_CLIENT_ID)
+                    cId = process.env.AURABRAIN_CLIENT_ID;
+                else if (process.env.TENANT_CLIENT_ID)
+                    cId = process.env.TENANT_CLIENT_ID;
+                if (process.env.AURABRAIN_CLIENT_SECRET)
+                    cSecret = process.env.AURABRAIN_CLIENT_SECRET;
+                else if (process.env.TENANT_CLIENT_SECRET)
+                    cSecret = process.env.TENANT_CLIENT_SECRET;
+            }
+            if (!cId || !cSecret) {
+                throw new Error("Missing required Secret Manager credentials (AURABRAIN_CLIENT_ID / AURABRAIN_CLIENT_SECRET).");
+            }
             const response = await axios_1.default.post(`${TENANT_BASE_URL}/api/Auth/token`, {
-                clientId: TENANT_CLIENT_ID.value(),
-                clientSecret: TENANT_CLIENT_SECRET.value(),
+                clientId: cId,
+                clientSecret: cSecret,
             }, { timeout: 10000 });
             const data = response.data;
             if (!data || data.success !== true || !data.token) {
@@ -96,8 +125,8 @@ async function getTenantToken() {
             return tokenCache.token;
         }
         catch (error) {
-            console.error("[BFF] Error acquiring Tenant token:", error.message || error);
-            throw new https_1.HttpsError("unauthenticated", "Unable to authenticate with AuraBrain Tenant API.");
+            console.error("[BFF] Error acquiring dynamic Tenant token:", error.message || error);
+            throw error;
         }
         finally {
             inFlightTokenPromise = null;
@@ -143,7 +172,7 @@ async function getMappedClientId(uid, auth) {
         console.warn("[BFF] getMappedClientId notice:", err.message);
     }
     // Fallback to active smart home client with real devices
-    return "03d6aaff-f21b-41fc-902f-8184dacd0861";
+    return "6782976c-e9a4-41c9-a754-05e4ba0a97b2";
 }
 /**
  * Checks if a particular device belongs to the client ID.
@@ -499,7 +528,7 @@ exports.registerTenantClient = (0, https_1.onCall)({
         // 3. Fallback: If AuraBrain SMS delivery is disabled on this tenant (e.g. sms_unavailable),
         // the user is ALREADY phone-authenticated via Firebase. Map user to primary active client.
         console.log(`[BFF] AuraBrain SMS disabled / no pending client ID. Mapping ${uid} to active client.`);
-        let targetClientId = "03d6aaff-f21b-41fc-902f-8184dacd0861"; // Default to Aditya Vikram Singh
+        let targetClientId = "6782976c-e9a4-41c9-a754-05e4ba0a97b2"; // Default to Aditya Vikram Singh
         try {
             const listRes = await axios_1.default.get(`${TENANT_BASE_URL}/api/v1/clients`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -963,15 +992,28 @@ exports.getAlexaLinkToken = (0, https_1.onCall)({
     }
     const clientId = await getMappedClientId(request.auth.uid, request.auth);
     const token = await getTenantToken();
-    const redirectUri = request.data?.redirectUri || "hasomi.com.homeautomation://alexa-callback";
+    const redirectUri = request.data?.redirectUri || ALEXA_REDIRECT_URI;
     const state = request.data?.state || "any";
     try {
-        const response = await axios_1.default.post(`${TENANT_BASE_URL}/api/integrations/alexa/link-token`, {
+        const response = await axios_1.default.post(`${ALEXA_BASE_URL}/api/integrations/alexa/link-token`, {
             clientId: clientId,
             redirectUri: redirectUri,
             state: state,
         }, { headers: { Authorization: `Bearer ${token}` } });
-        return response.data;
+        const data = response.data;
+        if (data && typeof data === "object") {
+            if (typeof data.authorizeUrl === "string") {
+                data.authorizeUrl = data.authorizeUrl
+                    .replace("tenant-api-qa.omnihome.in", "omnihome.in")
+                    .replace("tenant-api.omnihome.in", "omnihome.in");
+            }
+            if (typeof data.authorizationUrl === "string") {
+                data.authorizationUrl = data.authorizationUrl
+                    .replace("tenant-api-qa.omnihome.in", "omnihome.in")
+                    .replace("tenant-api.omnihome.in", "omnihome.in");
+            }
+        }
+        return data;
     }
     catch (error) {
         console.error("[BFF] getAlexaLinkToken error:", error.response?.data || error.message || error);
@@ -991,7 +1033,7 @@ exports.getAlexaStatus = (0, https_1.onCall)({
     }
     const token = await getTenantToken();
     try {
-        const response = await axios_1.default.get(`${TENANT_BASE_URL}/api/integrations/alexa/status`, { headers: { Authorization: `Bearer ${token}` } });
+        const response = await axios_1.default.get(`${ALEXA_BASE_URL}/api/integrations/alexa/status`, { headers: { Authorization: `Bearer ${token}` } });
         return response.data;
     }
     catch (error) {
@@ -1012,12 +1054,92 @@ exports.disconnectAlexa = (0, https_1.onCall)({
     }
     const token = await getTenantToken();
     try {
-        const response = await axios_1.default.post(`${TENANT_BASE_URL}/api/integrations/alexa/disconnect`, {}, { headers: { Authorization: `Bearer ${token}` } });
+        const response = await axios_1.default.post(`${ALEXA_BASE_URL}/api/integrations/alexa/disconnect`, {}, { headers: { Authorization: `Bearer ${token}` } });
         return response.data;
     }
     catch (error) {
         console.error("[BFF] disconnectAlexa error:", error.response?.data || error.message || error);
         return { success: true };
+    }
+});
+/**
+ * 16. getTenantApiToken (Callable)
+ * Securely brokers AuraBrain Tenant API JWTs to authenticated mobile clients.
+ * Reads Client ID and Client Secret server-side via Google Secret Manager.
+ */
+exports.getTenantApiToken = (0, https_1.onCall)({
+    region: "asia-south1",
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
+    enforceAppCheck: false,
+}, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "The function must be called by an authenticated Firebase user.");
+    }
+    try {
+        let cId = "";
+        let cSecret = "";
+        try {
+            if (AURABRAIN_CLIENT_ID.value())
+                cId = AURABRAIN_CLIENT_ID.value();
+            else if (TENANT_CLIENT_ID.value())
+                cId = TENANT_CLIENT_ID.value();
+            if (AURABRAIN_CLIENT_SECRET.value())
+                cSecret = AURABRAIN_CLIENT_SECRET.value();
+            else if (TENANT_CLIENT_SECRET.value())
+                cSecret = TENANT_CLIENT_SECRET.value();
+        }
+        catch (_) {
+            if (process.env.AURABRAIN_CLIENT_ID)
+                cId = process.env.AURABRAIN_CLIENT_ID;
+            else if (process.env.TENANT_CLIENT_ID)
+                cId = process.env.TENANT_CLIENT_ID;
+            if (process.env.AURABRAIN_CLIENT_SECRET)
+                cSecret = process.env.AURABRAIN_CLIENT_SECRET;
+            else if (process.env.TENANT_CLIENT_SECRET)
+                cSecret = process.env.TENANT_CLIENT_SECRET;
+        }
+        if (!cId || !cSecret) {
+            throw new https_1.HttpsError("failed-precondition", "Missing required backend secrets for Tenant token generation.");
+        }
+        console.log(`[getTenantApiToken] Authenticated request for uid: ${request.auth.uid}. Requesting Tenant token...`);
+        const response = await axios_1.default.post(`${TENANT_BASE_URL}/api/Auth/token`, {
+            clientId: cId,
+            clientSecret: cSecret,
+        }, { timeout: 10000 });
+        const data = response.data;
+        if (!data || data.success !== true || !data.token) {
+            throw new https_1.HttpsError("internal", "Failed to obtain Tenant API token from server.");
+        }
+        const token = data.token;
+        // Validate returned JWT claims
+        const parts = token.split(".");
+        if (parts.length !== 3) {
+            throw new https_1.HttpsError("internal", "Invalid JWT format returned from auth server.");
+        }
+        const payload = JSON.parse(Buffer.from(parts[1], "base64").toString("utf-8"));
+        const nowSec = Math.floor(Date.now() / 1000);
+        if (payload.iss !== "AuraBrain" ||
+            payload.aud !== "AuraBrainMobile" ||
+            payload.TenantId !== "6d11e924-d046-400d-bc30-62a06e13de61" ||
+            payload.ClientId !== "anvyaaai_AEB3" ||
+            payload.PermissionLevel !== "write" ||
+            !payload.exp ||
+            payload.exp <= nowSec) {
+            throw new https_1.HttpsError("internal", "Tenant API token claims validation failed.");
+        }
+        const expiresAt = data.expiresAt || new Date(payload.exp * 1000).toISOString();
+        console.log(`[getTenantApiToken] Successfully validated and returning token (expiresAt: ${expiresAt})`);
+        return {
+            token: token,
+            expiresAt: expiresAt,
+        };
+    }
+    catch (err) {
+        if (err instanceof https_1.HttpsError) {
+            throw err;
+        }
+        console.error("[getTenantApiToken] Error exchanging token:", err.response?.data || err.message || err);
+        throw new https_1.HttpsError("internal", "Failed to retrieve Tenant API token.");
     }
 });
 //# sourceMappingURL=index.js.map

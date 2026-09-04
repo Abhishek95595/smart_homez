@@ -15,6 +15,8 @@ import 'profile/profile_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_navigation_drawer.dart';
 import '../widgets/hasomi_bottom_voice_bar.dart';
+import '../features/home_setup/providers/home_setup_provider.dart';
+import '../features/home_setup/screens/home_setup_screen.dart';
 
 class MainShell extends StatefulWidget {
   final int initialIndex;
@@ -72,7 +74,7 @@ class MainShellState extends State<MainShell> {
       final propertyProvider = context.read<PropertyProvider>();
 
       final clientUuid =
-          auth.resolvedClientUuid ?? '03d6aaff-f21b-41fc-902f-8184dacd0861';
+          auth.resolvedClientUuid ?? '6782976c-e9a4-41c9-a754-05e4ba0a97b2';
       propertyProvider.setClientId(clientUuid);
       propertyProvider.syncFromApi(clientUuid);
       deviceProvider.syncFromApi(clientUuid);
@@ -228,7 +230,8 @@ class MainShellState extends State<MainShell> {
                 setState(() => _isDrawerOpen = isOpened);
               }
             },
-            floatingActionButton: (safeIndex == 0 &&
+            floatingActionButton:
+                (safeIndex == 0 &&
                     !_isDrawerOpen &&
                     !desktop &&
                     !_isChildRouteActive)
@@ -412,6 +415,16 @@ class _TabNavigator extends StatelessWidget {
       key: tab.navigatorKey,
       observers: observers,
       onGenerateRoute: (settings) {
+        if (settings.name == '/homes/setup') {
+          return MaterialPageRoute(
+            builder: (ctx) {
+              try {
+                ctx.read<HomeSetupProvider>().reset();
+              } catch (_) {}
+              return const HomeSetupScreen();
+            },
+          );
+        }
         return MaterialPageRoute(builder: (context) => tab.page);
       },
     );

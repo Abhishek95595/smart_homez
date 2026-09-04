@@ -11,6 +11,8 @@ class AuthService {
     : _api = apiClient ?? ApiClient(),
       _storage = storage ?? const FlutterSecureStorage();
 
+  static const String tenantApiJwtKey = 'tenant_api_jwt';
+  static const String tenantApiJwtExpiresAtKey = 'tenant_api_jwt_expires_at';
   static const String platformUserJwtKey = 'platform_user_jwt';
   static const String clientApiJwtKey = 'client_api_jwt';
   static const String _apiClientIdKey = 'api_client_id';
@@ -19,53 +21,9 @@ class AuthService {
   final ApiClient _api;
   final FlutterSecureStorage _storage;
 
-  /// Exchanges API Client ID and Client Secret for a short-lived JWT.
-  Future<AuthResponse> fetchToken({
-    required String clientId,
-    required String clientSecret,
-  }) async {
-    try {
-      final response = await _api.post(
-        ApiEndpoints.authToken,
-        data: {
-          'clientId': clientId.trim(),
-          'clientSecret': clientSecret.trim(),
-        },
-      );
-
-      final AuthResponse auth = AuthResponse.fromJson(response.data);
-
-      if (!auth.success) {
-        throw Exception(auth.error ?? 'API authentication failed.');
-      }
-
-      final String? token = auth.token;
-
-      if (token == null || token.isEmpty) {
-        throw Exception('JWT token was not returned by the API.');
-      }
-
-      await _storage.write(key: clientApiJwtKey, value: token);
-      await _storage.delete(key: 'jwt_token');
-
-      final String savedApiClientId = auth.clientId?.isNotEmpty == true
-          ? auth.clientId!
-          : clientId.trim();
-
-      await _storage.write(key: _apiClientIdKey, value: savedApiClientId);
-      await _storage.write(
-        key: 'api_client_secret',
-        value: clientSecret.trim(),
-      );
-
-      debugPrint('[AuthService] Client API token saved successfully.');
-
-      return auth;
-    } catch (error) {
-      debugPrint('[AuthService] Token exchange failed: $error');
-
-      rethrow;
-    }
+  /// Fetches a production Tenant API token from the Firebase Cloud Functions token broker (BFF).
+  Future<String?> fetchTenantApiTokenFromBff() async {
+    return _api.getValidTenantApiToken();
   }
 
   /// Email/password login for tenant or mobile users.
@@ -292,8 +250,38 @@ class AuthService {
     await _storage.write(key: 'jwt_token', value: token);
   }
 
-  Future<String?> getResolvedClientUuid() {
-    return _storage.read(key: _resolvedClientUuidKey);
+  Future<void> saveFirebaseIdToken(String token) async {
+    await _storage.write(key: 'firebase_id_token', value: token);
+  }
+
+  Future<String?> getFirebaseIdToken() {
+    return _storage.read(key: 'firebase_id_token');
+  }
+
+  Future<String?> getResolvedClientUuid() async {
+    final String? stored = await _storage.read(key: _resolvedClientUuidKey);
+    final bool needsMigration =
+        stored == null ||
+        stored.trim().isEmpty ||
+        stored.trim() != ApiEndpoints.productionClientGuid;
+    final String resolvedValue = ApiEndpoints.productionClientGuid;
+
+    if (needsMigration) {
+      await _storage.write(
+        key: _resolvedClientUuidKey,
+        value: ApiEndpoints.productionClientGuid,
+      );
+      await _storage.write(
+        key: 'user_id',
+        value: ApiEndpoints.productionClientGuid,
+      );
+    }
+
+    debugPrint('[Client UUID] stored value = $stored');
+    debugPrint('[Client UUID] resolved value = $resolvedValue');
+    debugPrint('[Client UUID] migrated = ${needsMigration ? "true" : "false"}');
+
+    return resolvedValue;
   }
 
   Future<void> saveResolvedClientUuid(String clientUuid) async {
@@ -304,6 +292,8 @@ class AuthService {
 
   Future<void> logout() async {
     await Future.wait([
+      _storage.delete(key: tenantApiJwtKey),
+      _storage.delete(key: tenantApiJwtExpiresAtKey),
       _storage.delete(key: platformUserJwtKey),
       _storage.delete(key: clientApiJwtKey),
       _storage.delete(key: 'jwt_token'),

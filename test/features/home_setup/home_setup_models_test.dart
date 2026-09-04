@@ -39,7 +39,7 @@ void main() {
 
         expect(
           HomeLayoutTemplateType.studio.defaultFlatRoomNames,
-          contains('Living & Bedroom'),
+          contains('Living & Sleeping Area'),
         );
         expect(HomeLayoutTemplateType.twoBhk.defaultFlatRoomNames.length, 7);
         expect(HomeLayoutTemplateType.threeBhk.defaultFlatRoomNames.length, 9);

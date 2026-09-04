@@ -23,7 +23,10 @@ class _FamilyInviteScreenState extends State<FamilyInviteScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final auth = context.read<AuthProvider>();
-      final clientUuid = auth.resolvedClientUuid ?? auth.resolvedClientId ?? '03d6aaff-f21b-41fc-902f-8184dacd0861';
+      final clientUuid =
+          auth.resolvedClientUuid ??
+          auth.resolvedClientId ??
+          '6782976c-e9a4-41c9-a754-05e4ba0a97b2';
       context.read<FamilyProvider>().setClientId(clientUuid);
       context.read<FamilyProvider>().fetchMembers(silent: true);
     });

@@ -32,13 +32,20 @@ class FamilyProvider extends ChangeNotifier {
   int get pendingInvitesCount => _members.where((m) => m.isPending).length;
 
   Future<String?> _resolveClientId() async {
-    if (_cachedClientId != null && _cachedClientId!.isNotEmpty) {
+    if (_cachedClientId != null &&
+        _cachedClientId!.isNotEmpty &&
+        _cachedClientId!.length == 36) {
       return _cachedClientId;
     }
     String? id = await _authService.getResolvedClientUuid();
-    id ??= await _storage.read(key: 'api_client_id');
-    id ??= await _storage.read(key: 'resolved_client_uuid');
-    id ??= '03d6aaff-f21b-41fc-902f-8184dacd0861'; // Match global app default user GUID
+    if (id == null || id.trim().length != 36) {
+      final String? stored = await _storage.read(key: 'resolved_client_uuid');
+      if (stored != null && stored.trim().length == 36) {
+        id = stored.trim();
+      } else {
+        id = '6782976c-e9a4-41c9-a754-05e4ba0a97b2';
+      }
+    }
     _cachedClientId = id;
     return id;
   }

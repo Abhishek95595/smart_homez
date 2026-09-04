@@ -8,7 +8,7 @@ class SubscriptionService {
   final ApiService _apiService;
 
   SubscriptionService({ApiService? apiService})
-      : _apiService = apiService ?? ApiService();
+    : _apiService = apiService ?? ApiService();
 
   /// 1. GET /api/v1/clients/{clientId}/subscription - Fetch user active subscription
   Future<UserSubscription> getSubscription(String clientId) async {
@@ -17,11 +17,15 @@ class SubscriptionService {
       final response = await _apiService.get(endpoint);
       final data = response.data;
       if (data is Map<String, dynamic>) {
-        final payload = data['data'] is Map ? data['data'] as Map<String, dynamic> : data;
+        final payload = data['data'] is Map
+            ? data['data'] as Map<String, dynamic>
+            : data;
         return UserSubscription.fromJson(payload);
       }
     } catch (e) {
-      debugPrint('[SubscriptionService] Failed to load subscription from API: $e');
+      debugPrint(
+        '[SubscriptionService] Failed to load subscription from API: $e',
+      );
     }
 
     return UserSubscription(
@@ -49,11 +53,17 @@ class SubscriptionService {
       final data = response.data;
       if (data is Map && data['data'] is List) {
         return (data['data'] as List)
-            .map((item) => SubscriptionPlan.fromJson(Map<String, dynamic>.from(item as Map)))
+            .map(
+              (item) => SubscriptionPlan.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
             .toList();
       }
     } catch (e) {
-      debugPrint('[SubscriptionService] Failed to fetch plans from API: $e. Using default plans.');
+      debugPrint(
+        '[SubscriptionService] Failed to fetch plans from API: $e. Using default plans.',
+      );
     }
 
     return defaultPlans;
@@ -83,7 +93,9 @@ class SubscriptionService {
         return Map<String, dynamic>.from(data);
       }
     } catch (e) {
-      debugPrint('[SubscriptionService] Checkout API call error: $e, simulating successful order');
+      debugPrint(
+        '[SubscriptionService] Checkout API call error: $e, simulating successful order',
+      );
     }
 
     return {
@@ -95,15 +107,16 @@ class SubscriptionService {
   }
 
   /// 4. POST /api/v1/clients/{clientId}/subscription/upgrade - Upgrade / Change subscription plan
-  Future<bool> upgradePlan(String clientId, String planId, String billingCycle) async {
+  Future<bool> upgradePlan(
+    String clientId,
+    String planId,
+    String billingCycle,
+  ) async {
     try {
       final endpoint = ApiEndpoints.upgradeSubscription(clientId);
       final response = await _apiService.post(
         endpoint,
-        body: {
-          'planId': planId,
-          'billingCycle': billingCycle,
-        },
+        body: {'planId': planId, 'billingCycle': billingCycle},
       );
       final data = response.data;
       if (data is Map && data['success'] == false) {
@@ -111,7 +124,9 @@ class SubscriptionService {
       }
       return true;
     } catch (e) {
-      debugPrint('[SubscriptionService] Upgrade plan API call: $e, simulating successful upgrade');
+      debugPrint(
+        '[SubscriptionService] Upgrade plan API call: $e, simulating successful upgrade',
+      );
       return true;
     }
   }
@@ -124,11 +139,17 @@ class SubscriptionService {
       final data = response.data;
       if (data is Map && data['data'] is List) {
         return (data['data'] as List)
-            .map((item) => SubscriptionInvoice.fromJson(Map<String, dynamic>.from(item as Map)))
+            .map(
+              (item) => SubscriptionInvoice.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
             .toList();
       }
     } catch (e) {
-      debugPrint('[SubscriptionService] Invoices API error: $e, using local history');
+      debugPrint(
+        '[SubscriptionService] Invoices API error: $e, using local history',
+      );
     }
 
     return [
@@ -143,7 +164,8 @@ class SubscriptionService {
         billingPeriod: '1 Year (Active)',
         status: 'paid',
         paymentMethod: 'UPI • user@okhdfcbank',
-        downloadUrl: 'https://tenant-api-qa.omnihome.in/invoices/INV-2026-0814.pdf',
+        downloadUrl:
+            'https://tenant-api-qa.omnihome.in/invoices/INV-2026-0814.pdf',
       ),
       SubscriptionInvoice(
         id: 'inv_002',
@@ -156,7 +178,8 @@ class SubscriptionService {
         billingPeriod: '1 Month',
         status: 'paid',
         paymentMethod: 'Visa •••• 4242',
-        downloadUrl: 'https://tenant-api-qa.omnihome.in/invoices/INV-2025-0720.pdf',
+        downloadUrl:
+            'https://tenant-api-qa.omnihome.in/invoices/INV-2025-0720.pdf',
       ),
     ];
   }
@@ -184,7 +207,9 @@ class SubscriptionService {
       }
       return true;
     } catch (e) {
-      debugPrint('[SubscriptionService] Refund API error: $e, simulated refund submission');
+      debugPrint(
+        '[SubscriptionService] Refund API error: $e, simulated refund submission',
+      );
       return true;
     }
   }
@@ -216,7 +241,11 @@ class SubscriptionService {
       final data = response.data;
       if (data is Map && data['data'] is List) {
         return (data['data'] as List)
-            .map((item) => PaymentMethodModel.fromJson(Map<String, dynamic>.from(item as Map)))
+            .map(
+              (item) => PaymentMethodModel.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
             .toList();
       }
     } catch (e) {

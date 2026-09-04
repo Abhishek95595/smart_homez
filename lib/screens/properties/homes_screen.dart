@@ -13,6 +13,8 @@ import 'floors_screen.dart';
 import 'rooms_screen.dart';
 import 'management_dialogs.dart';
 
+import '../../features/home_setup/providers/home_setup_provider.dart';
+
 class HomesScreen extends StatefulWidget {
   const HomesScreen({super.key});
 
@@ -32,23 +34,24 @@ class _HomesScreenState extends State<HomesScreen> {
     });
   }
 
-  Future<void> _add(BuildContext context) async {
-    final provider = context.read<PropertyProvider>();
-    final result = await showPropertyForm(
-      context,
-      nameExists: provider.propertyNameExists,
-    );
-    if (result == null || !context.mounted) return;
-    await provider.addProperty(
-      name: result.name,
-      address: result.address,
-      category: result.category,
-      propertyType: result.propertyType,
-      timezone: result.timezone,
-      currency: result.currency,
-      businessStart: result.businessStart,
-      businessEnd: result.businessEnd,
-    );
+  void _openHomeSetup(BuildContext context) {
+    try {
+      context.read<HomeSetupProvider>().reset();
+    } catch (e) {
+      debugPrint('[HomesScreen] Notice resetting HomeSetupProvider: $e');
+    }
+    Navigator.of(context, rootNavigator: true).pushNamed('/homes/setup').then((
+      _,
+    ) {
+      if (context.mounted) {
+        final clientId = context.read<AuthProvider>().resolvedClientId;
+        if (clientId != null) {
+          context.read<PropertyProvider>().syncFromApi(clientId);
+        } else {
+          context.read<PropertyProvider>().reload();
+        }
+      }
+    });
   }
 
   @override
@@ -60,17 +63,17 @@ class _HomesScreenState extends State<HomesScreen> {
         title: const Text('Properties & Homes'),
         actions: [
           IconButton(
-            tooltip: 'One-Click Home Setup',
+            tooltip: 'Add Property Setup',
             icon: const Icon(
-              Icons.auto_fix_high_rounded,
+              Icons.add_home_work_rounded,
               color: Color(0xFF00A38E),
             ),
-            onPressed: () => Navigator.pushNamed(context, '/homes/setup'),
+            onPressed: () => _openHomeSetup(context),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _add(context),
+        onPressed: () => _openHomeSetup(context),
         icon: const Icon(Icons.add_home_work_rounded),
         label: const Text('Add Property'),
       ),

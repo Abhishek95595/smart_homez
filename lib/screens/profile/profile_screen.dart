@@ -11,12 +11,13 @@ import 'widgets/profile_details_card.dart';
 import 'widgets/profile_hero.dart';
 import 'widgets/profile_home_card.dart';
 import 'widgets/profile_logout_button.dart';
+import 'widgets/profile_preferences_card.dart';
 import 'widgets/profile_stats.dart';
 import 'widgets/profile_support_card.dart';
 import 'widgets/profile_tariff_card.dart';
 
-/// Redesigned Smart Homz Profile screen supporting both Premium Dark and Premium Light themes seamlessly
-/// with dynamic data from the AuraBrain Tenant API and responsive preferences.
+/// Smart Homz Profile screen using the Hasomi Light Theme
+/// with dynamic data from providers and responsive layout styling.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -115,7 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         leading: canPop
             ? IconButton(
                 onPressed: () => Navigator.pop(context),
@@ -140,9 +141,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'Profile',
           style: TextStyle(
             color: colors.textPrimary,
-            fontSize: 17.5,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.2,
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.4,
           ),
         ),
       ),
@@ -175,18 +176,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 110),
       children: const [
         ProfileHero(),
         SizedBox(height: 16),
         ProfileStats(),
-        SizedBox(height: 22),
+        SizedBox(height: 24),
         ProfileHomeCard(),
-        SizedBox(height: 22),
+        SizedBox(height: 24),
         ProfileDetailsCard(),
-        SizedBox(height: 22),
+        SizedBox(height: 24),
+        ProfilePreferencesCard(),
+        SizedBox(height: 24),
         ProfileTariffCard(),
-        SizedBox(height: 22),
+        SizedBox(height: 24),
         ProfileSupportCard(),
         SizedBox(height: 28),
         ProfileLogoutButton(),
@@ -196,12 +199,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildLoadingSkeleton(ProfileThemeData colors) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 110),
       physics: const NeverScrollableScrollPhysics(),
       children: [
         // Hero Skeleton
         Container(
-          height: 260,
+          height: 240,
           decoration: BoxDecoration(
             color: colors.panel,
             borderRadius: BorderRadius.circular(ProfileTheme.largeRadius),
@@ -237,19 +240,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 24),
         // Cards Skeleton
         Container(
           height: 76,
-          decoration: BoxDecoration(
-            color: colors.panel,
-            borderRadius: BorderRadius.circular(ProfileTheme.largeRadius),
-            border: Border.all(color: colors.border),
-          ),
-        ),
-        const SizedBox(height: 22),
-        Container(
-          height: 180,
           decoration: BoxDecoration(
             color: colors.panel,
             borderRadius: BorderRadius.circular(ProfileTheme.largeRadius),
@@ -260,85 +254,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildErrorView(String errorMessage, ProfileThemeData colors) {
-    final Color retryTextColor = colors.isDark
-        ? colors.background
-        : Colors.white;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(28),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: colors.danger.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.cloud_off_rounded,
-                        color: colors.danger,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Unable to load profile',
-                      style: TextStyle(
-                        color: colors.textPrimary,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      errorMessage,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: colors.textSecondary,
-                        fontSize: 13,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton.icon(
-                      onPressed: _loadProfileData,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colors.accent,
-                        foregroundColor: retryTextColor,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 22,
-                          vertical: 11,
-                        ),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            ProfileTheme.smallRadius,
-                          ),
-                        ),
-                      ),
-                      icon: const Icon(Icons.refresh_rounded, size: 17),
-                      label: const Text(
-                        'Retry',
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ],
-                ),
+  Widget _buildErrorView(String error, ProfileThemeData colors) {
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        const SizedBox(height: 40),
+        Icon(Icons.error_outline_rounded, size: 56, color: colors.danger),
+        const SizedBox(height: 16),
+        Text(
+          'Failed to load profile data',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          error,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: colors.textSecondary, fontSize: 13),
+        ),
+        const SizedBox(height: 24),
+        Center(
+          child: ElevatedButton.icon(
+            onPressed: _refreshProfileData,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colors.accent,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(ProfileTheme.smallRadius),
               ),
             ),
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text('Try Again'),
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 }

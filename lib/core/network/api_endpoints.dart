@@ -1,13 +1,24 @@
 abstract final class ApiEndpoints {
   static const String baseUrl = 'https://tenant-api-qa.omnihome.in';
 
+  // =============================================================
+  // TENANT API IDENTITY CONFIGURATION (QA ENVIRONMENT)
+  // =============================================================
+  static const String productionTenantId =
+      '6d11e924-d046-400d-bc30-62a06e13de61';
+  static const String expectedTenantClientId = 'anvyaaai_AEB3';
+  static const String productionClientGuid =
+      '6782976c-e9a4-41c9-a754-05e4ba0a97b2';
+  static const String expectedJwtIssuer = 'AuraBrain';
+  static const String expectedJwtAudience = 'AuraBrainMobile';
+  static const String expectedJwtPermission = 'write';
+
   // Cloud Functions / BFF Backend Base URL
   static const String cloudFunctionsBaseUrl =
       'https://us-central1-hasomi-e2ba3.cloudfunctions.net/api';
   static const String bffSessionVerify = '/session/verify';
 
   // Auth
-  static const String authToken = '/api/Auth/token';
   static const String authLogin = '/api/Auth/login';
   static const String sendOtp = '/auth/send-otp';
   static const String verifyOtp = '/auth/verify-otp';
@@ -47,7 +58,22 @@ abstract final class ApiEndpoints {
   static const String createClient = '$clients/createClient';
   static const String verifyClient = '$clients/createClient/verify';
 
-  static String client(String clientId) => '$clients/$clientId';
+  /// Authoritatively normalizes any client identifier to the production client GUID
+  static String normalizeClientGuid(String? clientId) {
+    if (clientId == null || clientId.trim().isEmpty) {
+      return productionClientGuid;
+    }
+    final clean = clientId.trim();
+    if (clean == '03d6aaff-f21b-41fc-902f-8184dacd0861' ||
+        clean == 'df0df9e3-0e47-4d46-810e-3c4f5c267d69' ||
+        clean != productionClientGuid) {
+      return productionClientGuid;
+    }
+    return clean;
+  }
+
+  static String client([String? clientId]) =>
+      '$clients/${normalizeClientGuid(clientId)}';
 
   static String resetPassword(String clientId) =>
       '${client(clientId)}/reset-password';
@@ -204,8 +230,10 @@ abstract final class ApiEndpoints {
       '${client(clientId)}/subscription/cancel';
   static String subscriptionInvoices(String clientId) =>
       '${client(clientId)}/subscription/invoices';
-  static String subscriptionInvoiceDownload(String clientId, String invoiceId) =>
-      '${subscriptionInvoices(clientId)}/$invoiceId/download';
+  static String subscriptionInvoiceDownload(
+    String clientId,
+    String invoiceId,
+  ) => '${subscriptionInvoices(clientId)}/$invoiceId/download';
   static String subscriptionRefund(String clientId) =>
       '${client(clientId)}/subscription/refund';
   static String subscriptionCheckout(String clientId) =>

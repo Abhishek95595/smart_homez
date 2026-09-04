@@ -27,12 +27,8 @@ class AvatarProgressRing extends StatelessWidget {
     const double strokeWidth = 3.5;
     const double avatarSize = 92.0;
 
-    final Color trackColor = colors.isDark
-        ? const Color(0x12FFFFFF)
-        : const Color(0xFFE2EAE8);
-    final Color editIconColor = colors.isDark
-        ? colors.background
-        : Colors.white;
+    const Color trackColor = Color(0xFFE2EAE8);
+    const Color editIconColor = Colors.white;
 
     return Center(
       child: Stack(
@@ -47,10 +43,8 @@ class AvatarProgressRing extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: colors.accent.withValues(
-                    alpha: colors.isDark ? 0.12 : 0.08,
-                  ),
-                  blurRadius: colors.isDark ? 24 : 18,
+                  color: colors.accent.withValues(alpha: 0.08),
+                  blurRadius: 18,
                   spreadRadius: 0,
                 ),
               ],

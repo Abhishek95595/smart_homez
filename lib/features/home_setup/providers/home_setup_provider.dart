@@ -1,538 +1,360 @@
 import 'package:flutter/material.dart';
 
+import '../../../models/property_hierarchy.dart';
+import '../../../providers/property_provider.dart';
 import '../data/home_setup_service.dart';
-import '../data/models/bulk_assignment_models.dart';
 import '../data/models/home_layout_template.dart';
 import '../data/models/home_setup_request.dart';
 import '../data/models/home_setup_response.dart';
-import '../data/models/unassigned_device_model.dart';
-import '../data/room_suggestion_service.dart';
+import '../data/models/property_setup_draft.dart';
 
 class HomeSetupProvider extends ChangeNotifier {
   final HomeSetupService _setupService;
-  final RoomSuggestionService _suggestionService;
 
-  HomeSetupProvider({
-    HomeSetupService? setupService,
-    RoomSuggestionService? suggestionService,
-  }) : _setupService = setupService ?? HomeSetupService(),
-       _suggestionService = suggestionService ?? const RoomSuggestionService() {
-    _initCustomDefaults();
+  HomeSetupProvider({HomeSetupService? setupService})
+    : _setupService = setupService ?? HomeSetupService() {
+    _initDefaults();
   }
 
   // Wizard state
-  int _currentStep = 0;
-  HomeLayoutTemplateType _selectedTemplate = HomeLayoutTemplateType.twoBhk;
-  HierarchyMode _hierarchyMode = HierarchyMode.flat;
-  String _homeName = 'My Smart Home';
+  int _currentStep = 0; // 0: Property, 1: Layout, 2: Rooms, 3: Review
+  PropertyCategory _category = PropertyCategory.residential;
+  String _propertyName = '';
   String _address = '';
 
-  // Custom draft rooms & floors
-  List<String> _customFlatRooms = [];
-  List<CustomFloorDraft> _customFloors = [];
+  HomeLayoutTemplateType _selectedTemplate = HomeLayoutTemplateType.twoBhk;
+  int _floorCount = 1;
 
-  // Step 1 Output / Step 2 Input
+  // Draft floors & rooms state
+  List<DraftRoom> _draftRooms = [];
+  List<DraftFloor> _draftFloors = [];
+
+  // Creation output
   HomeSetupResult? _createdHome;
-
-  // Step 2 State
-  List<UnassignedDevice> _unassignedDevices = [];
-  final Map<String, String?> _deviceAssignments = {}; // deviceId -> roomId?
-  List<BulkAssignmentFailure> _partialFailures = [];
+  ManagedProperty? _createdProperty;
 
   // Loading & Error states
-  bool _isLoading = false;
-  bool _isFetchingDevices = false;
   bool _isSubmitting = false;
   String? _errorMessage;
-  String? _deviceFetchError;
   bool _isCompleted = false;
 
   // Getters
   int get currentStep => _currentStep;
-  HomeLayoutTemplateType get selectedTemplate => _selectedTemplate;
-  HierarchyMode get hierarchyMode => _hierarchyMode;
-  String get homeName => _homeName;
+  PropertyCategory get category => _category;
+  String get propertyName => _propertyName;
   String get address => _address;
-  List<String> get customFlatRooms => List.unmodifiable(_customFlatRooms);
-  List<CustomFloorDraft> get customFloors => List.unmodifiable(_customFloors);
-  HomeSetupResult? get createdHome => _createdHome;
-  List<UnassignedDevice> get unassignedDevices =>
-      List.unmodifiable(_unassignedDevices);
-  Map<String, String?> get deviceAssignments =>
-      Map.unmodifiable(_deviceAssignments);
-  List<BulkAssignmentFailure> get partialFailures =>
-      List.unmodifiable(_partialFailures);
+  HomeLayoutTemplateType get selectedTemplate => _selectedTemplate;
+  int get floorCount => _floorCount;
 
-  bool get isLoading => _isLoading;
-  bool get isFetchingDevices => _isFetchingDevices;
+  List<DraftRoom> get draftRooms => List.unmodifiable(_draftRooms);
+  List<DraftFloor> get draftFloors => List.unmodifiable(_draftFloors);
+
+  HomeSetupResult? get createdHome => _createdHome;
+  ManagedProperty? get createdProperty => _createdProperty;
+
   bool get isSubmitting => _isSubmitting;
   String? get errorMessage => _errorMessage;
-  String? get deviceFetchError => _deviceFetchError;
   bool get isCompleted => _isCompleted;
 
-  List<CreatedRoom> get availableRooms => _createdHome?.allRooms ?? [];
+  bool get isMultiFloor => _selectedTemplate.isMultiFloor;
 
-  int get assignedCount => _deviceAssignments.values
-      .where((rId) => rId != null && rId.isNotEmpty)
-      .length;
+  int get totalRoomCount {
+    if (isMultiFloor) {
+      return _draftFloors.fold(0, (sum, f) => sum + f.rooms.length);
+    }
+    return _draftRooms.length;
+  }
 
-  int get totalDevicesCount => _unassignedDevices.length;
+  void _initDefaults() {
+    _category = PropertyCategory.residential;
+    _selectedTemplate = HomeLayoutTemplateType.twoBhk;
+    _floorCount = _selectedTemplate.defaultFloorCount;
+    _initStructureForTemplate(_selectedTemplate);
+  }
 
-  void _initCustomDefaults() {
-    _customFlatRooms = List.from(
-      HomeLayoutTemplateType.custom.defaultFlatRoomNames,
-    );
-    _customFloors = [
-      CustomFloorDraft(
-        name: 'Ground Floor',
-        level: 0,
-        rooms: ['Living Room', 'Kitchen', 'Bathroom'],
-      ),
-      CustomFloorDraft(
-        name: 'First Floor',
-        level: 1,
-        rooms: ['Master Bedroom', 'Bedroom 2', 'Balcony'],
-      ),
-    ];
+  void _initStructureForTemplate(HomeLayoutTemplateType template) {
+    if (template.isMultiFloor) {
+      _draftFloors = template.generateDefaultFloors(_floorCount);
+      _draftRooms = [];
+    } else {
+      _draftFloors = [];
+      _draftRooms = template.defaultFlatRoomNames
+          .map((name) => DraftRoom(name: name))
+          .toList();
+    }
   }
 
   void setStep(int step) {
-    if (step == _currentStep) return;
+    if (step < 0 || step > 3 || step == _currentStep) return;
     _currentStep = step;
     notifyListeners();
   }
 
-  void setTemplate(HomeLayoutTemplateType template) {
-    _selectedTemplate = template;
-    _hierarchyMode = template.defaultHierarchyMode;
+  void goNext() {
+    if (_currentStep < 3) {
+      _currentStep++;
+      notifyListeners();
+    }
+  }
+
+  void goBack() {
+    if (_currentStep > 0) {
+      _currentStep--;
+      notifyListeners();
+    }
+  }
+
+  void setCategory(PropertyCategory newCategory) {
+    if (_category == newCategory) return;
+    _category = newCategory;
+
+    // Reset template, floors, rooms while preserving propertyName and address
+    if (_category == PropertyCategory.residential) {
+      _selectedTemplate = HomeLayoutTemplateType.twoBhk;
+    } else {
+      _selectedTemplate = HomeLayoutTemplateType.office;
+    }
+    _floorCount = _selectedTemplate.defaultFloorCount;
+    _initStructureForTemplate(_selectedTemplate);
+
+    notifyListeners();
+  }
+
+  void setPropertyName(String name) {
+    if (_propertyName == name) return;
+    _propertyName = name;
     _errorMessage = null;
     notifyListeners();
   }
 
-  void setHierarchyMode(HierarchyMode mode) {
-    _hierarchyMode = mode;
+  void setAddress(String addr) {
+    if (_address == addr) return;
+    _address = addr;
     notifyListeners();
   }
 
-  void setHomeName(String name) {
-    _homeName = name;
+  void selectTemplate(HomeLayoutTemplateType template) {
+    _selectedTemplate = template;
+    _floorCount = template.defaultFloorCount;
+    _initStructureForTemplate(template);
+    _errorMessage = null;
     notifyListeners();
   }
 
-  void setAddress(String address) {
-    _address = address;
-    notifyListeners();
-  }
+  void setFloorCount(int count) {
+    if (!isMultiFloor) return;
+    final min = _selectedTemplate.minFloorCount;
+    final max = _selectedTemplate.maxFloorCount;
+    final target = count.clamp(min, max);
+    if (target == _floorCount) return;
 
-  // ============================================================
-  // CUSTOM FLAT ROOMS MANAGEMENT
-  // ============================================================
-
-  String? addCustomFlatRoom(String name) {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) return 'Room name cannot be empty.';
-    final exists = _customFlatRooms.any(
-      (r) => r.trim().toLowerCase() == trimmed.toLowerCase(),
-    );
-    if (exists) return 'Room "$trimmed" already exists.';
-    _customFlatRooms.add(trimmed);
-    notifyListeners();
-    return null;
-  }
-
-  String? renameCustomFlatRoom(int index, String newName) {
-    if (index < 0 || index >= _customFlatRooms.length)
-      return 'Invalid room index.';
-    final trimmed = newName.trim();
-    if (trimmed.isEmpty) return 'Room name cannot be empty.';
-    for (int i = 0; i < _customFlatRooms.length; i++) {
-      if (i != index &&
-          _customFlatRooms[i].trim().toLowerCase() == trimmed.toLowerCase()) {
-        return 'Room "$trimmed" already exists.';
+    if (target > _floorCount) {
+      // Increase floor count: preserve existing floors and rooms, generate ONLY new floors
+      final currentList = List<DraftFloor>.from(_draftFloors);
+      for (int i = _floorCount; i < target; i++) {
+        String floorName;
+        if (i == 1) {
+          floorName = '1st Floor';
+        } else if (i == 2) {
+          floorName = '2nd Floor';
+        } else {
+          floorName = '${i}th Floor';
+        }
+        final roomNames = ['Room ${i}01', 'Room ${i}02', 'Bathroom'];
+        currentList.add(
+          DraftFloor(
+            name: floorName,
+            level: i,
+            rooms: roomNames.map((r) => DraftRoom(name: r)).toList(),
+          ),
+        );
       }
+      _draftFloors = currentList;
+    } else {
+      // Decrease floor count: remove ONLY the highest floor(s)
+      _draftFloors = _draftFloors.sublist(0, target);
     }
-    _customFlatRooms[index] = trimmed;
+
+    _floorCount = target;
     notifyListeners();
-    return null;
   }
 
-  void removeCustomFlatRoom(int index) {
-    if (index >= 0 && index < _customFlatRooms.length) {
-      _customFlatRooms.removeAt(index);
-      notifyListeners();
-    }
+  void increaseFloorCount() {
+    setFloorCount(_floorCount + 1);
   }
 
-  // ============================================================
-  // CUSTOM FLOORS & NESTED ROOMS MANAGEMENT
-  // ============================================================
-
-  String? addCustomFloor(String name, int level) {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) return 'Floor name cannot be empty.';
-    final exists = _customFloors.any(
-      (f) =>
-          f.name.trim().toLowerCase() == trimmed.toLowerCase() ||
-          f.level == level,
-    );
-    if (exists) return 'A floor with this name or level already exists.';
-    _customFloors.add(
-      CustomFloorDraft(name: trimmed, level: level, rooms: ['Living Room']),
-    );
-    _customFloors.sort((a, b) => a.level.compareTo(b.level));
-    notifyListeners();
-    return null;
+  void decreaseFloorCount() {
+    setFloorCount(_floorCount - 1);
   }
 
-  String? renameCustomFloor(int index, String newName, int level) {
-    if (index < 0 || index >= _customFloors.length)
-      return 'Invalid floor index.';
-    final trimmed = newName.trim();
-    if (trimmed.isEmpty) return 'Floor name cannot be empty.';
-    for (int i = 0; i < _customFloors.length; i++) {
-      if (i != index &&
-          (_customFloors[i].name.trim().toLowerCase() ==
-                  trimmed.toLowerCase() ||
-              _customFloors[i].level == level)) {
-        return 'A floor with this name or level already exists.';
-      }
-    }
-    _customFloors[index].name = trimmed;
-    _customFloors[index].level = level;
-    _customFloors.sort((a, b) => a.level.compareTo(b.level));
-    notifyListeners();
-    return null;
-  }
-
-  void removeCustomFloor(int index) {
-    if (index >= 0 && index < _customFloors.length) {
-      _customFloors.removeAt(index);
-      notifyListeners();
-    }
-  }
-
-  String? addRoomToFloor(int floorIndex, String roomName) {
-    if (floorIndex < 0 || floorIndex >= _customFloors.length) {
-      return 'Invalid floor.';
-    }
+  void addRoom(String roomName, {String? floorLocalId}) {
     final trimmed = roomName.trim();
-    if (trimmed.isEmpty) return 'Room name cannot be empty.';
-    final floor = _customFloors[floorIndex];
-    if (floor.rooms.any(
-      (r) => r.trim().toLowerCase() == trimmed.toLowerCase(),
-    )) {
-      return 'Room "$trimmed" already exists on ${floor.name}.';
-    }
-    floor.rooms.add(trimmed);
-    notifyListeners();
-    return null;
-  }
+    if (trimmed.isEmpty) return;
 
-  String? renameRoomInFloor(int floorIndex, int roomIndex, String newName) {
-    if (floorIndex < 0 || floorIndex >= _customFloors.length) {
-      return 'Invalid floor.';
-    }
-    final floor = _customFloors[floorIndex];
-    if (roomIndex < 0 || roomIndex >= floor.rooms.length) {
-      return 'Invalid room.';
-    }
-    final trimmed = newName.trim();
-    if (trimmed.isEmpty) return 'Room name cannot be empty.';
-    for (int i = 0; i < floor.rooms.length; i++) {
-      if (i != roomIndex &&
-          floor.rooms[i].trim().toLowerCase() == trimmed.toLowerCase()) {
-        return 'Room "$trimmed" already exists on ${floor.name}.';
+    if (isMultiFloor) {
+      if (floorLocalId == null && _draftFloors.isNotEmpty) {
+        floorLocalId = _draftFloors.first.localId;
       }
+      _draftFloors = _draftFloors.map((floor) {
+        if (floor.localId == floorLocalId) {
+          final updatedRooms = List<DraftRoom>.from(floor.rooms)
+            ..add(DraftRoom(name: trimmed, userAdded: true));
+          return floor.copyWith(rooms: updatedRooms);
+        }
+        return floor;
+      }).toList();
+    } else {
+      _draftRooms = List<DraftRoom>.from(_draftRooms)
+        ..add(DraftRoom(name: trimmed, userAdded: true));
     }
-    floor.rooms[roomIndex] = trimmed;
     notifyListeners();
-    return null;
   }
 
-  void removeRoomFromFloor(int floorIndex, int roomIndex) {
-    if (floorIndex >= 0 && floorIndex < _customFloors.length) {
-      final floor = _customFloors[floorIndex];
-      if (roomIndex >= 0 && roomIndex < floor.rooms.length) {
-        floor.rooms.removeAt(roomIndex);
-        notifyListeners();
+  void deleteRoom(String roomLocalId, {String? floorLocalId}) {
+    if (isMultiFloor) {
+      _draftFloors = _draftFloors.map((floor) {
+        if (floorLocalId == null || floor.localId == floorLocalId) {
+          final updatedRooms = floor.rooms
+              .where((r) => r.localId != roomLocalId)
+              .toList();
+          return floor.copyWith(rooms: updatedRooms);
+        }
+        return floor;
+      }).toList();
+    } else {
+      _draftRooms = _draftRooms.where((r) => r.localId != roomLocalId).toList();
+    }
+    notifyListeners();
+  }
+
+  Future<bool> submitPropertyCreation({
+    required PropertyProvider propertyProvider,
+  }) async {
+    if (_isSubmitting) return false;
+    if (_propertyName.trim().isEmpty) {
+      _errorMessage = 'Property name is required.';
+      notifyListeners();
+      return false;
+    }
+
+    _isSubmitting = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final flatRoomNames = !isMultiFloor
+          ? _draftRooms.map((r) => r.name).toList()
+          : null;
+
+      final customFloors = isMultiFloor
+          ? _draftFloors
+                .map(
+                  (f) => CustomFloorDraft(
+                    name: f.name,
+                    level: f.level,
+                    rooms: f.rooms.map((r) => r.name).toList(),
+                  ),
+                )
+                .toList()
+          : null;
+
+      final request = HomeSetupRequest(
+        template: _selectedTemplate.id,
+        homeName: _propertyName.trim(),
+        address: _address.trim().isNotEmpty ? _address.trim() : null,
+        hierarchyMode: isMultiFloor
+            ? HierarchyMode.floorBased
+            : HierarchyMode.flat,
+        flatRooms: flatRoomNames,
+        floors: customFloors,
+      );
+
+      // Submit via backend setup service
+      final result = await _setupService.setupHomeFromTemplate(request);
+      _createdHome = result;
+
+      // Refresh property provider state
+      await propertyProvider.reload();
+      if (result.home.id.isNotEmpty) {
+        _createdProperty =
+            propertyProvider.propertyById(result.home.id) ??
+            ManagedProperty(
+              id: result.home.id,
+              name: result.home.name,
+              category: _category == PropertyCategory.residential
+                  ? 'Residential'
+                  : 'Commercial',
+              propertyType: _selectedTemplate.title,
+              address: _address.trim(),
+            );
       }
-    }
-  }
 
-  // ============================================================
-  // VALIDATION & STEP 1 EXECUTION
-  // ============================================================
+      _isSubmitting = false;
+      _isCompleted = true;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      // Fallback: Create locally via PropertyProvider if offline/demo
+      try {
+        final newProp = await propertyProvider.addProperty(
+          name: _propertyName.trim(),
+          address: _address.trim(),
+          category: _category == PropertyCategory.residential
+              ? 'Residential'
+              : 'Commercial',
+          propertyType: _selectedTemplate.title,
+        );
 
-  String? validateLayoutStep() {
-    if (_homeName.trim().isEmpty) {
-      return 'Please enter a home name.';
-    }
-
-    if (_selectedTemplate == HomeLayoutTemplateType.custom) {
-      if (_hierarchyMode == HierarchyMode.flat) {
-        if (_customFlatRooms.isEmpty) {
-          return 'Please add at least one room to your custom layout.';
-        }
-        for (final room in _customFlatRooms) {
-          if (room.trim().isEmpty) {
-            return 'Room names cannot be empty.';
-          }
-        }
-      } else {
-        if (_customFloors.isEmpty) {
-          return 'Please add at least one floor to your custom layout.';
-        }
-        for (final floor in _customFloors) {
-          if (floor.name.trim().isEmpty) {
-            return 'Floor names cannot be empty.';
-          }
-          if (floor.rooms.isEmpty) {
-            return 'Floor "${floor.name}" must contain at least one room.';
-          }
-          for (final room in floor.rooms) {
-            if (room.trim().isEmpty) {
-              return 'Room names cannot be empty.';
+        if (isMultiFloor) {
+          for (final f in _draftFloors) {
+            final newFloor = await propertyProvider.addFloor(
+              propertyId: newProp.id,
+              name: f.name,
+              level: f.level,
+            );
+            for (final r in f.rooms) {
+              await propertyProvider.addRoom(
+                homeId: newProp.id,
+                floorId: newFloor.id,
+                name: r.name,
+                type: 'Room',
+              );
             }
           }
+        } else {
+          for (final r in _draftRooms) {
+            await propertyProvider.addRoom(
+              homeId: newProp.id,
+              name: r.name,
+              type: 'Room',
+            );
+          }
         }
-      }
-    }
 
-    return null;
-  }
-
-  HomeSetupRequest buildSetupRequest() {
-    List<String>? flatRooms;
-    List<CustomFloorDraft>? floors;
-
-    if (_selectedTemplate == HomeLayoutTemplateType.custom) {
-      if (_hierarchyMode == HierarchyMode.flat) {
-        flatRooms = List.from(_customFlatRooms);
-      } else {
-        floors = List.from(_customFloors);
-      }
-    } else if (_selectedTemplate == HomeLayoutTemplateType.villa) {
-      floors = List.from(_selectedTemplate.defaultVillaFloors);
-    } else {
-      flatRooms = List.from(_selectedTemplate.defaultFlatRoomNames);
-    }
-
-    return HomeSetupRequest(
-      template: _selectedTemplate.id,
-      homeName: _homeName.trim(),
-      address: _address.trim().isEmpty ? null : _address.trim(),
-      hierarchyMode: _hierarchyMode,
-      flatRooms: flatRooms,
-      floors: floors,
-    );
-  }
-
-  Future<bool> createHomeLayout({required bool canManage}) async {
-    if (!canManage) {
-      _errorMessage = 'You do not have permission to create home layouts.';
-      notifyListeners();
-      return false;
-    }
-
-    final validationError = validateLayoutStep();
-    if (validationError != null) {
-      _errorMessage = validationError;
-      notifyListeners();
-      return false;
-    }
-
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final request = buildSetupRequest();
-      _createdHome = await _setupService.setupHomeFromTemplate(request);
-
-      _isLoading = false;
-      _currentStep = 1; // Transition to Step 2
-      notifyListeners();
-
-      // Automatically fetch unassigned devices for step 2
-      await fetchUnassignedDevices();
-      return true;
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = e.toString().replaceFirst('Exception: ', '');
-      notifyListeners();
-      return false;
-    }
-  }
-
-  // ============================================================
-  // STEP 2: DEVICE ASSIGNMENT
-  // ============================================================
-
-  Future<void> fetchUnassignedDevices() async {
-    if (_createdHome == null) return;
-
-    _isFetchingDevices = true;
-    _deviceFetchError = null;
-    notifyListeners();
-
-    try {
-      _unassignedDevices = await _setupService.getUnassignedDevices(
-        _createdHome!.home.id,
-      );
-      _deviceAssignments.clear();
-
-      final rooms = availableRooms;
-
-      // Initialize assignments using suggestion service
-      for (final device in _unassignedDevices) {
-        final suggestedRoomId = _suggestionService.resolveSuggestedRoomId(
-          device: device,
-          availableRooms: rooms,
-        );
-        _deviceAssignments[device.id] = suggestedRoomId;
-      }
-    } catch (e) {
-      _deviceFetchError = e.toString().replaceFirst('Exception: ', '');
-      debugPrint('[HomeSetupProvider] Device fetch error: $e');
-    } finally {
-      _isFetchingDevices = false;
-      notifyListeners();
-    }
-  }
-
-  void assignDevice(String deviceId, String? roomId) {
-    _deviceAssignments[deviceId] = roomId;
-    _partialFailures.removeWhere((f) => f.deviceId == deviceId);
-    notifyListeners();
-  }
-
-  void assignAllSuggested() {
-    final rooms = availableRooms;
-    for (final device in _unassignedDevices) {
-      final suggestedRoomId = _suggestionService.resolveSuggestedRoomId(
-        device: device,
-        availableRooms: rooms,
-      );
-      if (suggestedRoomId != null) {
-        _deviceAssignments[device.id] = suggestedRoomId;
-      }
-    }
-    notifyListeners();
-  }
-
-  void clearAllAssignments() {
-    for (final device in _unassignedDevices) {
-      _deviceAssignments[device.id] = null;
-    }
-    notifyListeners();
-  }
-
-  Future<bool> submitAssignments({required bool canManage}) async {
-    if (!canManage) {
-      _errorMessage = 'You do not have permission to assign devices.';
-      notifyListeners();
-      return false;
-    }
-
-    _isSubmitting = true;
-    _errorMessage = null;
-    _partialFailures.clear();
-    notifyListeners();
-
-    try {
-      final List<DeviceAssignmentItem> assignments = [];
-      _deviceAssignments.forEach((deviceId, roomId) {
-        if (roomId != null && roomId.isNotEmpty) {
-          assignments.add(
-            DeviceAssignmentItem(deviceId: deviceId, roomId: roomId),
-          );
-        }
-      });
-
-      final response = await _setupService.bulkAssignDevicesToRooms(
-        assignments,
-      );
-
-      if (response.hasFailures) {
-        _partialFailures = List.from(response.failedAssignments);
+        _createdProperty = newProp;
         _isSubmitting = false;
-        notifyListeners();
-        return false;
-      }
-
-      _isCompleted = true;
-      _isSubmitting = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _isSubmitting = false;
-      _errorMessage = e.toString().replaceFirst('Exception: ', '');
-      notifyListeners();
-      return false;
-    }
-  }
-
-  Future<bool> retryFailedAssignments({required bool canManage}) async {
-    if (_partialFailures.isEmpty) return true;
-
-    final failedIds = _partialFailures.map((f) => f.deviceId).toSet();
-    final List<DeviceAssignmentItem> retryItems = [];
-
-    _deviceAssignments.forEach((deviceId, roomId) {
-      if (failedIds.contains(deviceId) && roomId != null && roomId.isNotEmpty) {
-        retryItems.add(
-          DeviceAssignmentItem(deviceId: deviceId, roomId: roomId),
-        );
-      }
-    });
-
-    if (retryItems.isEmpty) {
-      _partialFailures.clear();
-      notifyListeners();
-      return true;
-    }
-
-    _isSubmitting = true;
-    notifyListeners();
-
-    try {
-      final response = await _setupService.bulkAssignDevicesToRooms(retryItems);
-      _partialFailures = List.from(response.failedAssignments);
-      _isSubmitting = false;
-
-      if (_partialFailures.isEmpty) {
         _isCompleted = true;
         notifyListeners();
         return true;
+      } catch (err) {
+        _isSubmitting = false;
+        _errorMessage = 'Failed to create property: $err';
+        notifyListeners();
+        return false;
       }
-
-      notifyListeners();
-      return false;
-    } catch (e) {
-      _isSubmitting = false;
-      _errorMessage = e.toString().replaceFirst('Exception: ', '');
-      notifyListeners();
-      return false;
     }
   }
 
   void reset() {
     _currentStep = 0;
-    _selectedTemplate = HomeLayoutTemplateType.twoBhk;
-    _hierarchyMode = HierarchyMode.flat;
-    _homeName = 'My Smart Home';
+    _propertyName = '';
     _address = '';
-    _createdHome = null;
-    _unassignedDevices = [];
-    _deviceAssignments.clear();
-    _partialFailures.clear();
-    _isLoading = false;
-    _isFetchingDevices = false;
     _isSubmitting = false;
     _errorMessage = null;
-    _deviceFetchError = null;
     _isCompleted = false;
-    _initCustomDefaults();
+    _createdHome = null;
+    _createdProperty = null;
+    _initDefaults();
     notifyListeners();
   }
 }

@@ -8,7 +8,7 @@ import '../../properties/homes_screen.dart';
 import '../profile_theme.dart';
 
 /// Card displaying the active home and its summary counts (floors, rooms, devices)
-/// without exposing any personal street address.
+/// with proper singular/plural grammar and empty state handling.
 class ProfileHomeCard extends StatelessWidget {
   const ProfileHomeCard({super.key});
 
@@ -22,47 +22,77 @@ class ProfileHomeCard extends StatelessWidget {
     final activeHome = profileProvider.activeHome;
     final primaryProperty = propertyProvider.properties.firstOrNull;
 
-    final String homeName = activeHome?.name.isNotEmpty == true
-        ? activeHome!.name
-        : (primaryProperty?.name.isNotEmpty == true
-              ? primaryProperty!.name
-              : 'Primary Home');
-
     final bool hasHomes =
         profileProvider.homes.isNotEmpty ||
         propertyProvider.properties.isNotEmpty ||
         (profileProvider.profile?.homeCount ?? 0) > 0;
 
-    // Aggregate counts
+    final String homeName = hasHomes
+        ? (activeHome?.name.isNotEmpty == true
+              ? activeHome!.name
+              : (primaryProperty?.name.isNotEmpty == true
+                    ? primaryProperty!.name
+                    : 'Unnamed home'))
+        : 'No homes configured yet';
+
+    // Aggregate counts from actual provider models
     final int floorCount = propertyProvider.floors.isNotEmpty
         ? propertyProvider.floors.length
-        : (profileProvider.floorCount > 0 ? profileProvider.floorCount : 1);
+        : profileProvider.floorCount;
 
     final int roomCount = propertyProvider.rooms.isNotEmpty
         ? propertyProvider.rooms.length
-        : (profileProvider.roomCount > 0 ? profileProvider.roomCount : 4);
+        : profileProvider.roomCount;
 
     final int deviceCount = deviceProvider.devices.isNotEmpty
         ? deviceProvider.devices.length
         : profileProvider.deviceCount;
 
+    final String floorLabel =
+        '$floorCount ${floorCount == 1 ? 'floor' : 'floors'}';
+    final String roomLabel = '$roomCount ${roomCount == 1 ? 'room' : 'rooms'}';
+    final String deviceLabel =
+        '$deviceCount ${deviceCount == 1 ? 'device' : 'devices'}';
+
     final String subtitle = hasHomes
-        ? '$floorCount floors · $roomCount rooms · $deviceCount devices'
-        : 'No homes configured yet';
+        ? '$floorLabel · $roomLabel · $deviceLabel'
+        : 'Tap to configure properties';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            'MY HOME',
-            style: TextStyle(
-              color: colors.textTertiary,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.8,
-            ),
+          padding: const EdgeInsets.only(left: 4, right: 4, bottom: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'MY HOME',
+                style: TextStyle(
+                  color: colors.textTertiary,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              if (hasHomes)
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HomesScreen()),
+                    );
+                  },
+                  child: Text(
+                    'View All',
+                    style: TextStyle(
+                      color: colors.accent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
         Material(
@@ -83,23 +113,21 @@ class ProfileHomeCard extends StatelessWidget {
                 color: colors.panel,
                 borderRadius: BorderRadius.circular(ProfileTheme.largeRadius),
                 border: Border.all(color: colors.border, width: 1.0),
-                boxShadow: colors.isDark
-                    ? null
-                    : [
-                        BoxShadow(
-                          color: colors.shadow,
-                          blurRadius: 14,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                boxShadow: [
+                  BoxShadow(
+                    color: colors.shadow,
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 38,
-                    height: 38,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
-                      color: colors.raised,
+                      color: colors.secondarySurface,
                       borderRadius: BorderRadius.circular(
                         ProfileTheme.smallRadius,
                       ),

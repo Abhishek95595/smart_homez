@@ -582,7 +582,9 @@ class _HasomiScreenState extends State<HasomiScreen>
                           color: const Color(0xFF1E293B),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: const Color(0xFF00CAFF).withValues(alpha: 0.35),
+                            color: const Color(
+                              0xFF00CAFF,
+                            ).withValues(alpha: 0.35),
                           ),
                         ),
                         child: Row(
@@ -591,7 +593,9 @@ class _HasomiScreenState extends State<HasomiScreen>
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF00CAFF).withValues(alpha: 0.15),
+                                color: const Color(
+                                  0xFF00CAFF,
+                                ).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(

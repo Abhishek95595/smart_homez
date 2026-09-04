@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../profile_theme.dart';
 
-/// Row of three compact dark/light stat cards displaying total devices, online devices, and homes count.
+/// Row of three compact stat cards displaying total devices, online devices, and homes count.
 class ProfileStats extends StatelessWidget {
   const ProfileStats({super.key});
 
@@ -51,15 +51,13 @@ class _StatCard extends StatelessWidget {
         color: colors.panel,
         borderRadius: BorderRadius.circular(ProfileTheme.mediumRadius),
         border: Border.all(color: colors.border, width: 1.0),
-        boxShadow: colors.isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: colors.shadow,
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadow,
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [

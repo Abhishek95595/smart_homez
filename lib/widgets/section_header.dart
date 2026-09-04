@@ -4,14 +4,12 @@ class SectionHeader extends StatelessWidget {
   final String title;
   final String? actionLabel;
   final VoidCallback? onAction;
-  final bool isDark;
 
   const SectionHeader({
     super.key,
     required this.title,
     this.actionLabel,
     this.onAction,
-    this.isDark = false,
   });
 
   @override
@@ -22,10 +20,10 @@ class SectionHeader extends StatelessWidget {
       children: [
         Text(
           title,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: isDark ? Colors.white : const Color(0xFF0F172A),
+            color: Color(0xFF0F172A),
             letterSpacing: -0.2,
           ),
         ),
@@ -37,10 +35,8 @@ class SectionHeader extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
               child: Text(
                 actionLabel!,
-                style: TextStyle(
-                  color: isDark
-                      ? const Color(0xFF26C6DA)
-                      : const Color(0xFF00A38E),
+                style: const TextStyle(
+                  color: Color(0xFF00A38E),
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),

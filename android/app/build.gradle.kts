@@ -60,7 +60,7 @@ android {
 
     buildTypes {
         debug {
-            signingConfig = signingConfigs.getByName("hasomiDebug")
+            signingConfig = signingConfigs.getByName("debug")
         }
         release {
             signingConfig = signingConfigs.getByName("hasomiDebug")

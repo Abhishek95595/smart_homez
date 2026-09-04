@@ -47,11 +47,20 @@ class _VideoSplashScreenState extends State<VideoSplashScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Warm up and pre-cache heavy images into GPU memory while splash video plays
-    precacheImage(const AssetImage('assets/images/app_logo_white_transparent.png'), context);
-    precacheImage(const AssetImage('assets/images/app_logo_teal_transparent.png'), context);
+    precacheImage(
+      const AssetImage('assets/images/app_logo_white_transparent.png'),
+      context,
+    );
+    precacheImage(
+      const AssetImage('assets/images/app_logo_teal_transparent.png'),
+      context,
+    );
     precacheImage(const AssetImage('assets/images/app_icon.png'), context);
     precacheImage(const AssetImage('assets/images/drawer_bg.png'), context);
-    precacheImage(const AssetImage('assets/images/home_hero_banner.png'), context);
+    precacheImage(
+      const AssetImage('assets/images/home_hero_banner.png'),
+      context,
+    );
     precacheImage(const AssetImage('assets/images/new_robot.png'), context);
   }
 
@@ -130,10 +139,11 @@ class _VideoSplashScreenState extends State<VideoSplashScreen>
     if (mounted) {
       final authProvider = context.read<AuthProvider>();
       final bool isLoggedIn = authProvider.isLoggedIn;
-      
+
       // Direct destination: LoginScreen if unauthenticated, MainShell if logged in (No extra landing page)
-      final Widget targetScreen =
-          isLoggedIn ? const MainShell() : const LoginScreen();
+      final Widget targetScreen = isLoggedIn
+          ? const MainShell()
+          : const LoginScreen();
 
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
@@ -141,10 +151,7 @@ class _VideoSplashScreenState extends State<VideoSplashScreen>
           pageBuilder: (context, animation, secondaryAnimation) => targetScreen,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(
-              opacity: CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeIn,
-              ),
+              opacity: CurvedAnimation(parent: animation, curve: Curves.easeIn),
               child: child,
             );
           },
@@ -166,7 +173,8 @@ class _VideoSplashScreenState extends State<VideoSplashScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       body: GestureDetector(
-        onTap: _triggerFadeOutAndNavigate, // Tap to immediately fade out and proceed
+        onTap:
+            _triggerFadeOutAndNavigate, // Tap to immediately fade out and proceed
         behavior: HitTestBehavior.opaque,
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -184,9 +192,7 @@ class _VideoSplashScreenState extends State<VideoSplashScreen>
                       child: VideoPlayer(_videoController),
                     ),
                   )
-                : const SizedBox.expand(
-                    child: ColoredBox(color: Colors.black),
-                  ),
+                : const SizedBox.expand(child: ColoredBox(color: Colors.black)),
           ),
         ),
       ),

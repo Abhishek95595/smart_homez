@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Smart Homz — Scenes Easy Flow</title>
+<style>
+:root{
+  --bg:#06111B;
+  --bg-soft:#081722;
+  --surface:#0B1823;
+  --surface-2:#0E1D29;
+  --surface-3:#122532;
+  --text:#F4F7F8;
+  --muted:#8FA3B2;
+  --faint:#607482;
+  --accent:#18D6B4;
+  --accent-2:#55E7C7;
+  --accent-soft:rgba(24,214,180,.12);
+  --line:rgba(85,231,199,.14);
+  --line-strong:rgba(85,231,199,.30);
+  --danger:#FF6474;
+  --warn:#EAB96A;
+  --shadow:0 22px 70px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#03090E}
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);display:flex;justify-content:center}
+button,input{font:inherit}
+button{cursor:pointer}
+.phone{
+  width:100%;max-width:430px;min-height:100vh;position:relative;overflow:hidden;
+  background:radial-gradient(circle at 84% 0%,rgba(24,214,180,.10),transparent 28%),var(--bg);
+  box-shadow:var(--shadow);
+}
+.screen{min-height:100vh;padding-bottom:94px}
+.hidden{display:none!important}
+.safe{height:max(10px,env(safe-area-inset-top))}
+.content{padding:14px 16px 24px}
+.row{display:flex;align-items:center}
+.space{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.icon-btn{
+  width:40px;height:40px;border-radius:13px;border:1px solid var(--line);background:var(--surface);
+  color:var(--text);display:grid;place-items:center
+}
+.icon-btn svg,.mini svg,.nav-item svg,.scene-run svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* scenes home */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}
+.brand{display:flex;align-items:center;gap:10px}
+.robot{width:42px;height:42px;border-radius:14px;border:1px solid var(--line-strong);background:linear-gradient(145deg,rgba(24,214,180,.20),rgba(24,214,180,.03)),var(--surface);display:grid;place-items:center;box-shadow:0 0 24px rgba(24,214,180,.08);font-size:20px}
+.eyebrow{font-size:11px;color:var(--muted);margin-bottom:2px}
+h1{font-size:20px;line-height:1;margin:0;letter-spacing:-.35px}
+.hero{border-radius:24px;border:1px solid var(--line);background:radial-gradient(circle at 88% 28%,rgba(85,231,199,.16),transparent 28%),linear-gradient(135deg,rgba(24,214,180,.10),transparent 55%),var(--surface);padding:18px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;right:-18px;bottom:-26px;width:126px;height:126px;border-radius:38px;border:1px solid var(--line-strong);background:radial-gradient(circle at 35% 38%,var(--accent) 0 4px,transparent 5px),radial-gradient(circle at 67% 38%,var(--accent) 0 4px,transparent 5px),linear-gradient(145deg,rgba(24,214,180,.14),rgba(24,214,180,.025));transform:rotate(-8deg)}
+.hero h2{font-size:20px;line-height:1.15;margin:0 0 7px;max-width:235px;letter-spacing:-.5px}
+.hero p{font-size:12px;line-height:1.5;color:var(--muted);margin:0;max-width:240px}
+.hero-meta{margin-top:11px;font-size:10px;color:var(--accent-2)}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0 10px}
+.section-head h3{font-size:16px;margin:0}
+.add-btn{border:0;border-radius:13px;padding:10px 12px;background:linear-gradient(135deg,var(--accent),#0FB59B);color:#031511;font-weight:800;font-size:12px;box-shadow:0 8px 24px rgba(24,214,180,.15)}
+.search-wrap{position:relative;margin-bottom:11px}
+.search-wrap svg{position:absolute;left:13px;top:13px;width:17px;height:17px;stroke:var(--muted);fill:none;stroke-width:1.7}
+.search{width:100%;height:43px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--text);outline:none;padding:0 13px 0 41px}
+.scene-list{display:grid;gap:10px}
+.scene-card{border-radius:20px;padding:14px;background:linear-gradient(180deg,rgba(255,255,255,.015),transparent),var(--surface);border:1px solid var(--line)}
+.scene-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.scene-main{display:flex;gap:11px;min-width:0}
+.scene-icon{flex:0 0 auto;width:43px;height:43px;border-radius:14px;display:grid;place-items:center;border:1px solid var(--line-strong);background:var(--accent-soft);color:var(--accent-2)}
+.scene-icon svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.scene-copy h4{font-size:14px;margin:1px 0 4px}
+.scene-copy p{font-size:11px;color:var(--muted);line-height:1.4;margin:0}
+.star{width:31px;height:31px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted)}
+.star.on{color:var(--warn)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:11px 0}
+.chip{font-size:9px;padding:5px 7px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
+.chip.schedule{color:#7DB9FF}
+.card-actions{display:grid;grid-template-columns:1fr auto;gap:7px;border-top:1px solid var(--line);padding-top:10px}
+.scene-run{height:36px;border-radius:12px;border:1px solid var(--line-strong);background:var(--accent-soft);color:var(--accent-2);font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;gap:7px}
+.mini{width:36px;height:36px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);display:grid;place-items:center}
+.empty{padding:30px;text-align:center;color:var(--muted);border:1px dashed var(--line-strong);border-radius:18px}
+
+/* editor */
+.editor{padding-bottom:108px}
+.editor-top{position:sticky;top:0;z-index:20;background:rgba(6,17,27,.92);backdrop-filter:blur(18px);border-bottom:1px solid var(--line);padding:10px 16px 12px}
+.editor-head{display:flex;align-items:center;gap:11px}
+.editor-title small{display:block;color:var(--muted);font-size:10px;margin-bottom:3px}
+.editor-title strong{font-size:16px}
+.editor-body{padding:16px}
+.label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin:0 0 9px}
+.identity{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.selected-scene-icon{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;border:1px solid var(--line-strong);background:var(--accent-soft);color:var(--accent-2);flex:0 0 auto}
+.selected-scene-icon svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.scene-name{flex:1;height:50px;border:0;border-bottom:1px solid var(--line-strong);background:transparent;color:var(--text);font-size:20px;font-weight:700;outline:none;padding:0 2px}
+.scene-name::placeholder{color:#536775}
+.icon-row{display:flex;gap:8px;overflow:auto;padding-bottom:4px;scrollbar-width:none}
+.icon-row::-webkit-scrollbar{display:none}
+.icon-chip{width:42px;height:42px;border-radius:13px;border:1px solid var(--line);background:var(--surface);color:var(--muted);display:grid;place-items:center;flex:0 0 auto}
+.icon-chip svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.icon-chip.active{background:var(--accent-soft);color:var(--accent-2);border-color:var(--line-strong)}
+.block{margin-top:22px}
+.block-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:10px}
+.block-head h3{font-size:15px;margin:0}
+.block-head span{font-size:10px;color:var(--accent-2)}
+.room-title{font-size:11px;color:var(--muted);font-weight:700;margin:15px 2px 7px}
+.device-card{border:1px solid var(--line);background:var(--surface);border-radius:16px;margin-bottom:8px;overflow:hidden}
+.device-card.included{border-color:var(--line-strong)}
+.device-row{min-height:60px;display:flex;align-items:center;gap:11px;padding:10px 12px}
+.device-icon{width:38px;height:38px;border-radius:11px;background:var(--surface-2);display:grid;place-items:center;color:var(--faint);flex:0 0 auto}
+.device-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.device-card.included .device-icon{background:var(--accent-soft);color:var(--accent-2)}
+.device-main{flex:1;min-width:0}
+.device-name{font-size:13px;font-weight:650}
+.device-state{font-size:10px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.switch{position:relative;width:44px;height:25px;flex:0 0 auto}
+.switch input{display:none}
+.switch span{position:absolute;inset:0;border-radius:999px;background:var(--surface-3);border:1px solid var(--line);transition:.18s}
+.switch span:after{content:"";position:absolute;width:17px;height:17px;top:3px;left:3px;border-radius:50%;background:var(--muted);transition:.18s}
+.switch input:checked+span{background:var(--accent-soft);border-color:var(--line-strong)}
+.switch input:checked+span:after{left:22px;background:var(--accent)}
+.device-controls{border-top:1px solid var(--line);padding:12px 14px 14px 61px;display:grid;gap:12px}
+.segment{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.segment button,.trigger-btn{height:34px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);font-size:11px;font-weight:700}
+.segment button.active,.trigger-btn.active{background:var(--accent-soft);border-color:var(--line-strong);color:var(--accent-2)}
+.range-label{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:7px}
+.range-label b{color:var(--text);font-weight:700}
+input[type="range"]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:999px;background:var(--surface-3);outline:none}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--accent)}
+input[type="range"]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#fff;border:3px solid var(--accent)}
+.trigger-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.trigger-btn{height:42px}
+.schedule-panel{margin-top:9px;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--surface)}
+.time-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px}
+.time-row input{height:40px;border-radius:11px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);padding:0 11px;outline:none}
+.days{display:flex;gap:6px;margin-top:10px;overflow:auto}
+.day{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);font-size:10px;font-weight:700;flex:0 0 auto}
+.day.active{background:var(--accent-soft);border-color:var(--line-strong);color:var(--accent-2)}
+.option-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border:1px solid var(--line);background:var(--surface);border-radius:15px}
+.option-copy strong{display:block;font-size:12px}.option-copy span{display:block;font-size:10px;color:var(--muted);margin-top:3px}
+.editor-footer{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(430px,100%);z-index:25;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(6,17,27,.96);backdrop-filter:blur(18px);border-top:1px solid var(--line)}
+.save-btn{width:100%;height:48px;border-radius:14px;border:0;background:linear-gradient(135deg,var(--accent),#0FB59B);color:#031511;font-weight:850;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px}
+.save-btn:disabled{background:var(--surface-2);color:var(--faint);border:1px solid var(--line);cursor:not-allowed}
+.save-note{text-align:center;font-size:10px;color:var(--muted);margin-top:6px}
+
+/* bottom nav */
+.bottom-nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(430px,100%);padding:9px 14px calc(9px + env(safe-area-inset-bottom));background:rgba(6,17,27,.94);backdrop-filter:blur(18px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);z-index:10}
+.nav-item{border:0;background:transparent;color:var(--muted);display:grid;place-items:center;gap:4px;font-size:9px;padding:5px 0}.nav-item.active{color:var(--accent-2)}
+.fab{width:54px;height:54px;border-radius:18px;margin-top:-24px;background:linear-gradient(135deg,var(--accent),#0FB59B);color:#041512;font-size:26px;border:5px solid var(--bg);box-shadow:0 12px 30px rgba(24,214,180,.2);display:grid;place-items:center}
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);width:min(380px,calc(100% - 32px));padding:12px 14px;border-radius:14px;border:1px solid var(--line-strong);background:var(--surface-2);box-shadow:var(--shadow);font-size:11px;z-index:50;display:none}.toast.show{display:block}
+@media(min-width:700px){body{padding:18px 0}.phone{min-height:calc(100vh - 36px);border-radius:32px}.bottom-nav,.editor-footer{bottom:18px}.bottom-nav{border-radius:0 0 32px 32px}}
+</style>
+</head>
+<body>
+<div class="phone">
+  <section class="screen" id="scenesScreen">
+    <div class="safe"></div>
+    <main class="content">
+      <header class="topbar">
+        <div class="brand">
+          <div class="robot">🤖</div>
+          <div><div class="eyebrow">Smart Homz</div><h1>Scenes</h1></div>
+        </div>
+        <button class="icon-btn" id="refreshBtn" aria-label="Refresh">
+          <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+        </button>
+      </header>
+
+      <section class="hero">
+        <h2>Your home, set in one tap.</h2>
+        <p>Create simple scenes by choosing devices and the state you want.</p>
+        <div class="hero-meta">● Quick Scenes ready</div>
+      </section>
+
+      <div class="section-head">
+        <h3>My Scenes</h3>
+        <button class="add-btn" id="createBtn">＋ Create</button>
+      </div>
+
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <input class="search" id="search" placeholder="Search scenes" />
+      </div>
+      <section class="scene-list" id="sceneList"></section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button class="nav-item"><svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v9H3z"/></svg>Home</button>
+      <button class="nav-item"><svg viewBox="0 0 24 24"><path d="M8 8h8v8H8zM4 10h4M16 10h4M10 4v4M10 16v4"/></svg>Devices</button>
+      <button class="nav-item" id="fabBtn"><div class="fab">＋</div>Add</button>
+      <button class="nav-item active"><svg viewBox="0 0 24 24"><path d="m12 3 2.1 4.7L19 10l-4.9 2.3L12 17l-2.1-4.7L5 10l4.9-2.3z"/></svg>Scenes</button>
+      <button class="nav-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 20c1-4 3-6 7-6s6 2 7 6"/></svg>Profile</button>
+    </nav>
+  </section>
+
+  <section class="screen editor hidden" id="editorScreen">
+    <div class="safe"></div>
+    <div class="editor-top">
+      <div class="editor-head">
+        <button class="icon-btn" id="backBtn" aria-label="Back"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+        <div class="editor-title"><small>SCENE SETUP</small><strong id="editorHeading">Create Scene</strong></div>
+      </div>
+    </div>
+
+    <div class="editor-body">
+      <div class="identity">
+        <div class="selected-scene-icon" id="selectedSceneIcon"></div>
+        <input class="scene-name" id="sceneName" maxlength="28" placeholder="Name this scene" />
+      </div>
+      <div class="icon-row" id="iconRow"></div>
+
+      <section class="block">
+        <div class="block-head"><h3>Choose devices</h3><span id="deviceCount">0 selected</span></div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.45;margin-top:-4px">Turn on only the devices this scene should control. Their settings appear automatically.</div>
+        <div id="rooms"></div>
+      </section>
+
+      <section class="block">
+        <div class="block-head"><h3>When should it run?</h3><span>Optional</span></div>
+        <div class="trigger-grid">
+          <button class="trigger-btn active" data-trigger="manual">Manual tap</button>
+          <button class="trigger-btn" data-trigger="scheduled">Schedule</button>
+        </div>
+        <div class="schedule-panel hidden" id="schedulePanel">
+          <div class="time-row">
+            <span style="font-size:11px;color:var(--muted)">Run at</span>
+            <input type="time" id="scheduleTime" value="19:30" />
+          </div>
+          <div class="days" id="days"></div>
+        </div>
+      </section>
+
+      <section class="block">
+        <div class="option-row">
+          <div class="option-copy"><strong>Add to Quick Scenes</strong><span>Show this scene on your dashboard for one-tap access.</span></div>
+          <label class="switch"><input type="checkbox" id="favorite"><span></span></label>
+        </div>
+      </section>
+    </div>
+
+    <footer class="editor-footer">
+      <button class="save-btn" id="saveBtn" disabled>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>
+        Save Scene
+      </button>
+      <div class="save-note" id="saveNote">Enter a name and choose at least one device</div>
+    </footer>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const ICONS={
+  moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  film:'<rect x="2" y="3" width="20" height="18" rx="2"/><path d="M7 3v18M17 3v18M2 8h5M2 16h5M17 8h5M17 16h5"/>',
+  coffee:'<path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z"/><path d="M6 2v2M10 2v2M14 2v2"/>',
+  briefcase:'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  bed:'<path d="M2 4v16M2 9h18a2 2 0 0 1 2 2v9M2 15h20"/><circle cx="7" cy="9" r="1.5"/>',
+  home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/>',
+  star:'<path d="m12 3 2.1 4.7L19 10l-4.9 2.3L12 17l-2.1-4.7L5 10l4.9-2.3z"/>',
+  light:'<path d="M9 18h6M10 22h4"/><path d="M12 2a6 6 0 0 0-4 10.5c.6.6 1 1.3 1 2.5h6c0-1.2.4-1.9 1-2.5A6 6 0 0 0 12 2Z"/>',
+  plug:'<path d="M12 22v-5M9 8V2M15 8V2"/><path d="M7 8h10v3a5 5 0 0 1-10 0Z"/>',
+  climate:'<path d="M14 4a2 2 0 0 0-4 0v10.3a4 4 0 1 0 4 0Z"/>',
+  cover:'<path d="M7 17V3M3 7l4-4 4 4M17 7v14M21 17l-4 4-4-4"/>'
+};
+const icon=(name,size=20)=>`<svg viewBox="0 0 24 24" style="width:${size}px;height:${size}px">${ICONS[name]}</svg>`;
+
+const ROOMS=[
+  {name:'Living Room',devices:[
+    {id:'lr-light',name:'Ceiling Light',type:'light'},
+    {id:'lr-lamp',name:'Floor Lamp',type:'light'},
+    {id:'lr-tv',name:'TV Plug',type:'plug'},
+    {id:'lr-blinds',name:'Blinds',type:'cover'}
+  ]},
+  {name:'Bedroom',devices:[
+    {id:'br-light',name:'Ceiling Light',type:'light'},
+    {id:'br-lamp',name:'Bedside Lamp',type:'light'},
+    {id:'br-ac',name:'AC',type:'climate'}
+  ]},
+  {name:'Kitchen',devices:[
+    {id:'kt-light',name:'Counter Lights',type:'light'},
+    {id:'kt-plug',name:'Coffee Maker',type:'plug'}
+  ]}
+];
+const ALL=ROOMS.flatMap(r=>r.devices);
+const dayLabels=['M','T','W','T','F','S','S'];
+
+const app={
+  editingId:null,
+  draft:null,
+  scenes:[
+    {id:'1',name:'Movie Night',icon:'film',favorite:true,trigger:'manual',time:'',days:[],devices:{'lr-light':{included:true,on:true,brightness:20},'lr-blinds':{included:true,position:0},'lr-tv':{included:true,on:true}}},
+    {id:'2',name:'Good Morning',icon:'sun',favorite:true,trigger:'scheduled',time:'07:00',days:[0,1,2,3,4],devices:{'br-light':{included:true,on:true,brightness:65},'lr-blinds':{included:true,position:100}}},
+    {id:'3',name:'Away Mode',icon:'home',favorite:false,trigger:'manual',time:'',days:[],devices:{'lr-light':{included:true,on:false},'br-light':{included:true,on:false},'lr-tv':{included:true,on:false}}}
+  ]
+};
+
+function defaultDevice(d){return {included:false,on:d.type!=='cover'&&d.type!=='climate',brightness:70,temp:22,position:0}}
+function freshDraft(){const devices={};ALL.forEach(d=>devices[d.id]=defaultDevice(d));return {name:'',icon:'moon',favorite:false,trigger:'manual',time:'19:30',days:[0,1,2,3,4,5,6],devices}}
+function cloneDraft(scene){
+  const d=freshDraft();d.name=scene.name;d.icon=scene.icon;d.favorite=scene.favorite;d.trigger=scene.trigger;d.time=scene.time||'19:30';d.days=[...(scene.days||[])];
+  Object.entries(scene.devices||{}).forEach(([id,v])=>{if(d.devices[id])d.devices[id]={...d.devices[id],...v}});return d;
+}
+function includedCount(d=app.draft){return Object.values(d.devices).filter(x=>x.included).length}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__t);window.__t=setTimeout(()=>t.classList.remove('show'),1800)}
+function openEditor(scene=null){app.editingId=scene?.id||null;app.draft=scene?cloneDraft(scene):freshDraft();document.getElementById('scenesScreen').classList.add('hidden');document.getElementById('editorScreen').classList.remove('hidden');renderEditor();window.scrollTo(0,0)}
+function closeEditor(){document.getElementById('editorScreen').classList.add('hidden');document.getElementById('scenesScreen').classList.remove('hidden');renderScenes();window.scrollTo(0,0)}
+
+function renderScenes(){
+  const q=document.getElementById('search').value.trim().toLowerCase();
+  const data=app.scenes.filter(s=>s.name.toLowerCase().includes(q));
+  const list=document.getElementById('sceneList');
+  if(!data.length){list.innerHTML='<div class="empty">No scenes found.</div>';return}
+  list.innerHTML=data.map(s=>{
+    const count=Object.values(s.devices).filter(d=>d.included).length;
+    return `<article class="scene-card" data-id="${s.id}">
+      <div class="scene-top"><div class="scene-main"><div class="scene-icon">${icon(s.icon,21)}</div><div class="scene-copy"><h4>${escapeHtml(s.name)}</h4><p>${count} device${count===1?'':'s'} configured</p></div></div><button class="star ${s.favorite?'on':''}" data-act="fav">${s.favorite?'★':'☆'}</button></div>
+      <div class="chips"><span class="chip">${count} device${count===1?'':'s'}</span><span class="chip ${s.trigger==='scheduled'?'schedule':''}">${s.trigger==='scheduled'?'Scheduled '+s.time:'Manual'}</span>${s.favorite?'<span class="chip">Quick Scene</span>':''}</div>
+      <div class="card-actions"><button class="scene-run" data-act="run"><svg viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></svg>Activate</button><button class="mini" data-act="edit" aria-label="Edit"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/></svg></button></div>
+    </article>`
+  }).join('');
+}
+function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+
+function renderEditor(){
+  const d=app.draft;
+  document.getElementById('editorHeading').textContent=app.editingId?'Edit Scene':'Create Scene';
+  document.getElementById('sceneName').value=d.name;
+  document.getElementById('favorite').checked=d.favorite;
+  document.getElementById('selectedSceneIcon').innerHTML=icon(d.icon,28);
+  document.getElementById('iconRow').innerHTML=['moon','sun','film','coffee','briefcase','bed','home'].map(i=>`<button class="icon-chip ${d.icon===i?'active':''}" data-icon="${i}">${icon(i,19)}</button>`).join('');
+  const count=includedCount();document.getElementById('deviceCount').textContent=`${count} selected`;
+  document.getElementById('rooms').innerHTML=ROOMS.map(room=>`<div class="room-title">${room.name}</div>${room.devices.map(renderDevice).join('')}`).join('');
+  document.querySelectorAll('[data-trigger]').forEach(b=>b.classList.toggle('active',b.dataset.trigger===d.trigger));
+  document.getElementById('schedulePanel').classList.toggle('hidden',d.trigger!=='scheduled');
+  document.getElementById('scheduleTime').value=d.time;
+  document.getElementById('days').innerHTML=dayLabels.map((x,i)=>`<button class="day ${d.days.includes(i)?'active':''}" data-day="${i}">${x}</button>`).join('');
+  syncSave();
+}
+
+function renderDevice(device){
+  const s=app.draft.devices[device.id];
+  let summary='Not included';
+  if(s.included){
+    if(device.type==='light')summary=s.on?`ON · ${s.brightness}%`:'OFF';
+    if(device.type==='plug')summary=s.on?'ON':'OFF';
+    if(device.type==='climate')summary=s.on?`ON · ${s.temp}°C`:'OFF';
+    if(device.type==='cover')summary=s.position===0?'Closed':`${s.position}% open`;
+  }
+  let controls='';
+  if(s.included){
+    if(device.type!=='cover')controls+=`<div class="segment"><button class="${s.on?'active':''}" data-state="on" data-id="${device.id}">Turn on</button><button class="${!s.on?'active':''}" data-state="off" data-id="${device.id}">Turn off</button></div>`;
+    if(device.type==='light'&&s.on)controls+=`<div><div class="range-label"><span>Brightness</span><b>${s.brightness}%</b></div><input type="range" min="1" max="100" value="${s.brightness}" data-range="brightness" data-id="${device.id}"></div>`;
+    if(device.type==='climate'&&s.on)controls+=`<div><div class="range-label"><span>Temperature</span><b>${s.temp}°C</b></div><input type="range" min="16" max="30" value="${s.temp}" data-range="temp" data-id="${device.id}"></div>`;
+    if(device.type==='cover')controls+=`<div><div class="range-label"><span>Position</span><b>${s.position===0?'Closed':s.position+'%'}</b></div><input type="range" min="0" max="100" value="${s.position}" data-range="position" data-id="${device.id}"></div>`;
+  }
+  return `<div class="device-card ${s.included?'included':''}" data-device="${device.id}"><div class="device-row"><div class="device-icon">${icon(device.type,18)}</div><div class="device-main"><div class="device-name">${device.name}</div><div class="device-state">${summary}</div></div><label class="switch"><input type="checkbox" data-include="${device.id}" ${s.included?'checked':''}><span></span></label></div>${s.included?`<div class="device-controls">${controls}</div>`:''}</div>`;
+}
+
+function syncSave(){
+  const count=includedCount(),ok=app.draft.name.trim().length>0&&count>0;
+  const btn=document.getElementById('saveBtn');btn.disabled=!ok;
+  document.getElementById('saveNote').textContent=!app.draft.name.trim()?'Enter a scene name':count===0?'Choose at least one device':`${app.draft.name.trim()} · ${count} device${count===1?'':'s'}`;
+}
+
+function saveScene(){
+  const d=app.draft;if(!d.name.trim()||includedCount()===0)return;
+  const scene={id:app.editingId||String(Date.now()),name:d.name.trim(),icon:d.icon,favorite:d.favorite,trigger:d.trigger,time:d.trigger==='scheduled'?d.time:'',days:d.trigger==='scheduled'?[...d.days]:[],devices:JSON.parse(JSON.stringify(d.devices))};
+  if(app.editingId){const i=app.scenes.findIndex(x=>x.id===app.editingId);app.scenes[i]=scene;showToast('Scene updated')}else{app.scenes.unshift(scene);showToast('Scene created')}
+  closeEditor();
+}
+
+// home actions
+document.getElementById('createBtn').onclick=()=>openEditor();
+document.getElementById('fabBtn').onclick=()=>openEditor();
+document.getElementById('backBtn').onclick=closeEditor;
+document.getElementById('refreshBtn').onclick=()=>{renderScenes();showToast('Scenes refreshed')};
+document.getElementById('search').oninput=renderScenes;
+document.getElementById('sceneList').onclick=e=>{
+  const btn=e.target.closest('[data-act]');if(!btn)return;const card=e.target.closest('.scene-card');const s=app.scenes.find(x=>x.id===card.dataset.id);if(!s)return;
+  if(btn.dataset.act==='fav'){s.favorite=!s.favorite;renderScenes()}
+  if(btn.dataset.act==='edit')openEditor(s);
+  if(btn.dataset.act==='run'){showToast(`${s.name} activated`)}
+};
+
+// editor actions
+document.getElementById('sceneName').addEventListener('input',e=>{app.draft.name=e.target.value;syncSave()});
+document.getElementById('favorite').addEventListener('change',e=>app.draft.favorite=e.target.checked);
+document.getElementById('iconRow').onclick=e=>{const b=e.target.closest('[data-icon]');if(!b)return;app.draft.icon=b.dataset.icon;renderEditor()};
+document.querySelector('.trigger-grid').onclick=e=>{const b=e.target.closest('[data-trigger]');if(!b)return;app.draft.trigger=b.dataset.trigger;renderEditor()};
+document.getElementById('scheduleTime').onchange=e=>app.draft.time=e.target.value;
+document.getElementById('days').onclick=e=>{const b=e.target.closest('[data-day]');if(!b)return;const i=Number(b.dataset.day);app.draft.days=app.draft.days.includes(i)?app.draft.days.filter(x=>x!==i):[...app.draft.days,i].sort();renderEditor()};
+document.getElementById('rooms').addEventListener('change',e=>{
+  const id=e.target.dataset.include;if(id){app.draft.devices[id].included=e.target.checked;renderEditor()}
+});
+document.getElementById('rooms').addEventListener('click',e=>{
+  const b=e.target.closest('[data-state]');if(!b)return;app.draft.devices[b.dataset.id].on=b.dataset.state==='on';renderEditor();
+});
+document.getElementById('rooms').addEventListener('input',e=>{
+  const kind=e.target.dataset.range,id=e.target.dataset.id;if(!kind||!id)return;app.draft.devices[id][kind]=Number(e.target.value);renderEditor();
+});
+document.getElementById('saveBtn').onclick=saveScene;
+
+renderScenes();
+</script>
+</body>
+</html>

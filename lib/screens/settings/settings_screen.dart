@@ -27,7 +27,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final bool _emailAlerts = true;
   bool _soundEffects = true;
 
-  String _themeMode = 'Light';
   String _language = 'English';
   String _temperatureUnit = '°C';
   String _timeFormat = '12-Hour';
@@ -63,24 +62,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.settings_suggest_outlined,
                     title: 'App Preferences',
                     children: [
-                      _SettingRow(
-                        icon: Icons.dark_mode_outlined,
-                        title: 'Theme',
-                        subtitle: '$_themeMode Mode',
-                        trailing: _SegmentedChoice(
-                          values: const ['Light', 'Dark', 'System'],
-                          selected: _themeMode,
-                          onSelected: (value) {
-                            setState(() => _themeMode = value);
-                            if (value != 'Light') {
-                              _showInfo(
-                                '$value theme selected',
-                                'The preference is set on this screen. The app currently ships with the Hasomi light design system.',
-                              );
-                            }
-                          },
-                        ),
-                      ),
                       _SettingRow(
                         icon: Icons.language_rounded,
                         title: 'Language',

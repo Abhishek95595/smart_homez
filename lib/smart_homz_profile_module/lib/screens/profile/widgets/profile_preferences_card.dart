@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../providers/profile_provider.dart';
-import '../../../providers/theme_provider.dart';
 import '../profile_theme.dart';
 import 'avatar_picker_sheet.dart';
 
-/// Card showing application preferences like Theme, Units, Language, and Companion Avatar.
+/// Card showing application preferences like Units, Language, and Companion Avatar.
 class ProfilePreferencesCard extends StatelessWidget {
   const ProfilePreferencesCard({super.key});
 
@@ -14,9 +13,7 @@ class ProfilePreferencesCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = ProfileTheme.of(context);
     final profileProvider = context.watch<ProfileProvider>();
-    final themeProvider = context.watch<ThemeProvider>();
     final avatar = profileProvider.currentAvatar;
-    final currentThemeMode = themeProvider.themeName;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -38,15 +35,13 @@ class ProfilePreferencesCard extends StatelessWidget {
             color: colors.panel,
             borderRadius: BorderRadius.circular(ProfileTheme.largeRadius),
             border: Border.all(color: colors.border, width: 1.0),
-            boxShadow: colors.isDark
-                ? null
-                : [
-                    BoxShadow(
-                      color: colors.shadow,
-                      blurRadius: 14,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+            boxShadow: [
+              BoxShadow(
+                color: colors.shadow,
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             children: [
@@ -132,71 +127,6 @@ class ProfilePreferencesCard extends StatelessWidget {
                 ),
               ),
               _RowDivider(color: colors.divider),
-              // Theme row with interactive segmented selector
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: colors.raised,
-                        borderRadius: BorderRadius.circular(
-                          ProfileTheme.smallRadius,
-                        ),
-                      ),
-                      child: Icon(
-                        colors.isDark
-                            ? Icons.dark_mode_rounded
-                            : Icons.light_mode_rounded,
-                        color: colors.accent,
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Theme',
-                            style: TextStyle(
-                              color: colors.textPrimary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '$currentThemeMode Mode',
-                            style: TextStyle(
-                              color: colors.textSecondary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    _ThemeSegmentedChoice(
-                      values: const ['Light', 'Dark'],
-                      selected: currentThemeMode,
-                      onSelected: (value) {
-                        if (value == 'Light') {
-                          themeProvider.setThemeMode(ThemeMode.light);
-                        } else if (value == 'Dark') {
-                          themeProvider.setThemeMode(ThemeMode.dark);
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              _RowDivider(color: colors.divider),
               // Temperature Units row
               const _PreferenceRow(
                 icon: Icons.thermostat_rounded,
@@ -214,71 +144,6 @@ class ProfilePreferencesCard extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ThemeSegmentedChoice extends StatelessWidget {
-  final List<String> values;
-  final String selected;
-  final ValueChanged<String> onSelected;
-
-  const _ThemeSegmentedChoice({
-    required this.values,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = ProfileTheme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        color: colors.raised,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colors.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: values.map((value) {
-          final isSelected = selected == value;
-          final Color activeText = colors.isDark
-              ? colors.background
-              : Colors.white;
-
-          return InkWell(
-            onTap: () => onSelected(value),
-            borderRadius: BorderRadius.circular(11),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSelected ? colors.accent : Colors.transparent,
-                borderRadius: BorderRadius.circular(11),
-                boxShadow: isSelected && !colors.isDark
-                    ? [
-                        BoxShadow(
-                          color: colors.accent.withValues(alpha: 0.25),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Text(
-                value,
-                style: TextStyle(
-                  color: isSelected ? activeText : colors.textSecondary,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
     );
   }
 }

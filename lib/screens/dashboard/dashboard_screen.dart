@@ -9,10 +9,12 @@ import '../../providers/device_provider.dart';
 import '../../providers/energy_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../providers/automation_provider.dart';
+import '../../providers/scene_provider.dart';
 import '../energy/energy_screen.dart';
 import '../properties/floors_screen.dart';
 import '../properties/homes_screen.dart';
 import '../automations/automations_screen.dart';
+import '../scenes/scenes_screen.dart';
 import '../main_shell.dart';
 import '../../theme/app_theme.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -21,6 +23,7 @@ import '../../widgets/app_navigation_drawer.dart';
 import '../../widgets/notification_bell_button.dart';
 import '../../features/integrations/alexa/alexa_provider.dart';
 import '../../features/integrations/alexa/alexa_webview_screen.dart';
+import '../../features/home_setup/providers/home_setup_provider.dart';
 import '../../widgets/app_logo.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -69,8 +72,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final firstName = rawName.split(' ').first;
     final userName =
         (firstName.isNotEmpty && !firstName.toLowerCase().contains('otp'))
-            ? firstName
-            : 'Friend';
+        ? firstName
+        : 'Friend';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -91,13 +94,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onPressed: () => openAppDrawer(btnCtx),
           ),
         ),
-        title: const AppBrandHeader(
-          fontSize: 24,
-          spacing: 0,
-        ),
-        actions: const [
-          NotificationBellButton(),
-        ],
+        title: const AppBrandHeader(fontSize: 24, spacing: 0),
+        actions: const [NotificationBellButton()],
       ),
       body: SafeArea(
         top: false,
@@ -137,13 +135,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               title: 'Schedules',
               actionLabel: 'View All',
               onAction: () {
-                final mainShellState = context.findAncestorStateOfType<MainShellState>();
+                final mainShellState = context
+                    .findAncestorStateOfType<MainShellState>();
                 if (mainShellState != null) {
                   mainShellState.onTabTapped(2);
                 } else {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const AutomationsScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const AutomationsScreen(),
+                    ),
                   );
                 }
               },
@@ -152,6 +153,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             RepaintBoundary(
               child: _AutomationsSection(
                 automationProvider: context.watch<AutomationProvider>(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            RepaintBoundary(
+              child: _QuickScenesSection(
+                sceneProvider: context.watch<SceneProvider>(),
               ),
             ),
             const SizedBox(height: 24),
@@ -419,6 +426,27 @@ class _PropertiesAndEnergySection extends StatelessWidget {
     );
   }
 
+  void _openAddProperty(BuildContext context) {
+    try {
+      context.read<HomeSetupProvider>().reset();
+    } catch (e) {
+      debugPrint('[AddProperty] Reset notice: $e');
+    }
+
+    Navigator.of(context, rootNavigator: true).pushNamed('/homes/setup').then((
+      _,
+    ) {
+      if (context.mounted) {
+        final clientId = context.read<AuthProvider>().resolvedClientId;
+        if (clientId != null) {
+          context.read<PropertyProvider>().syncFromApi(clientId);
+        } else {
+          context.read<PropertyProvider>().reload();
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final propertyProvider = context.watch<PropertyProvider>();
@@ -429,7 +457,7 @@ class _PropertiesAndEnergySection extends StatelessWidget {
 
     if (properties.isEmpty) {
       propertiesWidget = _AddPropertyFullCard(
-        onTap: () => Navigator.pushNamed(context, '/homes/setup'),
+        onTap: () => _openAddProperty(context),
       );
     } else if (properties.length == 1) {
       propertiesWidget = Row(
@@ -445,33 +473,7 @@ class _PropertiesAndEnergySection extends StatelessWidget {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: _AddPropertyCard(
-              onTap: () => Navigator.pushNamed(context, '/homes/setup'),
-            ),
-          ),
-        ],
-      );
-    } else if (properties.length == 2) {
-      propertiesWidget = Row(
-        children: [
-          Expanded(
-            child: _buildPropertyCard(
-              context,
-              properties[0],
-              propertyProvider,
-              deviceProvider,
-              user,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _buildPropertyCard(
-              context,
-              properties[1],
-              propertyProvider,
-              deviceProvider,
-              user,
-            ),
+            child: _AddPropertyCard(onTap: () => _openAddProperty(context)),
           ),
         ],
       );
@@ -487,9 +489,7 @@ class _PropertiesAndEnergySection extends StatelessWidget {
             if (index == properties.length) {
               return SizedBox(
                 width: 165,
-                child: _AddPropertyCard(
-                  onTap: () => Navigator.pushNamed(context, '/homes/setup'),
-                ),
+                child: _AddPropertyCard(onTap: () => _openAddProperty(context)),
               );
             }
             return SizedBox(
@@ -1735,10 +1735,7 @@ class _ScheduleToggleSwitch extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
 
-  const _ScheduleToggleSwitch({
-    required this.value,
-    required this.onChanged,
-  });
+  const _ScheduleToggleSwitch({required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -1791,6 +1788,161 @@ class _ScheduleToggleSwitch extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _QuickScenesSection extends StatelessWidget {
+  final SceneProvider sceneProvider;
+
+  const _QuickScenesSection({required this.sceneProvider});
+
+  @override
+  Widget build(BuildContext context) {
+    final quickScenes = sceneProvider.quickScenes;
+    if (quickScenes.isEmpty) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final auth = context.read<AuthProvider>();
+    final property = context.read<PropertyProvider>();
+    final clientId = property.clientId ?? auth.resolvedClientUuid;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Quick Scenes',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ScenesScreen()),
+                  );
+                },
+                child: Text(
+                  'See All',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 100,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: quickScenes.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final scene = quickScenes[index];
+              final isActivating = sceneProvider.isActivating(scene.id);
+              return GestureDetector(
+                onTap: isActivating
+                    ? null
+                    : () async {
+                        if (clientId != null) {
+                          final success = await sceneProvider.activateScene(
+                            clientId,
+                            scene.id,
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  success
+                                      ? '“${scene.name}” activated'
+                                      : 'Failed to activate “${scene.name}”',
+                                ),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                child: Container(
+                  width: 160,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: colorScheme.outlineVariant),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Icon(
+                            Icons.auto_awesome_rounded,
+                            size: 20,
+                            color: colorScheme.primary,
+                          ),
+                          if (isActivating)
+                            SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: colorScheme.primary,
+                              ),
+                            )
+                          else
+                            Icon(
+                              Icons.play_circle_fill_rounded,
+                              size: 22,
+                              color: colorScheme.primary,
+                            ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            scene.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          Text(
+                            '${scene.actions.length} devices',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

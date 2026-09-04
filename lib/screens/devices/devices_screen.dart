@@ -141,6 +141,7 @@ class DevicesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final deviceProvider = context.watch<DeviceProvider>();
     final user = context.watch<AuthProvider>().currentUser;
+
     final rawVisibleDevices =
         (propertyName != null && floorName != null && roomName != null)
         ? deviceProvider.visibleDevicesForRoom(
@@ -176,10 +177,15 @@ class DevicesScreen extends StatelessWidget {
 
     final canPop = Navigator.canPop(context);
 
+    const scaffoldBg = AppColors.background;
+    const appBarBg = Colors.white;
+    const primaryText = AppColors.textPrimary;
+    const tealAccent = AppColors.primary;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: appBarBg,
         elevation: 0,
         scrolledUnderElevation: 1,
         centerTitle: false,
@@ -187,11 +193,7 @@ class DevicesScreen extends StatelessWidget {
             ? null
             : Builder(
                 builder: (ctx) => IconButton(
-                  icon: const Icon(
-                    Icons.menu_rounded,
-                    color: Color(0xFF0F172A),
-                    size: 28,
-                  ),
+                  icon: Icon(Icons.menu_rounded, color: primaryText, size: 28),
                   tooltip: 'Menu',
                   onPressed: () => openAppDrawer(ctx),
                 ),
@@ -201,25 +203,33 @@ class DevicesScreen extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
-                color: Color(0xFF0F172A),
+                color: primaryText,
                 letterSpacing: -0.4,
               ),
             ),
             const SizedBox(height: 2),
-            const Text(
-              'SMART IOT HARDWARE MATRIX',
+            Text(
+              'SMART HOME HARDWARE MATRIX',
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF00A38E),
+                color: tealAccent,
                 letterSpacing: 0.8,
               ),
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.add_circle_outline_rounded, color: tealAccent),
+            tooltip: 'Add Device',
+            onPressed: () => _addDevice(context),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       body: SafeArea(
         top: false,
@@ -232,7 +242,7 @@ class DevicesScreen extends StatelessWidget {
                 actionLabel: 'Retry',
                 onAction: () => context.read<DeviceProvider>().reload(),
               )
-            : _GenZDeviceDashboard(
+            : _HasomiDeviceDashboard(
                 devices: visibleDevices,
                 user: user,
                 loadError: deviceProvider.loadError,
@@ -289,7 +299,7 @@ class DevicesScreen extends StatelessWidget {
 
 enum _DeviceFilter { all, on, lights, climate, fans, sensors, offline }
 
-class _GenZDeviceDashboard extends StatefulWidget {
+class _HasomiDeviceDashboard extends StatefulWidget {
   final List<Device> devices;
   final AppUser? user;
   final String? loadError;
@@ -299,7 +309,7 @@ class _GenZDeviceDashboard extends StatefulWidget {
   final ValueChanged<Device>? onDelete;
   final ValueChanged<Device>? onMove;
 
-  const _GenZDeviceDashboard({
+  const _HasomiDeviceDashboard({
     required this.devices,
     required this.user,
     this.loadError,
@@ -311,10 +321,10 @@ class _GenZDeviceDashboard extends StatefulWidget {
   });
 
   @override
-  State<_GenZDeviceDashboard> createState() => _GenZDeviceDashboardState();
+  State<_HasomiDeviceDashboard> createState() => _HasomiDeviceDashboardState();
 }
 
-class _GenZDeviceDashboardState extends State<_GenZDeviceDashboard> {
+class _HasomiDeviceDashboardState extends State<_HasomiDeviceDashboard> {
   String _query = '';
   _DeviceFilter _filter = _DeviceFilter.all;
 
@@ -367,6 +377,11 @@ class _GenZDeviceDashboardState extends State<_GenZDeviceDashboard> {
 
     final bool isWide = MediaQuery.of(context).size.width > 600;
 
+    const primaryText = AppColors.textPrimary;
+    const secondaryText = AppColors.textSecondary;
+    const tealAccent = AppColors.primary;
+    const roomPillBg = AppColors.primarySoft;
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
       children: [
@@ -375,7 +390,7 @@ class _GenZDeviceDashboardState extends State<_GenZDeviceDashboard> {
           const SizedBox(height: 12),
         ],
 
-        // Gen-Z Hero Device Status Header
+        // Hero Device Matrix Status Card
         _HeroDeviceMatrix(
           totalDevices: widget.devices.length,
           activeDevices: activeCount,
@@ -419,7 +434,7 @@ class _GenZDeviceDashboardState extends State<_GenZDeviceDashboard> {
         if (widget.devices.isEmpty)
           _DeviceEmptyState(message: widget.emptyMessage)
         else if (filteredDevices.isEmpty)
-          const _DeviceEmptyState(
+          _DeviceEmptyState(
             message: 'No smart devices found matching current filters.',
           )
         else
@@ -435,7 +450,7 @@ class _GenZDeviceDashboardState extends State<_GenZDeviceDashboard> {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00A38E).withValues(alpha: 0.12),
+                        color: roomPillBg,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
@@ -443,39 +458,39 @@ class _GenZDeviceDashboardState extends State<_GenZDeviceDashboard> {
                             ? Icons.grid_view_rounded
                             : Icons.meeting_room_rounded,
                         size: 16,
-                        color: const Color(0xFF00A38E),
+                        color: tealAccent,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       room,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16.5,
                         fontWeight: FontWeight.w900,
-                        color: Color(0xFF0F172A),
+                        color: primaryText,
                         letterSpacing: -0.3,
                       ),
                     ),
                     const Spacer(),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
+                        horizontal: 10,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: roomOnCount > 0
-                            ? const Color(0xFFECFDF5)
-                            : const Color(0xFFF1F5F9),
+                        color: roomPillBg,
                         borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: const Color(0xFFB2EBF2),
+                          width: 0.8,
+                        ),
                       ),
                       child: Text(
                         '$roomOnCount/${roomDevices.length} Active',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
-                          color: roomOnCount > 0
-                              ? const Color(0xFF059669)
-                              : const Color(0xFF64748B),
+                          color: roomOnCount > 0 ? tealAccent : secondaryText,
                         ),
                       ),
                     ),
@@ -546,141 +561,188 @@ class _HeroDeviceMatrix extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x1A0F172A),
-            blurRadius: 18,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF10B981),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Color(0x8010B981),
-                                blurRadius: 6,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'LIVE SPACE MATRIX',
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF00C9A7),
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$activeDevices of $totalDevices Running',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 19,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.4,
-                      ),
-                    ),
-                  ],
-                ),
+    final tealColor = AppColors.primary;
+    final titleColor = AppColors.textPrimary;
+    final cardBg = Colors.white;
+    final cardBorder = const Color(0xFFE8EEF0);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final showMascot = constraints.maxWidth > 330;
+
+        return Container(
+          clipBehavior: Clip.antiAlias,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFE7F8F5), Color(0xFFFFFFFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFB2EBF2), width: 1.0),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A00A38E),
+                blurRadius: 16,
+                offset: Offset(0, 6),
               ),
-              if (activeDevices > 0)
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: onTurnAllOff,
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEF4444).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: const Color(0xFFEF4444).withValues(alpha: 0.4),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.power_settings_new_rounded,
-                            size: 15,
-                            color: Color(0xFFFCA5A5),
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'Turn All Off',
-                            style: TextStyle(
-                              color: Color(0xFFFCA5A5),
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              // Robot Mascot in top-right if width permits
+              if (showMascot)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Opacity(
+                    opacity: 0.85,
+                    child: Image.asset(
+                      'assets/images/new_robot.png',
+                      height: 56,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const SizedBox.shrink(),
                     ),
                   ),
                 ),
+
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF10B981),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Color(0x8010B981),
+                                        blurRadius: 6,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'LIVE HOME MATRIX',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w900,
+                                    color: tealColor,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '$activeDevices of $totalDevices Running',
+                              style: TextStyle(
+                                color: titleColor,
+                                fontSize: 19,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (activeDevices > 0) ...[
+                        const SizedBox(width: 8),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: onTurnAllOff,
+                            borderRadius: BorderRadius.circular(14),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFFEF4444,
+                                ).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: const Color(
+                                    0xFFEF4444,
+                                  ).withValues(alpha: 0.35),
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.power_settings_new_rounded,
+                                    size: 14,
+                                    color: Color(0xFFEF4444),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Turn Off',
+                                    style: TextStyle(
+                                      color: Color(0xFFEF4444),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      _heroStat(
+                        'Online Devices',
+                        '$onlineDevices',
+                        Icons.wifi_tethering_rounded,
+                        tealColor,
+                        cardBg,
+                        cardBorder,
+                      ),
+                      const SizedBox(width: 8),
+                      _heroStat(
+                        'Active Loads',
+                        '$activeDevices',
+                        Icons.bolt_rounded,
+                        const Color(0xFFF59E0B),
+                        cardBg,
+                        cardBorder,
+                      ),
+                      const SizedBox(width: 8),
+                      _heroStat(
+                        'Total Devices',
+                        '$totalDevices',
+                        Icons.grid_view_rounded,
+                        tealColor,
+                        cardBg,
+                        cardBorder,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ],
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              _heroStat(
-                'Online Network',
-                '$onlineDevices',
-                Icons.wifi_tethering_rounded,
-                const Color(0xFF00C9A7),
-              ),
-              const SizedBox(width: 10),
-              _heroStat(
-                'Active Loads',
-                '$activeDevices',
-                Icons.bolt_rounded,
-                const Color(0xFFF59E0B),
-              ),
-              const SizedBox(width: 10),
-              _heroStat(
-                'Total Hardware',
-                '$totalDevices',
-                Icons.hub_rounded,
-                const Color(0xFF60A5FA),
-              ),
-            ],
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -689,14 +751,26 @@ class _HeroDeviceMatrix extends StatelessWidget {
     String value,
     IconData icon,
     Color accentColor,
+    Color bg,
+    Color borderColor,
   ) {
+    final valueColor = AppColors.textPrimary;
+    final labelColor = AppColors.textSecondary;
+
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.07),
+          color: bg,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          border: Border.all(color: borderColor, width: 0.9),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x05000000),
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -711,8 +785,8 @@ class _HeroDeviceMatrix extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       value,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: valueColor,
                         fontSize: 14,
                         fontWeight: FontWeight.w900,
                         height: 1.1,
@@ -724,7 +798,7 @@ class _HeroDeviceMatrix extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: labelColor,
                       fontSize: 9.5,
                       fontWeight: FontWeight.w600,
                     ),
@@ -752,11 +826,17 @@ class _DeviceSearchInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bg = AppColors.surface;
+    final borderColor = const Color(0xFFE8EEF0);
+    final textStyleColor = AppColors.textPrimary;
+    final hintColor = AppColors.textFaint;
+    final tealAccent = AppColors.primary;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: bg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: borderColor, width: 1.0),
         boxShadow: const [
           BoxShadow(
             color: Color(0x04000000),
@@ -767,23 +847,19 @@ class _DeviceSearchInput extends StatelessWidget {
       ),
       child: TextField(
         onChanged: onChanged,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13.5,
           fontWeight: FontWeight.w600,
-          color: Color(0xFF0F172A),
+          color: textStyleColor,
         ),
         decoration: InputDecoration(
           hintText: 'Search device, type or room...',
-          hintStyle: const TextStyle(
+          hintStyle: TextStyle(
             fontSize: 13,
-            color: Color(0xFF94A3B8),
+            color: hintColor,
             fontWeight: FontWeight.w500,
           ),
-          prefixIcon: const Icon(
-            Icons.search_rounded,
-            color: Color(0xFF00A38E),
-            size: 20,
-          ),
+          prefixIcon: Icon(Icons.search_rounded, color: tealAccent, size: 20),
           suffixIcon: query.isEmpty
               ? null
               : IconButton(
@@ -796,6 +872,8 @@ class _DeviceSearchInput extends StatelessWidget {
                   ),
                 ),
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
         ),
       ),
@@ -815,7 +893,7 @@ class _FilterRail extends StatelessWidget {
       {
         'f': _DeviceFilter.all,
         'label': 'All Devices',
-        'icon': Icons.apps_rounded,
+        'icon': Icons.grid_view_rounded,
       },
       {'f': _DeviceFilter.on, 'label': 'Active ON', 'icon': Icons.bolt_rounded},
       {
@@ -841,6 +919,12 @@ class _FilterRail extends StatelessWidget {
       },
     ];
 
+    final unselectedBg = AppColors.surface;
+    final unselectedBorder = const Color(0xFFE8EEF0);
+    final unselectedText = AppColors.textPrimary;
+    final unselectedIcon = AppColors.textSecondary;
+    final tealAccent = AppColors.primary;
+
     return SizedBox(
       height: 36,
       child: ListView(
@@ -862,26 +946,17 @@ class _FilterRail extends StatelessWidget {
                   vertical: 7,
                 ),
                 decoration: BoxDecoration(
-                  gradient: isSelected
-                      ? const LinearGradient(
-                          colors: [Color(0xFF00C9A7), Color(0xFF00A38E)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
-                  color: isSelected ? null : Colors.white,
+                  color: isSelected ? tealAccent : unselectedBg,
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(
-                    color: isSelected
-                        ? const Color(0xFF00A38E)
-                        : const Color(0xFFE2E8F0),
+                    color: isSelected ? tealAccent : unselectedBorder,
                   ),
                   boxShadow: isSelected
-                      ? const [
+                      ? [
                           BoxShadow(
-                            color: Color(0x2500A38E),
+                            color: tealAccent.withValues(alpha: 0.25),
                             blurRadius: 8,
-                            offset: Offset(0, 3),
+                            offset: const Offset(0, 3),
                           ),
                         ]
                       : null,
@@ -892,9 +967,7 @@ class _FilterRail extends StatelessWidget {
                     Icon(
                       icon,
                       size: 14,
-                      color: isSelected
-                          ? Colors.white
-                          : const Color(0xFF64748B),
+                      color: isSelected ? Colors.white : unselectedIcon,
                     ),
                     const SizedBox(width: 5),
                     Text(
@@ -904,9 +977,7 @@ class _FilterRail extends StatelessWidget {
                         fontWeight: isSelected
                             ? FontWeight.w800
                             : FontWeight.w700,
-                        color: isSelected
-                            ? Colors.white
-                            : const Color(0xFF334155),
+                        color: isSelected ? Colors.white : unselectedText,
                       ),
                     ),
                   ],
@@ -945,21 +1016,27 @@ class _GenZDeviceCard extends StatelessWidget {
     final bool isOn = device.isOn;
 
     final theme = _getDeviceTheme(device.type, isOn);
+    final tealAccent = AppColors.primary;
+    final primaryText = AppColors.textPrimary;
+    final secondaryText = AppColors.textSecondary;
+    final cardBg = isOn ? const Color(0xFFF0FDFB) : AppColors.surface;
+    final borderColor = isOn
+        ? const Color(0xFF99F6E4)
+        : const Color(0xFFE8EEF0);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isOn ? theme.cardBg : Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: isOn ? theme.borderColor : const Color(0xFFE2E8F0),
-          width: isOn ? 1.5 : 1,
-        ),
+        border: Border.all(color: borderColor, width: isOn ? 1.4 : 1.0),
         boxShadow: [
           BoxShadow(
-            color: isOn ? theme.glowColor : const Color(0x04000000),
-            blurRadius: isOn ? 16 : 8,
-            offset: const Offset(0, 4),
+            color: isOn
+                ? tealAccent.withValues(alpha: 0.15)
+                : const Color(0x04000000),
+            blurRadius: isOn ? 14 : 6,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -980,10 +1057,10 @@ class _GenZDeviceCard extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Squircle Icon Avatar with dynamic glow
+                    // Device Icon Badge
                     Container(
-                      width: 48,
-                      height: 48,
+                      width: 46,
+                      height: 46,
                       decoration: BoxDecoration(
                         gradient: isOn
                             ? LinearGradient(
@@ -992,24 +1069,13 @@ class _GenZDeviceCard extends StatelessWidget {
                                 end: Alignment.bottomRight,
                               )
                             : null,
-                        color: isOn ? null : const Color(0xFFF1F5F9),
+                        color: isOn ? null : AppColors.primarySoft,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: isOn
-                            ? [
-                                BoxShadow(
-                                  color: theme.iconGradient.first.withValues(
-                                    alpha: 0.35,
-                                  ),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ]
-                            : null,
                       ),
                       child: Icon(
                         theme.icon,
-                        color: isOn ? Colors.white : const Color(0xFF64748B),
-                        size: 24,
+                        color: isOn ? Colors.white : AppColors.primary,
+                        size: 22,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -1026,9 +1092,7 @@ class _GenZDeviceCard extends StatelessWidget {
                             style: TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 15.5,
-                              color: isOn
-                                  ? const Color(0xFF0F172A)
-                                  : const Color(0xFF1E293B),
+                              color: primaryText,
                               letterSpacing: -0.2,
                             ),
                           ),
@@ -1041,7 +1105,7 @@ class _GenZDeviceCard extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: device.status == DeviceStatus.online
                                       ? const Color(0xFF10B981)
-                                      : const Color(0xFF94A3B8),
+                                      : secondaryText,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -1054,20 +1118,18 @@ class _GenZDeviceCard extends StatelessWidget {
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w800,
                                   color: device.status == DeviceStatus.online
-                                      ? (isOn
-                                            ? theme.iconGradient.first
-                                            : const Color(0xFF64748B))
-                                      : const Color(0xFF94A3B8),
+                                      ? (isOn ? tealAccent : secondaryText)
+                                      : secondaryText,
                                   letterSpacing: 0.4,
                                 ),
                               ),
                               if (device.roomName != null &&
                                   device.roomName!.isNotEmpty) ...[
                                 const SizedBox(width: 6),
-                                const Text(
+                                Text(
                                   '•',
                                   style: TextStyle(
-                                    color: Color(0xFFCBD5E1),
+                                    color: secondaryText.withValues(alpha: 0.6),
                                     fontSize: 10,
                                   ),
                                 ),
@@ -1077,9 +1139,9 @@ class _GenZDeviceCard extends StatelessWidget {
                                     device.roomName!,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
-                                      color: Color(0xFF64748B),
+                                      color: secondaryText,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -1091,15 +1153,15 @@ class _GenZDeviceCard extends StatelessWidget {
                       ),
                     ),
 
-                    // Tactile Gen-Z Power Button / Sensor Badge
+                    // Power Button / Sensor Badge
                     if (controllable)
                       GestureDetector(
                         onTap: () =>
                             context.read<DeviceProvider>().toggleDevice(device),
                         child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 240),
-                          width: 44,
-                          height: 44,
+                          duration: const Duration(milliseconds: 200),
+                          width: 42,
+                          height: 42,
                           decoration: BoxDecoration(
                             gradient: isOn
                                 ? LinearGradient(
@@ -1120,7 +1182,7 @@ class _GenZDeviceCard extends StatelessWidget {
                                     BoxShadow(
                                       color: theme.iconGradient.first
                                           .withValues(alpha: 0.35),
-                                      blurRadius: 10,
+                                      blurRadius: 8,
                                       offset: const Offset(0, 3),
                                     ),
                                   ]
@@ -1129,7 +1191,7 @@ class _GenZDeviceCard extends StatelessWidget {
                           child: Center(
                             child: Icon(
                               Icons.power_settings_new_rounded,
-                              size: 22,
+                              size: 20,
                               color: isOn
                                   ? Colors.white
                                   : const Color(0xFF94A3B8),
@@ -1170,9 +1232,9 @@ class _GenZDeviceCard extends StatelessWidget {
                         ),
                       )
                     else
-                      const Icon(
+                      Icon(
                         Icons.lock_outline_rounded,
-                        color: Color(0xFF94A3B8),
+                        color: secondaryText,
                         size: 18,
                       ),
 
@@ -1180,10 +1242,10 @@ class _GenZDeviceCard extends StatelessWidget {
                     if (onEdit != null && onDelete != null) ...[
                       const SizedBox(width: 4),
                       PopupMenuButton<String>(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.more_vert_rounded,
                           size: 18,
-                          color: Color(0xFF94A3B8),
+                          color: secondaryText,
                         ),
                         padding: EdgeInsets.zero,
                         offset: const Offset(0, 35),
@@ -1251,7 +1313,7 @@ class _GenZDeviceCard extends StatelessWidget {
                   ],
                 ),
 
-                // Inline Slider Control for Fan / AC when ON
+                // Inline Slider Control for Fan / AC / Light when ON
                 if (controllable &&
                     isOn &&
                     device.dimLevel != null &&
@@ -1280,16 +1342,16 @@ class _GenZDeviceCard extends StatelessWidget {
                               ? Icons.thermostat_rounded
                               : Icons.lightbulb_outline_rounded,
                           size: 16,
-                          color: theme.iconGradient.first,
+                          color: tealAccent,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: SliderTheme(
                             data: SliderTheme.of(context).copyWith(
                               trackHeight: 4,
-                              activeTrackColor: theme.iconGradient.first,
+                              activeTrackColor: tealAccent,
                               inactiveTrackColor: const Color(0xFFE2E8F0),
-                              thumbColor: theme.iconGradient.first,
+                              thumbColor: tealAccent,
                               thumbShape: const RoundSliderThumbShape(
                                 enabledThumbRadius: 6,
                               ),
@@ -1314,7 +1376,7 @@ class _GenZDeviceCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w900,
-                            color: theme.iconGradient.first,
+                            color: tealAccent,
                           ),
                         ),
                       ],
@@ -1430,6 +1492,10 @@ class _DeviceEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final titleColor = AppColors.textPrimary;
+    final secondaryText = AppColors.textSecondary;
+    final iconBg = const Color(0xFFF1F5F9);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
@@ -1439,33 +1505,29 @@ class _DeviceEmptyState extends StatelessWidget {
               width: 68,
               height: 68,
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
+                color: iconBg,
                 borderRadius: BorderRadius.circular(22),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.devices_other_rounded,
-                color: Color(0xFF94A3B8),
+                color: secondaryText,
                 size: 32,
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'No Devices Found',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w900,
-                color: Color(0xFF0F172A),
+                color: titleColor,
               ),
             ),
             const SizedBox(height: 6),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Color(0xFF64748B),
-                height: 1.4,
-              ),
+              style: TextStyle(fontSize: 13, color: secondaryText, height: 1.4),
             ),
           ],
         ),

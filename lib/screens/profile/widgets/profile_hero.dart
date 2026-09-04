@@ -3,21 +3,19 @@ import 'package:provider/provider.dart';
 
 import '../../../models/user_role.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/device_provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../profile_theme.dart';
 import 'avatar_picker_sheet.dart';
 import 'avatar_progress_ring.dart';
 
-/// Centered profile hero section showing the avatar progress ring,
-/// online devices counter pill, full name, email, role/permission badges, and customize button.
+/// Compact profile hero section displaying user avatar, online status pill, name, role badge, and customize button.
 class ProfileHero extends StatelessWidget {
   const ProfileHero({super.key});
 
   void _showCustomizeDialog(BuildContext context) {
     final colors = ProfileTheme.of(context);
-    final Color buttonTextColor = colors.isDark
-        ? colors.background
-        : Colors.white;
+    final Color buttonTextColor = Colors.white;
 
     showDialog(
       context: context,
@@ -130,6 +128,7 @@ class ProfileHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = ProfileTheme.of(context);
     final profileProvider = context.watch<ProfileProvider>();
+    final deviceProvider = context.watch<DeviceProvider>();
     final auth = context.watch<AuthProvider>();
     final user = auth.currentUser;
     final profile = profileProvider.profile;
@@ -148,48 +147,51 @@ class ProfileHero extends StatelessWidget {
               ? displayName.substring(0, 2).toUpperCase()
               : 'SH');
 
-    final int deviceCount = profileProvider.deviceCount;
-    final int onlineCount = profileProvider.onlineDeviceCount;
-    final double onlineRatio = profileProvider.onlineRatio;
+    final int deviceCount = deviceProvider.devices.isNotEmpty
+        ? deviceProvider.devices.length
+        : profileProvider.deviceCount;
+
+    final int onlineCount = deviceProvider.devices.isNotEmpty
+        ? deviceProvider.onlineCount
+        : profileProvider.onlineDeviceCount;
+
+    final double onlineRatio = deviceCount > 0
+        ? (onlineCount / deviceCount).clamp(0.0, 1.0)
+        : 0.0;
+
     final avatar = profileProvider.currentAvatar;
     final role = auth.role;
 
-    final Color statusTextColor = colors.isDark
-        ? colors.accent
-        : const Color(0xFF007B6C);
-    final Color roleTextColor = colors.isDark
-        ? colors.accent
-        : const Color(0xFF007F70);
-    final Color permissionTextColor = colors.isDark
-        ? colors.warmAccent
-        : const Color(0xFFC96D1E);
-    final Color buttonColor = colors.isDark
-        ? colors.accent
-        : const Color(0xFF007F70);
-
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       decoration: BoxDecoration(
         color: colors.panel,
         borderRadius: BorderRadius.circular(ProfileTheme.largeRadius),
         border: Border.all(color: colors.border, width: 1.0),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadow,
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Avatar with animated device progress ring
+          // Avatar with progress ring
           AvatarProgressRing(
             progress: onlineRatio,
             avatar: avatar,
             fallbackInitials: initials,
             onEdit: () => AvatarPickerSheet.show(context),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
-          // Smart Status Pill (3 / 4 DEVICES ONLINE)
+          // Device status pill
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
               color: colors.accentSoft,
               borderRadius: BorderRadius.circular(20),
@@ -206,21 +208,25 @@ class ProfileHero extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  '$onlineCount / $deviceCount DEVICES ONLINE',
-                  style: TextStyle(
-                    color: statusTextColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.6,
+                Flexible(
+                  child: Text(
+                    '$onlineCount / $deviceCount DEVICES ONLINE',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: colors.accent,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-          // Full Name
+          // User Full Name
           Text(
             displayName,
             textAlign: TextAlign.center,
@@ -229,14 +235,12 @@ class ProfileHero extends StatelessWidget {
             style: TextStyle(
               color: colors.textPrimary,
               fontSize: 21,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.3,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.4,
             ),
           ),
-          const SizedBox(height: 3),
-
-          // Email
-          if (displayEmail.isNotEmpty)
+          if (displayEmail.isNotEmpty) ...[
+            const SizedBox(height: 2),
             Text(
               displayEmail,
               textAlign: TextAlign.center,
@@ -248,9 +252,10 @@ class ProfileHero extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-          const SizedBox(height: 14),
+          ],
+          const SizedBox(height: 12),
 
-          // Badges Row (Role + API Permission)
+          // Badges Row (Role + Permission)
           Wrap(
             alignment: WrapAlignment.center,
             spacing: 8,
@@ -260,7 +265,7 @@ class ProfileHero extends StatelessWidget {
                 icon: Icons.shield_outlined,
                 label: role.label,
                 backgroundColor: colors.accentSoft,
-                textColor: roleTextColor,
+                textColor: colors.accent,
               ),
               if (profile?.permissionLevel != null &&
                   profile!.permissionLevel!.isNotEmpty)
@@ -268,33 +273,33 @@ class ProfileHero extends StatelessWidget {
                   icon: Icons.verified_user_outlined,
                   label: profile.permissionLevel!.toUpperCase(),
                   backgroundColor: colors.warmAccentSoft,
-                  textColor: permissionTextColor,
+                  textColor: colors.warmAccent,
                 ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
 
           // Customize Profile Button
           OutlinedButton.icon(
             onPressed: () => _showCustomizeDialog(context),
             style: OutlinedButton.styleFrom(
-              foregroundColor: buttonColor,
+              foregroundColor: colors.accent,
               textStyle: const TextStyle(
                 fontSize: 13,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 0.2,
               ),
               side: BorderSide(
-                color: colors.accent.withValues(alpha: 0.35),
-                width: 1.0,
+                color: colors.accent.withValues(alpha: 0.4),
+                width: 1.2,
               ),
               backgroundColor: Colors.transparent,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
             ),
-            icon: Icon(Icons.edit_outlined, size: 15, color: buttonColor),
+            icon: Icon(Icons.edit_outlined, size: 15, color: colors.accent),
             label: const Text('Customize Profile'),
           ),
         ],

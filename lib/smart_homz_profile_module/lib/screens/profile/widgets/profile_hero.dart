@@ -15,9 +15,7 @@ class ProfileHero extends StatelessWidget {
 
   void _showCustomizeDialog(BuildContext context) {
     final colors = ProfileTheme.of(context);
-    final Color buttonTextColor = colors.isDark
-        ? colors.background
-        : Colors.white;
+    final Color buttonTextColor = Colors.white;
 
     showDialog(
       context: context,
@@ -154,18 +152,10 @@ class ProfileHero extends StatelessWidget {
     final avatar = profileProvider.currentAvatar;
     final role = auth.role;
 
-    final Color statusTextColor = colors.isDark
-        ? colors.accent
-        : const Color(0xFF007B6C);
-    final Color roleTextColor = colors.isDark
-        ? colors.accent
-        : const Color(0xFF007F70);
-    final Color permissionTextColor = colors.isDark
-        ? colors.warmAccent
-        : const Color(0xFFC96D1E);
-    final Color buttonColor = colors.isDark
-        ? colors.accent
-        : const Color(0xFF007F70);
+    final Color statusTextColor = const Color(0xFF007B6C);
+    final Color roleTextColor = const Color(0xFF007F70);
+    final Color permissionTextColor = const Color(0xFFC96D1E);
+    final Color buttonColor = const Color(0xFF007F70);
 
     return Container(
       width: double.infinity,

@@ -24,36 +24,41 @@ Widget _buildTestEnergyApp() {
 }
 
 void main() {
-  testWidgets('EnergyScreen renders without pixel overflow on narrow mobile screens',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(320, 640);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'EnergyScreen renders without pixel overflow on narrow mobile screens',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(_buildTestEnergyApp());
-    await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpWidget(_buildTestEnergyApp());
+      await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Energy Monitoring'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      expect(find.text('Energy Monitoring'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
-  testWidgets('EnergyScreen renders without overflow on standard mobile (360x740)',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(360, 740);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'EnergyScreen renders without overflow on standard mobile (360x740)',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(360, 740);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(_buildTestEnergyApp());
-    await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpWidget(_buildTestEnergyApp());
+      await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Energy Monitoring'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      expect(find.text('Energy Monitoring'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
-  testWidgets('Energy comparison & insights modals render without overflow',
-      (WidgetTester tester) async {
+  testWidgets('Energy comparison & insights modals render without overflow', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(360, 640);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);

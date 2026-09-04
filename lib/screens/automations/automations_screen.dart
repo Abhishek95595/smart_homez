@@ -10,6 +10,8 @@ import '../../widgets/app_state_widgets.dart';
 import 'automation_details_screen.dart';
 import 'create_automation_screen.dart';
 
+import '../scenes/scenes_screen.dart';
+
 enum _AutomationFilter { all, active, disabled }
 
 class AutomationsScreen extends StatefulWidget {
@@ -20,6 +22,7 @@ class AutomationsScreen extends StatefulWidget {
 }
 
 class _AutomationsScreenState extends State<AutomationsScreen> {
+  int _activeTab = 0; // 0: Automations, 1: Scenes
   _AutomationFilter _selectedFilter = _AutomationFilter.all;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -198,12 +201,19 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
       return true;
     }).toList();
 
+    if (_activeTab == 1) {
+      return const ScenesScreen();
+    }
+
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFBFDFD),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(74),
         child: Container(
-          color: Colors.white,
+          color: colorScheme.surface,
           child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -212,10 +222,10 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
                   Builder(
                     builder: (ctx) => IconButton(
                       onPressed: () => openAppDrawer(ctx),
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.menu_rounded,
                         size: 28,
-                        color: Color(0xFF0F172A),
+                        color: colorScheme.onSurface,
                       ),
                       tooltip: 'Menu',
                     ),
@@ -223,29 +233,36 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
+                      children: [
                         Text(
                           'Automations',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
-                            color: Color(0xFF0F172A),
+                            color: colorScheme.onSurface,
                             letterSpacing: -0.4,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
                           'Make your home work automatically ✨',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF64748B),
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 48), // Balance drawer hamburger icon
+                  IconButton(
+                    onPressed: () => setState(() => _activeTab = 1),
+                    icon: Icon(
+                      Icons.auto_awesome_rounded,
+                      color: colorScheme.primary,
+                    ),
+                    tooltip: 'View Scenes',
+                  ),
                 ],
               ),
             ),
@@ -254,7 +271,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          color: const Color(0xFF00897B),
+          color: colorScheme.primary,
           onRefresh: provider.fetchRules,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(

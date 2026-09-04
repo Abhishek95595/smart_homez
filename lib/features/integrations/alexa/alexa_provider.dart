@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:app_links/app_links.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-
 
 import '../../../core/network/api_exception.dart';
 import '../../../models/device.dart';
@@ -16,10 +14,7 @@ class AlexaWebViewData {
   final Uri uri;
   final String token;
 
-  AlexaWebViewData({
-    required this.uri,
-    required this.token,
-  });
+  AlexaWebViewData({required this.uri, required this.token});
 }
 
 class AlexaProvider extends ChangeNotifier {
@@ -75,12 +70,35 @@ class AlexaProvider extends ChangeNotifier {
       '[AlexaProvider] Deep link received: ${uri.scheme}://${uri.host}${uri.path}',
     );
 
-    final bool isCallback = (uri.scheme == 'hasomi.com.homeautomation' ||
-            uri.scheme == 'app1') &&
-        (uri.host == 'alexa-callback' || uri.path.contains('alexa-callback'));
+    final String scheme = uri.scheme.toLowerCase();
+    final String host = uri.host.toLowerCase();
+    final String path = uri.path.toLowerCase();
+    final String url = uri.toString().toLowerCase();
+
+    final bool isCallback =
+        scheme == 'hasomi.com.homeautomation' ||
+        scheme == 'omnihome.in.homeautomation' ||
+        scheme == 'app1' ||
+        host == 'alexa-callback' ||
+        path.contains('alexa-callback') ||
+        host == 'alexa-link' ||
+        path.contains('alexa-link') ||
+        url.contains('alexa-callback') ||
+        url.contains('alexa-link') ||
+        url.contains('omnihome.in.homeautomation') ||
+        url.contains('hasomi.com.homeautomation');
 
     if (isCallback) {
-      final String? state = uri.queryParameters['state'];
+      Map<String, String> params = Map<String, String>.from(
+        uri.queryParameters,
+      );
+      if (params.isEmpty && uri.fragment.isNotEmpty) {
+        try {
+          params = Uri.splitQueryString(uri.fragment);
+        } catch (_) {}
+      }
+
+      final String? state = params['state'];
       final bool isValidState = await _service.validateCallbackState(state);
 
       if (!isValidState) {
@@ -178,8 +196,7 @@ class AlexaProvider extends ChangeNotifier {
     try {
       final AlexaLinkResponse result = await _service.createLinkToken(
         clientId: clientId,
-        redirectUri:
-            redirectUri ?? 'hasomi.com.homeautomation://alexa-callback',
+        redirectUri: redirectUri ?? AlexaService.alexaRedirectUri,
         state: state,
       );
       _lastLinkResponse = result;
@@ -187,7 +204,10 @@ class AlexaProvider extends ChangeNotifier {
       final String rawUrl = result.authorizeUrl.trim();
       final Uri? tempUri = Uri.tryParse(rawUrl);
 
-      if (rawUrl.isEmpty || tempUri == null || !tempUri.hasScheme || tempUri.host.isEmpty) {
+      if (rawUrl.isEmpty ||
+          tempUri == null ||
+          !tempUri.hasScheme ||
+          tempUri.host.isEmpty) {
         _errorMessage =
             'Invalid backend response: Authorize URL is not an absolute URL.';
         _state = AlexaConnectionState.error;
@@ -195,13 +215,7 @@ class AlexaProvider extends ChangeNotifier {
         return null;
       }
 
-      final Uri uri = Uri(
-        scheme: tempUri.scheme,
-        host: tempUri.host,
-        port: tempUri.port,
-        path: tempUri.path,
-        query: tempUri.query,
-      );
+      final Uri uri = tempUri;
 
       debugPrint(
         '[Alexa] Authorize URL ready: '
@@ -210,31 +224,20 @@ class AlexaProvider extends ChangeNotifier {
         'path=${uri.path}',
       );
 
-      final platformToken = await _service.getPlatformUserJwt();
+      final String? platformToken = await _service.getPlatformUserJwt();
+      final String? bearerToken = platformToken?.trim().isNotEmpty == true
+          ? platformToken!.trim()
+          : await _service.getOrFetchApplicationBearerToken();
 
-      if (platformToken == null || platformToken.trim().isEmpty) {
-        _errorMessage =
-            'Unable to start Alexa linking because the user authentication token is missing.';
-        _state = AlexaConnectionState.error;
-        notifyListeners();
-        return null;
-      }
-
-      if (!_validateJwt(platformToken.trim())) {
-        _errorMessage =
-            'Unable to start Alexa linking because the user authentication token is invalid or expired.';
-        _state = AlexaConnectionState.error;
-        notifyListeners();
-        return null;
-      }
-
-      debugPrint('[Alexa] Platform JWT available: ${platformToken.trim().isNotEmpty}');
+      debugPrint(
+        '[Alexa] Token available for WebView: ${bearerToken?.isNotEmpty == true}',
+      );
 
       // Reset connecting state — caller will navigate to WebView
       _state = AlexaConnectionState.notConnected;
       _errorMessage = null;
       notifyListeners();
-      return AlexaWebViewData(uri: uri, token: platformToken.trim());
+      return AlexaWebViewData(uri: uri, token: bearerToken?.trim() ?? '');
     } on ApiException catch (e) {
       debugPrint('[AlexaProvider] Api error: ${e.message}');
       _errorMessage = e.message;
@@ -351,47 +354,5 @@ class AlexaProvider extends ChangeNotifier {
       return userToken;
     }
     return _service.getOrFetchApplicationBearerToken();
-  }
-
-  bool _validateJwt(String token) {
-    try {
-      final parts = token.split('.');
-      if (parts.length != 3) {
-        debugPrint('[Alexa] JWT Validation Failed: Not a 3-part JWT structure.');
-        return false;
-      }
-
-      String payloadStr = parts[1];
-      final int mod = payloadStr.length % 4;
-      String padded = payloadStr;
-      if (mod > 0) {
-        padded += '=' * (4 - mod);
-      }
-
-      final String decoded = utf8.decode(base64Url.decode(padded));
-      final Map<String, dynamic> payload = jsonDecode(decoded);
-
-      if (payload.containsKey('exp')) {
-        final int expSec = payload['exp'] as int;
-        final DateTime expTime = DateTime.fromMillisecondsSinceEpoch(expSec * 1000);
-        if (DateTime.now().isAfter(expTime)) {
-          debugPrint('[Alexa] JWT Validation Failed: Token is expired.');
-          return false;
-        }
-      }
-
-      if (payload.containsKey('sub')) {
-        debugPrint('[Alexa] JWT Validation: Sub/User ID is present.');
-      }
-
-      if (payload.containsKey('iss')) {
-        debugPrint('[Alexa] JWT Validation: Issuer is ${payload['iss']}.');
-      }
-
-      return true;
-    } catch (e) {
-      debugPrint('[Alexa] JWT Validation Error: $e');
-      return false;
-    }
   }
 }

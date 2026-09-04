@@ -326,7 +326,21 @@ class _RoomCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (onEdit != null && onDelete != null)
+              if (onEdit == null && onDelete != null)
+                IconButton(
+                  tooltip: 'Delete room',
+                  constraints: const BoxConstraints(
+                    minWidth: 44,
+                    minHeight: 44,
+                  ),
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: AppColors.danger,
+                    size: 22,
+                  ),
+                  onPressed: onDelete,
+                )
+              else if (onEdit != null && onDelete != null)
                 PopupMenuButton<String>(
                   tooltip: 'Room actions',
                   onSelected: (value) {

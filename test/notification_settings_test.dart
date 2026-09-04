@@ -15,7 +15,6 @@ import 'package:smart_homez/providers/family_provider.dart';
 import 'package:smart_homez/providers/notification_settings_provider.dart';
 import 'package:smart_homez/providers/profile_provider.dart';
 import 'package:smart_homez/providers/routine_provider.dart';
-import 'package:smart_homez/providers/theme_provider.dart';
 import 'package:smart_homez/providers/ticket_provider.dart';
 import 'package:smart_homez/providers/water_provider.dart';
 import 'package:smart_homez/screens/settings/notification_settings_screen.dart';
@@ -61,7 +60,6 @@ Widget _buildTestApp({
       ChangeNotifierProvider(create: (_) => WaterProvider()),
       ChangeNotifierProvider(create: (_) => TicketProvider()),
       ChangeNotifierProvider(create: (_) => FamilyProvider()),
-      ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ChangeNotifierProvider(create: (_) => ProfileProvider()),
       ChangeNotifierProvider.value(
         value: notifProvider ?? NotificationSettingsProvider(),

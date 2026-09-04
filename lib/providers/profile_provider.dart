@@ -250,7 +250,7 @@ class ProfileProvider extends ChangeNotifier {
       email: email,
       phone: phone,
       isActive: true,
-      homeCount: _homes.isNotEmpty ? _homes.length : 1,
+      homeCount: _homes.isNotEmpty ? _homes.length : 0,
       deviceCount: _deviceCount,
       onlineDeviceCount: _onlineDeviceCount,
     );

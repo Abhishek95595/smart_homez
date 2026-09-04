@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../core/network/api_endpoints.dart';
+
 class SseService {
   SseService._internal();
 
@@ -13,7 +15,7 @@ class SseService {
     return _instance;
   }
 
-  static const String _baseUrl = 'https://tenant-api-qa.omnihome.in';
+  static String get _baseUrl => ApiEndpoints.baseUrl;
 
   final StreamController<Map<String, dynamic>> _eventController =
       StreamController<Map<String, dynamic>>.broadcast();

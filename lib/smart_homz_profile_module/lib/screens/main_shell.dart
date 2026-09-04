@@ -52,7 +52,7 @@ class _MainShellState extends State<MainShell> {
       final propertyProvider = context.read<PropertyProvider>();
 
       final clientUuid =
-          auth.resolvedClientUuid ?? '03d6aaff-f21b-41fc-902f-8184dacd0861';
+          auth.resolvedClientUuid ?? '6782976c-e9a4-41c9-a754-05e4ba0a97b2';
       propertyProvider.setClientId(clientUuid);
       propertyProvider.syncFromApi(clientUuid);
       deviceProvider.syncFromApi(clientUuid);

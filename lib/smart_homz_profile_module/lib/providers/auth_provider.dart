@@ -112,25 +112,16 @@ class AuthProvider extends ChangeNotifier {
             password: secret,
           );
 
-          // Tenant API endpoints (like client homes and devices) require an API Client Token.
-          // Fetch and store the API Client Token to authorize subsequent API requests.
+          // Retrieve tenant API token via Firebase Cloud Function BFF
           try {
-            final apiAuth = await _authService.fetchToken(
-              clientId: 'anvyaaai_AEB3',
-              clientSecret: 'ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8',
-            );
-            _apiToken = apiAuth.token;
+            _apiToken = await _authService.fetchTenantApiTokenFromBff();
           } catch (apiTokenError) {
             debugPrint(
-              '[AuthProvider] Failed to exchange API Client Token after email login: $apiTokenError',
+              '[AuthProvider] Failed to obtain Tenant API Token after email login: $apiTokenError',
             );
           }
         } else {
-          authResponse = await _authService.fetchToken(
-            clientId: cleanIdentifier,
-            clientSecret: secret,
-          );
-          _apiToken = authResponse.token;
+          _apiToken = await _authService.fetchTenantApiTokenFromBff();
         }
       } catch (apiError) {
         // Fallback for demo account or when server API is unavailable/rate-limited
@@ -235,7 +226,7 @@ class AuthProvider extends ChangeNotifier {
       }
 
       if (finalClientId == null || finalClientId.isEmpty) {
-        finalClientId = 'df0df9e3-0e47-4d46-810e-3c4f5c267d69';
+        finalClientId = ApiEndpoints.productionClientGuid;
       }
 
       _resolvedClientUuid = finalClientId;
@@ -319,18 +310,9 @@ class AuthProvider extends ChangeNotifier {
         return _fail('API credentials or customer UUID are missing.');
       }
 
-      final authResponse = await _authService.fetchToken(
-        clientId: apiClientId.trim(),
-        clientSecret: clientSecret.trim(),
-      );
+      final String? token = await _authService.fetchTenantApiTokenFromBff();
 
-      if (!authResponse.success ||
-          authResponse.token == null ||
-          authResponse.token!.isEmpty) {
-        return _fail(authResponse.error ?? 'API authentication failed.');
-      }
-
-      _apiToken = authResponse.token;
+      _apiToken = token;
       _resolvedClientUuid = customerClientUuid.trim();
 
       await _authService.saveResolvedClientUuid(_resolvedClientUuid!);
@@ -424,19 +406,10 @@ class AuthProvider extends ChangeNotifier {
       final String? savedPassword = await _authService.getSavedPassword();
 
       try {
-        if (savedClientId != null &&
-            savedClientSecret != null &&
-            savedClientId.isNotEmpty &&
-            savedClientSecret.isNotEmpty) {
-          final tenantAuth = await _authService.fetchToken(
-            clientId: savedClientId,
-            clientSecret: savedClientSecret,
-          );
-          if (tenantAuth.success &&
-              tenantAuth.token != null &&
-              tenantAuth.token!.isNotEmpty) {
-            savedToken = tenantAuth.token;
-          }
+        final String? bffToken = await _authService
+            .fetchTenantApiTokenFromBff();
+        if (bffToken != null && bffToken.isNotEmpty) {
+          savedToken = bffToken;
         } else if (savedEmail != null &&
             savedPassword != null &&
             savedEmail.isNotEmpty &&
@@ -457,7 +430,7 @@ class AuthProvider extends ChangeNotifier {
 
       final String savedClientUuid =
           (await _authService.getResolvedClientUuid()) ??
-          'df0df9e3-0e47-4d46-810e-3c4f5c267d69';
+          ApiEndpoints.productionClientGuid;
 
       if (savedToken == null || savedToken.isEmpty) {
         return;
@@ -687,7 +660,7 @@ class AuthProvider extends ChangeNotifier {
 
         _apiToken = response.token;
         _resolvedClientUuid =
-            response.clientId ?? 'df0df9e3-0e47-4d46-810e-3c4f5c267d69';
+            response.clientId ?? ApiEndpoints.productionClientGuid;
         String clientName = 'Smart Home User';
         if (_resolvedClientUuid != null && _resolvedClientUuid!.isNotEmpty) {
           try {
@@ -731,8 +704,9 @@ class AuthProvider extends ChangeNotifier {
 
       Map<String, dynamic> sessionResult = {};
       try {
-        sessionResult = await _authService
-            .getTenantSession(fcmToken: 'MOCK_DEVICE_FCM_TOKEN');
+        sessionResult = await _authService.getTenantSession(
+          fcmToken: 'MOCK_DEVICE_FCM_TOKEN',
+        );
 
         if (sessionResult['success'] == true &&
             sessionResult['status'] == 'authenticated') {
@@ -779,9 +753,9 @@ class AuthProvider extends ChangeNotifier {
 
       final String finalDisplayName =
           (resolvedName.isNotEmpty &&
-                  !resolvedName.toLowerCase().contains('otp'))
-              ? resolvedName
-              : 'Smart Home User';
+              !resolvedName.toLowerCase().contains('otp'))
+          ? resolvedName
+          : 'Smart Home User';
 
       _currentUser = AppUser(
         id: userCred.user?.uid ?? _resolvedClientUuid ?? '',

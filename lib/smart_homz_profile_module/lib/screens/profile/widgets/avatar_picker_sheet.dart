@@ -29,9 +29,7 @@ class AvatarPickerSheet extends StatelessWidget {
     final selectedId = profileProvider.selectedAvatarId;
     final avatars = ProfileProvider.availableAvatars;
 
-    final Color dragHandleColor = colors.isDark
-        ? colors.textTertiary
-        : const Color(0xFFC7D1CF);
+    const Color dragHandleColor = Color(0xFFC7D1CF);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -109,7 +107,7 @@ class AvatarPickerSheet extends StatelessWidget {
 
                 final Color cardBackground = isSelected
                     ? colors.accentSoft
-                    : (colors.isDark ? colors.raised : const Color(0xFFF7FAF9));
+                    : const Color(0xFFF7FAF9);
 
                 final Color cardBorderColor = isSelected
                     ? colors.accent

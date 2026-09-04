@@ -7,7 +7,7 @@ class SubscriptionProvider extends ChangeNotifier {
   final SubscriptionService _service;
 
   SubscriptionProvider({SubscriptionService? service})
-      : _service = service ?? SubscriptionService();
+    : _service = service ?? SubscriptionService();
 
   UserSubscription? _subscription;
   List<SubscriptionPlan> _plans = SubscriptionService.defaultPlans;
@@ -112,8 +112,11 @@ class SubscriptionProvider extends ChangeNotifier {
           date: DateTime.now(),
           amount: price,
           taxAmount: price * 0.18,
-          planName: '${matchingPlan.name} (${_selectedBillingCycle.toUpperCase()})',
-          billingPeriod: _selectedBillingCycle == 'annual' ? '1 Year' : '1 Month',
+          planName:
+              '${matchingPlan.name} (${_selectedBillingCycle.toUpperCase()})',
+          billingPeriod: _selectedBillingCycle == 'annual'
+              ? '1 Year'
+              : '1 Month',
           status: 'paid',
           paymentMethod: 'UPI / Card Payment',
         ),

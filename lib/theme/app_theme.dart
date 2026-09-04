@@ -269,56 +269,6 @@ class AppTheme {
     );
   }
 
-  static ThemeData get darkTheme {
-    final base = ThemeData.dark(useMaterial3: true);
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF4DE8C0),
-      brightness: Brightness.dark,
-      primary: const Color(0xFF4DE8C0),
-      surface: const Color(0xFF1A2027),
-      error: const Color(0xFFFF6B6B),
-    );
-
-    return base.copyWith(
-      scaffoldBackgroundColor: const Color(0xFF10151A),
-      colorScheme: colorScheme,
-      textTheme: base.textTheme.apply(
-        bodyColor: const Color(0xFFEEF2F4),
-        displayColor: const Color(0xFFEEF2F4),
-        fontFamily: 'Inter',
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF4DE8C0),
-          foregroundColor: const Color(0xFF10151A),
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF4DE8C0),
-          side: const BorderSide(color: Color(0x12FFFFFF), width: 1.2),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: const Color(0xFF4DE8C0),
-          textStyle: const TextStyle(fontWeight: FontWeight.w800),
-        ),
-      ),
-    );
-  }
-
   static BoxShadow get softShadow => const BoxShadow(
     color: Color(0x08000000),
     blurRadius: 16,

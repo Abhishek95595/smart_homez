@@ -601,11 +601,11 @@ class _AlexaIntegrationCard extends StatelessWidget {
                       Text(
                         active
                             ? (isConnected
-                                ? 'Account linked & smart home skill active'
-                                : 'Account linked • Say "Alexa, discover devices"')
+                                  ? 'Account linked & smart home skill active'
+                                  : 'Account linked • Say "Alexa, discover devices"')
                             : (isConnecting
-                                ? 'Authenticating with Alexa account...'
-                                : 'Link with Echo & Alexa smart home skill'),
+                                  ? 'Authenticating with Alexa account...'
+                                  : 'Link with Echo & Alexa smart home skill'),
                         style: TextStyle(
                           color: active
                               ? AppColors.success
@@ -672,7 +672,10 @@ class _AlexaIntegrationCard extends StatelessWidget {
                       icon: const Icon(Icons.devices_other_rounded, size: 16),
                       label: const Text(
                         'Synced Devices',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF0090B8),
@@ -691,7 +694,10 @@ class _AlexaIntegrationCard extends StatelessWidget {
                       icon: const Icon(Icons.link_off_rounded, size: 16),
                       label: const Text(
                         'Disconnect',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.danger,

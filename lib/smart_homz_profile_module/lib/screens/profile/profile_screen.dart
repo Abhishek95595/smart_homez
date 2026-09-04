@@ -13,7 +13,7 @@ import 'widgets/profile_logout_button.dart';
 import 'widgets/profile_stats.dart';
 import 'widgets/profile_support_card.dart';
 
-/// Redesigned Smart Homz Profile screen supporting both Premium Dark and Premium Light themes seamlessly
+/// Redesigned Smart Homz Profile screen using Hasomi Light Theme
 /// with dynamic data from the AuraBrain Tenant API and responsive preferences.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -247,9 +247,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildErrorView(String errorMessage, ProfileThemeData colors) {
-    final Color retryTextColor = colors.isDark
-        ? colors.background
-        : Colors.white;
+    final Color retryTextColor = Colors.white;
 
     return LayoutBuilder(
       builder: (context, constraints) {

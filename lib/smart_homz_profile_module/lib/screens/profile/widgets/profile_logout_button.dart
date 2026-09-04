@@ -89,9 +89,7 @@ class ProfileLogoutButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = ProfileTheme.of(context);
 
-    final Color borderColor = colors.isDark
-        ? colors.danger.withValues(alpha: 0.30)
-        : const Color(0x40D94A4A);
+    const Color borderColor = Color(0x40D94A4A);
 
     return SizedBox(
       width: double.infinity,

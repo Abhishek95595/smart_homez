@@ -1,440 +1,345 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../../providers/property_provider.dart';
 import '../../services/environment_service.dart';
-import '../../theme/app_theme.dart';
 import '../../widgets/app_navigation_drawer.dart';
 import '../alerts/alerts_screen.dart';
+import 'environment_theme.dart';
+import 'widgets/dusk_to_dawn_card.dart';
+import 'widgets/family_presence_card.dart';
+import 'widgets/home_location_card.dart';
+import 'widgets/live_conditions_grid.dart';
+import 'widgets/solar_cycle_hero.dart';
+import 'widgets/weather_prompt_card.dart';
+import 'widgets/widget_shortcuts_row.dart';
 
 class EnvironmentScreen extends StatefulWidget {
-  const EnvironmentScreen({super.key});
+  final EnvironmentService? service;
+
+  const EnvironmentScreen({super.key, this.service});
 
   @override
   State<EnvironmentScreen> createState() => _EnvironmentScreenState();
 }
 
 class _EnvironmentScreenState extends State<EnvironmentScreen> {
-  final EnvironmentService _envService = EnvironmentService();
+  late final EnvironmentService _envService;
   bool _isLoading = true;
+
+  // API Data
   Map<String, dynamic>? _solarData;
   List<Map<String, dynamic>> _weatherPrompts = [];
   bool _duskDawnEnabled = true;
-  String _selectedHomeId = '';
+  String _duskDawnMode = 'automatic';
+  Map<String, dynamic>? _presenceData;
+  Map<String, dynamic>? _locationData;
+  List<Map<String, dynamic>> _widgetScenes = [];
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _envService = widget.service ?? EnvironmentService();
+    _loadAllData();
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadAllData() async {
     setState(() => _isLoading = true);
     try {
-      final solar = await _envService.getSolarStatus();
-      final duskDawn = await _envService.getDuskDawn();
-      final prompts = await _envService.getWeatherPrompts();
+      final results = await Future.wait([
+        _envService.getSolarStatus(), // 0
+        _envService.getDuskDawn(), // 1
+        _envService.getWeatherPrompts(), // 2
+        _envService.getPresence(), // 3
+        _envService.getHomeLocation(), // 4
+        _envService.getWidgets(), // 5
+      ]);
 
       if (mounted) {
         setState(() {
-          _solarData = solar;
-          _weatherPrompts = prompts;
-          if (duskDawn != null && duskDawn.containsKey('enabled')) {
+          _solarData = results[0] as Map<String, dynamic>?;
+
+          final duskDawn = results[1] as Map<String, dynamic>?;
+          if (duskDawn != null) {
             _duskDawnEnabled = duskDawn['enabled'] == true;
+            _duskDawnMode = duskDawn['mode']?.toString() ?? 'automatic';
           }
+
+          _weatherPrompts =
+              (results[2] as List?)
+                  ?.whereType<Map>()
+                  .map((e) => Map<String, dynamic>.from(e))
+                  .toList() ??
+              [];
+          _presenceData = results[3] as Map<String, dynamic>?;
+          _locationData = results[4] as Map<String, dynamic>?;
+          _widgetScenes =
+              (results[5] as List?)
+                  ?.whereType<Map>()
+                  .map((e) => Map<String, dynamic>.from(e))
+                  .toList() ??
+              [];
           _isLoading = false;
         });
       }
     } catch (_) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _toggleDuskDawn(bool val) async {
-    setState(() => _duskDawnEnabled = val);
-    await _envService.setDuskDawn({
-      'enabled': val,
-      'mode': val ? 'automatic' : 'manual',
+    final previousEnabled = _duskDawnEnabled;
+    final previousMode = _duskDawnMode;
+
+    setState(() {
+      _duskDawnEnabled = val;
+      _duskDawnMode = val ? 'automatic' : 'manual';
     });
+
+    try {
+      final success = await _envService.setDuskDawn({
+        'enabled': val,
+        'mode': val ? 'automatic' : 'manual',
+      });
+      if (!success && mounted) {
+        setState(() {
+          _duskDawnEnabled = previousEnabled;
+          _duskDawnMode = previousMode;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update Dusk-to-Dawn setting.'),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _duskDawnEnabled = previousEnabled;
+          _duskDawnMode = previousMode;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error updating Dusk-to-Dawn setting.')),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final properties = context.watch<PropertyProvider>().properties;
+    final colors = EnvironmentTheme.of(context);
 
-    if (_selectedHomeId.isEmpty && properties.isNotEmpty) {
-      _selectedHomeId = properties.first.id;
-    }
+    final sunrise = _solarData?['sunrise']?.toString();
+    final sunset = _solarData?['sunset']?.toString();
+    final solarNoon = _solarData?['solarNoon']?.toString();
+    final sunState = _solarData?['sunState']?.toString();
+    final dayLength = _solarData?['dayLength']?.toString();
 
-    final sunrise = _solarData?['sunrise'] ?? '06:14 AM';
-    final sunset = _solarData?['sunset'] ?? '06:48 PM';
-    final solarNoon = _solarData?['solarNoon'] ?? '12:31 PM';
-    final sunState = _solarData?['sunState'] ?? 'Daylight Optimal';
+    // Weather metrics (nullable for safe unavailable representation)
+    final temp = _solarData?['temperature']?.toString();
+    final humidity = _solarData?['humidity']?.toString();
+    final aqi = _solarData?['aqi']?.toString();
+    final uvIndex = _solarData?['uvIndex']?.toString();
+
+    final String displayHeaderSunState = sunState != null && sunState.isNotEmpty
+        ? sunState
+        : 'Unavailable';
 
     return Scaffold(
       drawer: const AppNavigationDrawer(),
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        centerTitle: false,
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Smart Environment',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF0F172A),
-                letterSpacing: -0.4,
+      backgroundColor: colors.background,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _loadAllData,
+          color: colors.accent,
+          backgroundColor: colors.panel,
+          child: Column(
+            children: [
+              // ─── HASOMI LIGHT HEADER ───
+              _buildHeader(context, colors, displayHeaderSunState),
+
+              // ─── BODY CONTENT ───
+              Expanded(
+                child: _isLoading
+                    ? Center(
+                        child: CircularProgressIndicator(color: colors.accent),
+                      )
+                    : ListView(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
+                        ),
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
+                        children: [
+                          // 1. Solar Cycle Hero Card
+                          SolarCycleHeroCard(
+                            sunrise: sunrise,
+                            sunset: sunset,
+                            solarNoon: solarNoon,
+                            sunState: sunState,
+                            dayLength: dayLength,
+                          ),
+                          const SizedBox(height: 20),
+
+                          // 2. Live Conditions (2x2 Grid)
+                          LiveConditionsGrid(
+                            temperature: temp,
+                            humidity: humidity,
+                            aqi: aqi,
+                            uvIndex: uvIndex,
+                          ),
+                          const SizedBox(height: 20),
+
+                          // 3. Dusk-to-Dawn Automation Card
+                          DuskToDawnCard(
+                            enabled: _duskDawnEnabled,
+                            mode: _duskDawnMode,
+                            onChanged: _toggleDuskDawn,
+                          ),
+                          const SizedBox(height: 20),
+
+                          // 4. Family Presence Card
+                          FamilyPresenceCard(data: _presenceData),
+                          const SizedBox(height: 20),
+
+                          // 5. Home Location Card
+                          HomeLocationCard(data: _locationData),
+                          const SizedBox(height: 20),
+
+                          // 6. Smart Recommendations (Rendered only when API returns prompts)
+                          if (_weatherPrompts.isNotEmpty) ...[
+                            Row(
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: colors.accentSoft,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.auto_awesome_rounded,
+                                    color: colors.accent,
+                                    size: 18,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Smart Recommendations',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w800,
+                                    color: colors.textPrimary,
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            ..._weatherPrompts.map(
+                              (prompt) => WeatherPromptCard(prompt: prompt),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+
+                          // 7. Quick Shortcuts (Rendered only when API returns widgets)
+                          if (_widgetScenes.isNotEmpty) ...[
+                            Row(
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: colors.accentSoft,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.widgets_rounded,
+                                    color: colors.accent,
+                                    size: 18,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Quick Shortcuts',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w800,
+                                    color: colors.textPrimary,
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            WidgetShortcutsRow(scenes: _widgetScenes),
+                          ],
+                        ],
+                      ),
               ),
-            ),
-            SizedBox(height: 2),
-            Text(
-              'SOLAR & CLIMATE TELEMETRY',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF00A38E),
-                letterSpacing: 0.8,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
-        actions: [
+      ),
+    );
+  }
+
+  Widget _buildHeader(
+    BuildContext context,
+    EnvironmentThemeData colors,
+    String sunState,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
           Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Color(0xFF0F172A)),
-              tooltip: 'Menu',
-              onPressed: () => Scaffold.of(context).openDrawer(),
+            builder: (ctx) => _HeaderIconButton(
+              icon: Icons.menu_rounded,
+              colors: colors,
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF0F172A)),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Smart Environment',
+                  style: TextStyle(
+                    fontSize: 18.5,
+                    fontWeight: FontWeight.w800,
+                    color: colors.textPrimary,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  sunState.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: colors.accent,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _HeaderIconButton(
+            icon: Icons.refresh_rounded,
+            colors: colors,
+            onPressed: _loadAllData,
             tooltip: 'Refresh',
-            onPressed: _loadData,
           ),
-          IconButton(
-            icon: const Icon(
-              Icons.notifications_none_rounded,
-              color: Color(0xFF0F172A),
-            ),
-            tooltip: 'Alerts',
+          const SizedBox(width: 8),
+          _HeaderIconButton(
+            icon: Icons.notifications_none_rounded,
+            colors: colors,
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const AlertsScreen()),
             ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: RefreshIndicator(
-          onRefresh: _loadData,
-          color: AppColors.primary,
-          child: _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: AppColors.primary),
-                )
-              : ListView(
-                  physics: const AlwaysScrollableScrollPhysics(
-                    parent: BouncingScrollPhysics(),
-                  ),
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 80),
-                  children: [
-                    // Hero Solar Cycle Card
-                    _SolarCycleCard(
-                      sunrise: sunrise.toString(),
-                      sunset: sunset.toString(),
-                      solarNoon: solarNoon.toString(),
-                      sunState: sunState.toString(),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Dusk to Dawn Automation Tile
-                    _DuskToDawnCard(
-                      enabled: _duskDawnEnabled,
-                      onChanged: _toggleDuskDawn,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Climate & Weather Insights
-                    const Text(
-                      'Environmental Conditions',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF0F172A),
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Row(
-                      children: [
-                        Expanded(
-                          child: _MetricCard(
-                            icon: Icons.thermostat_rounded,
-                            label: 'Indoor Temp',
-                            value: '23.5 °C',
-                            sublabel: 'Comfort Zone',
-                            accentColor: Color(0xFF00A38E),
-                            badgeColor: Color(0xFFE6F7F5),
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: _MetricCard(
-                            icon: Icons.water_drop_rounded,
-                            label: 'Humidity',
-                            value: '48 %',
-                            sublabel: 'Optimal RH',
-                            accentColor: Color(0xFF3B82F6),
-                            badgeColor: Color(0xFFEFF6FF),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    const Row(
-                      children: [
-                        Expanded(
-                          child: _MetricCard(
-                            icon: Icons.air_rounded,
-                            label: 'Air Quality (AQI)',
-                            value: '34 PM2.5',
-                            sublabel: 'Good • Clean',
-                            accentColor: Color(0xFF10B981),
-                            badgeColor: Color(0xFFECFDF5),
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: _MetricCard(
-                            icon: Icons.wb_sunny_rounded,
-                            label: 'UV Index',
-                            value: '2.1 Low',
-                            sublabel: 'Safe Exposure',
-                            accentColor: Color(0xFFF59E0B),
-                            badgeColor: Color(0xFFFFFBEB),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Smart Weather Prompts
-                    if (_weatherPrompts.isNotEmpty) ...[
-                      const Text(
-                        'Smart Recommendations',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF0F172A),
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      ..._weatherPrompts.map(
-                        (prompt) => Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFFE8EEF0)),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x06000000),
-                                blurRadius: 10,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 42,
-                                height: 42,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFE7F8F5),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.tips_and_updates_rounded,
-                                  color: Color(0xFF00A38E),
-                                  size: 22,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      prompt['title']?.toString() ??
-                                          'Climate Automation',
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w800,
-                                        color: Color(0xFF0F172A),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      prompt['description']?.toString() ??
-                                          'Optimized for natural comfort & energy savings.',
-                                      style: const TextStyle(
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.w500,
-                                        color: Color(0xFF64748B),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SolarCycleCard extends StatelessWidget {
-  final String sunrise;
-  final String sunset;
-  final String solarNoon;
-  final String sunState;
-
-  const _SolarCycleCard({
-    required this.sunrise,
-    required this.sunset,
-    required this.solarNoon,
-    required this.sunState,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF23C9B5), Color(0xFF00A38E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x2200A38E),
-            blurRadius: 18,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.22),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.wb_sunny_rounded,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Solar Cycle',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      Text(
-                        'Astronomical Solar Tracking',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  sunState,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _SolarTimeItem(
-                  icon: Icons.wb_twilight_rounded,
-                  label: 'Sunrise',
-                  time: sunrise,
-                ),
-                _SolarTimeItem(
-                  icon: Icons.wb_sunny_outlined,
-                  label: 'Solar Noon',
-                  time: solarNoon,
-                ),
-                _SolarTimeItem(
-                  icon: Icons.nightlight_round,
-                  label: 'Sunset',
-                  time: sunset,
-                ),
-              ],
-            ),
+            tooltip: 'Alerts',
           ),
         ],
       ),
@@ -442,198 +347,43 @@ class _SolarCycleCard extends StatelessWidget {
   }
 }
 
-class _SolarTimeItem extends StatelessWidget {
+class _HeaderIconButton extends StatelessWidget {
   final IconData icon;
-  final String label;
-  final String time;
+  final EnvironmentThemeData colors;
+  final VoidCallback onPressed;
+  final String? tooltip;
 
-  const _SolarTimeItem({
+  const _HeaderIconButton({
     required this.icon,
-    required this.label,
-    required this.time,
+    required this.colors,
+    required this.onPressed,
+    this.tooltip,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.white, size: 20),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 10.5,
-            color: Colors.white70,
-            fontWeight: FontWeight.w600,
+    Widget button = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(EnvironmentTheme.smallRadius),
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: colors.panel,
+            borderRadius: BorderRadius.circular(EnvironmentTheme.smallRadius),
+            border: Border.all(color: colors.border, width: 1.0),
           ),
+          child: Icon(icon, color: colors.textPrimary, size: 20),
         ),
-        const SizedBox(height: 2),
-        Text(
-          time,
-          style: const TextStyle(
-            fontSize: 13,
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _DuskToDawnCard extends StatelessWidget {
-  final bool enabled;
-  final ValueChanged<bool> onChanged;
-
-  const _DuskToDawnCard({required this.enabled, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE8EEF0)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x06000000),
-            blurRadius: 10,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: const BoxDecoration(
-              color: Color(0xFFE6F7F5),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.bedtime_outlined,
-              color: Color(0xFF00A38E),
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Dusk-to-Dawn Automation',
-                  style: TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Auto-activate ambient night lights at sunset',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: enabled,
-            onChanged: onChanged,
-            activeThumbColor: const Color(0xFF00A38E),
-          ),
-        ],
       ),
     );
-  }
-}
 
-class _MetricCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final String sublabel;
-  final Color accentColor;
-  final Color badgeColor;
+    if (tooltip != null) {
+      button = Tooltip(message: tooltip!, child: button);
+    }
 
-  const _MetricCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.sublabel,
-    required this.accentColor,
-    required this.badgeColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE8EEF0)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x06000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: badgeColor,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: accentColor, size: 20),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF64748B),
-            ),
-          ),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: accentColor,
-                letterSpacing: -0.3,
-              ),
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            sublabel,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF94A3B8),
-            ),
-          ),
-        ],
-      ),
-    );
+    return button;
   }
 }

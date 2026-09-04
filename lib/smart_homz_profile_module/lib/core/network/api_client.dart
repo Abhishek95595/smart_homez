@@ -24,55 +24,55 @@ class ApiClient {
 
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest:
-            (RequestOptions options, RequestInterceptorHandler handler) async {
-              try {
-                final String path = options.path;
-                final bool isAlexa = _isAlexaEndpoint(path);
+        onRequest: (RequestOptions options, RequestInterceptorHandler handler) async {
+          try {
+            String path = options.path;
 
-                String? token;
-
-                if (isAlexa) {
-                  token = await _storage.read(key: 'platform_user_jwt');
-                  if (token == null || token.trim().isEmpty) {
-                    token = await _storage.read(key: 'jwt_token');
-                  }
-                  debugPrint('[API Auth] Alexa endpoint detected.');
-                  debugPrint(
-                    '[API Auth] Platform user JWT exists: '
-                    '${token != null && token.trim().isNotEmpty}',
-                  );
-                  if (token != null && token.trim().isNotEmpty) {
-                    _logJwtClaims(token.trim());
-                  }
-                } else {
-                  token = await _storage.read(key: 'client_api_jwt');
-                  if (token == null || token.trim().isEmpty) {
-                    token = await _storage.read(key: 'api_service_jwt');
-                  }
-                  if (token == null || token.trim().isEmpty) {
-                    token = await _storage.read(key: 'jwt_token');
-                  }
-                  if (token == null || token.trim().isEmpty) {
-                    token = await _storage.read(key: 'platform_user_jwt');
-                  }
-                }
-
-                if (token != null && token.trim().isNotEmpty) {
-                  options.headers['Authorization'] = 'Bearer ${token.trim()}';
-                  debugPrint('[API Auth] Authorization attached: true');
-                } else {
-                  options.headers.remove('Authorization');
-                  debugPrint('[API Auth] Authorization attached: false');
-                }
-
-                debugPrint('[API Request] ${options.method} ${options.path}');
-                return handler.next(options);
-              } catch (error) {
-                debugPrint('[API Auth] Request interceptor error: $error');
-                return handler.next(options);
+            // Hard safety guard: Normalize any /api/v1/clients/{clientId} path to productionClientGuid
+            final clientPathRegex = RegExp(
+              r'^/api/v1/clients/([0-9a-fA-F-]+)(/.*)?$',
+            );
+            final match = clientPathRegex.firstMatch(path);
+            if (match != null) {
+              final extractedId = match.group(1);
+              final rest = match.group(2) ?? '';
+              if (extractedId != 'resolve' &&
+                  extractedId != 'createClient' &&
+                  extractedId != ApiEndpoints.productionClientGuid) {
+                path =
+                    '/api/v1/clients/${ApiEndpoints.productionClientGuid}$rest';
+                options.path = path;
               }
-            },
+            }
+
+            String? token = await _storage.read(key: 'tenant_api_jwt');
+            if (!isJwtValid(token)) {
+              final String? legacy = await _storage.read(key: 'client_api_jwt');
+              if (isJwtValid(legacy)) {
+                token = legacy;
+                await _storage.write(key: 'tenant_api_jwt', value: token);
+              }
+              await _storage.delete(key: 'client_api_jwt');
+            }
+
+            if (token != null && token.trim().isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer ${token.trim()}';
+              debugPrint('[API] Tenant JWT source = tenant_api_jwt');
+              debugPrint('[API] Tenant = ${ApiEndpoints.productionTenantId}');
+              debugPrint(
+                '[API] AuraBrain ClientId = ${ApiEndpoints.expectedTenantClientId}',
+              );
+            } else {
+              options.headers.remove('Authorization');
+            }
+
+            debugPrint('[API Request] ${options.method} $path');
+            return handler.next(options);
+          } catch (error) {
+            debugPrint('[API Auth] Request interceptor error: $error');
+            return handler.next(options);
+          }
+        },
 
         onResponse:
             (Response<dynamic> response, ResponseInterceptorHandler handler) {
@@ -87,7 +87,6 @@ class ApiClient {
         onError: (DioException error, ErrorInterceptorHandler handler) async {
           final int? statusCode = error.response?.statusCode;
           final String path = error.requestOptions.path;
-          final bool isAlexa = _isAlexaEndpoint(path);
 
           debugPrint(
             '[API Error] '
@@ -95,86 +94,6 @@ class ApiClient {
             '$path '
             '${error.message}',
           );
-
-          if (statusCode == 401) {
-            if (isAlexa) {
-              debugPrint(
-                '[API Auth] 401 Unauthorized on Alexa endpoint. Skipping Client API token refresh to prevent wrong token type retry.',
-              );
-              return handler.next(error);
-            }
-
-            if (path == ApiEndpoints.authToken ||
-                path == ApiEndpoints.authLogin) {
-              return handler.next(error);
-            }
-
-            try {
-              String? clientId = await _storage.read(key: 'api_client_id');
-              String? clientSecret = await _storage.read(
-                key: 'api_client_secret',
-              );
-
-              if (clientId == null ||
-                  clientId.trim().isEmpty ||
-                  clientSecret == null ||
-                  clientSecret.trim().isEmpty) {
-                clientId = 'anvyaaai_AEB3';
-                clientSecret = 'ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8';
-              }
-
-              if (clientId.isNotEmpty && clientSecret.isNotEmpty) {
-                debugPrint('[API Auth] Refreshing token via Client API...');
-                final Dio refreshDio = Dio(
-                  BaseOptions(baseUrl: ApiEndpoints.baseUrl),
-                );
-                final response = await refreshDio.post<dynamic>(
-                  ApiEndpoints.authToken,
-                  data: <String, dynamic>{
-                    'clientId': clientId,
-                    'clientSecret': clientSecret,
-                  },
-                );
-
-                final dynamic responseBody = response.data;
-                if (responseBody is Map &&
-                    responseBody['success'] == true &&
-                    responseBody['token'] != null) {
-                  final String? newToken = responseBody['token']?.toString();
-                  if (newToken != null && newToken.isNotEmpty) {
-                    await _storage.write(
-                      key: 'client_api_jwt',
-                      value: newToken,
-                    );
-                    await _storage.write(
-                      key: 'api_service_jwt',
-                      value: newToken,
-                    );
-                    await _storage.write(key: 'jwt_token', value: newToken);
-                    debugPrint(
-                      '[API Auth] Client API token refreshed successfully.',
-                    );
-
-                    final RequestOptions options = error.requestOptions;
-                    options.headers['Authorization'] = 'Bearer $newToken';
-                    final Dio retryDio = Dio(
-                      BaseOptions(
-                        baseUrl: ApiEndpoints.baseUrl,
-                        headers: options.headers,
-                      ),
-                    );
-                    final Response<dynamic> retryResponse = await retryDio
-                        .fetch<dynamic>(options);
-                    return handler.resolve(retryResponse);
-                  }
-                }
-              }
-            } catch (refreshError) {
-              debugPrint(
-                '[API Auth] Automatic token refresh failed: $refreshError',
-              );
-            }
-          }
 
           return handler.next(error);
         },
@@ -220,6 +139,67 @@ class ApiClient {
   late final Dio _dio;
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  static bool isJwtValid(String? token) {
+    if (token == null || token.trim().isEmpty) return false;
+    final List<String> parts = token.trim().split('.');
+    if (parts.length != 3) return false;
+    try {
+      final String normalized = base64Url.normalize(parts[1]);
+      final String payloadString = utf8.decode(base64Url.decode(normalized));
+      final dynamic decoded = jsonDecode(payloadString);
+      if (decoded is Map) {
+        // 1. Reject Firebase ID tokens & verify AuraBrain issuer
+        final dynamic iss = decoded['iss'];
+        if (iss == null ||
+            iss.toString().contains('securetoken.google.com') ||
+            iss.toString() != 'AuraBrain') {
+          return false;
+        }
+
+        // 2. Verify Audience
+        final dynamic aud = decoded['aud'];
+        if (aud == null || aud.toString() != 'AuraBrainMobile') {
+          return false;
+        }
+
+        // 3. Verify Production Tenant ID
+        final dynamic tenantId = decoded['TenantId'] ?? decoded['tenantId'];
+        if (tenantId == null ||
+            tenantId.toString() != '6d11e924-d046-400d-bc30-62a06e13de61') {
+          return false;
+        }
+
+        // 4. Verify Expected Tenant Client ID
+        final dynamic clientId = decoded['ClientId'] ?? decoded['clientId'];
+        if (clientId == null ||
+            clientId.toString() != ApiEndpoints.expectedTenantClientId) {
+          return false;
+        }
+
+        // 5. Verify Permission Level
+        final dynamic permission =
+            decoded['PermissionLevel'] ?? decoded['permissionLevel'];
+        if (permission == null || permission.toString() != 'write') {
+          return false;
+        }
+
+        // 6. Verify Expiration
+        if (decoded['exp'] == null) return false;
+        final dynamic exp = decoded['exp'];
+        final int expSeconds = exp is int
+            ? exp
+            : int.tryParse(exp.toString()) ?? 0;
+        final int nowSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+        if (expSeconds <= nowSeconds) {
+          return false;
+        }
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 
   // =============================================================
   // ALEXA ENDPOINT CHECK

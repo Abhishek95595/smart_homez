@@ -29,7 +29,7 @@ class AlexaLinkResponse {
         map['linkToken']?.toString() ??
         '';
 
-    final String authUrl =
+    String authUrl =
         map['authorizeUrl']?.toString() ??
         map['authorizationUrl']?.toString() ??
         map['authorization_url']?.toString() ??
@@ -37,6 +37,13 @@ class AlexaLinkResponse {
         map['auth_url']?.toString() ??
         map['url']?.toString() ??
         '';
+
+    if (authUrl.contains('tenant-api-qa.omnihome.in') ||
+        authUrl.contains('tenant-api.omnihome.in')) {
+      authUrl = authUrl
+          .replaceAll('tenant-api-qa.omnihome.in', 'omnihome.in')
+          .replaceAll('tenant-api.omnihome.in', 'omnihome.in');
+    }
 
     return AlexaLinkResponse(
       ssoToken: ssoToken,

@@ -44,17 +44,11 @@ class _LoginScreenState extends State<LoginScreen>
     )..repeat(reverse: true);
 
     _floatingAnimation = Tween<double>(begin: -8.0, end: 8.0).animate(
-      CurvedAnimation(
-        parent: _floatingController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _floatingController, curve: Curves.easeInOut),
     );
 
     _shadowScaleAnimation = Tween<double>(begin: 0.85, end: 1.15).animate(
-      CurvedAnimation(
-        parent: _floatingController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _floatingController, curve: Curves.easeInOut),
     );
 
     // Glowing aura pulse animation
@@ -64,10 +58,7 @@ class _LoginScreenState extends State<LoginScreen>
     )..repeat(reverse: true);
 
     _pulseAnimation = Tween<double>(begin: 0.4, end: 0.85).animate(
-      CurvedAnimation(
-        parent: _pulseController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
   }
 
@@ -146,7 +137,11 @@ class _LoginScreenState extends State<LoginScreen>
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+              const Icon(
+                Icons.error_outline_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -230,7 +225,11 @@ class _LoginScreenState extends State<LoginScreen>
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+              const Icon(
+                Icons.error_outline_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -289,8 +288,12 @@ class _LoginScreenState extends State<LoginScreen>
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        const Color(0xFF00A38E).withValues(alpha: _pulseAnimation.value * 0.18),
-                        const Color(0xFF00E5FF).withValues(alpha: _pulseAnimation.value * 0.08),
+                        const Color(
+                          0xFF00A38E,
+                        ).withValues(alpha: _pulseAnimation.value * 0.18),
+                        const Color(
+                          0xFF00E5FF,
+                        ).withValues(alpha: _pulseAnimation.value * 0.08),
                         Colors.transparent,
                       ],
                     ),
@@ -314,8 +317,12 @@ class _LoginScreenState extends State<LoginScreen>
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        const Color(0xFF38BDF8).withValues(alpha: (1.0 - _pulseAnimation.value) * 0.15),
-                        const Color(0xFF00A38E).withValues(alpha: (1.0 - _pulseAnimation.value) * 0.06),
+                        const Color(0xFF38BDF8).withValues(
+                          alpha: (1.0 - _pulseAnimation.value) * 0.15,
+                        ),
+                        const Color(0xFF00A38E).withValues(
+                          alpha: (1.0 - _pulseAnimation.value) * 0.06,
+                        ),
                         Colors.transparent,
                       ],
                     ),
@@ -330,7 +337,10 @@ class _LoginScreenState extends State<LoginScreen>
             child: Center(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 440),
                   child: Column(
@@ -364,10 +374,6 @@ class _LoginScreenState extends State<LoginScreen>
                       const SizedBox(height: 24),
 
                       // Register Navigation Link
-                     
-                          
-                  
-              
                     ],
                   ),
                 ),
@@ -384,10 +390,7 @@ class _LoginScreenState extends State<LoginScreen>
     return Column(
       children: [
         // Merged Brand Logo Header Bar: [H]asomi
-        const AppBrandHeader(
-          fontSize: 50,
-          spacing: 0,
-        ),
+        const AppBrandHeader(fontSize: 50, spacing: 0),
 
         const SizedBox(height: 18),
 
@@ -407,7 +410,9 @@ class _LoginScreenState extends State<LoginScreen>
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF00A38E).withValues(alpha: 0.18),
+                          color: const Color(
+                            0xFF00A38E,
+                          ).withValues(alpha: 0.18),
                           blurRadius: 24,
                           spreadRadius: 2,
                         ),
@@ -437,7 +442,9 @@ class _LoginScreenState extends State<LoginScreen>
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.12),
+                          color: const Color(
+                            0xFF0F172A,
+                          ).withValues(alpha: 0.12),
                           blurRadius: 10,
                           spreadRadius: 1,
                         ),
@@ -474,10 +481,7 @@ class _LoginScreenState extends State<LoginScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF0F172A).withValues(alpha: 0.05),
@@ -761,10 +765,7 @@ class _LoginScreenState extends State<LoginScreen>
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
                   gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF00A38E),
-                      Color(0xFF028090),
-                    ],
+                    colors: [Color(0xFF00A38E), Color(0xFF028090)],
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -798,7 +799,9 @@ class _LoginScreenState extends State<LoginScreen>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              auth.isOtpSent ? 'Verify & Continue' : 'Get OTP Code',
+                              auth.isOtpSent
+                                  ? 'Verify & Continue'
+                                  : 'Get OTP Code',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 15.5,

@@ -20,6 +20,7 @@ import '../screens/profile/profile_screen.dart';
 import '../screens/properties/floors_screen.dart';
 import '../screens/properties/homes_screen.dart';
 import '../screens/properties/rooms_screen.dart';
+import '../screens/scenes/scenes_screen.dart';
 import '../screens/main_shell.dart';
 import '../screens/services_module/services_screen.dart';
 import '../screens/settings/settings_screen.dart';
@@ -96,9 +97,11 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
         if (rootNav.canPop()) {
           rootNav.popUntil((route) => route.isFirst);
         } else {
-          rootNav.pushReplacement(MaterialPageRoute(
-            builder: (_) => MainShell(initialIndex: tabIndex),
-          ));
+          rootNav.pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => MainShell(initialIndex: tabIndex),
+            ),
+          );
         }
       }
     }
@@ -280,8 +283,15 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                                 _DrawerChildItem(
                                   title: 'Automations',
                                   icon: Icons.bolt_outlined,
-                                  isLast: true,
+                                  isLast: false,
                                   onTap: () => _openTab(context, 2),
+                                ),
+                                _DrawerChildItem(
+                                  title: 'Scenes',
+                                  icon: Icons.auto_awesome_rounded,
+                                  isLast: true,
+                                  onTap: () =>
+                                      _open(context, const ScenesScreen()),
                                 ),
                               ],
                             ),
@@ -860,7 +870,7 @@ class _SmartDrawerMenuCard extends StatelessWidget {
         border: Border.all(
           color: isExpanded
               ? (letterColor ?? iconColor ?? const Color(0xFF00A38E))
-                  .withValues(alpha: 0.4)
+                    .withValues(alpha: 0.4)
               : const Color(0xFFE2E8F0),
           width: 1.15,
         ),

@@ -6,7 +6,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../profile_theme.dart';
 
-/// Card showing account details like Full Name, Email, Phone, Time Zone, and Role.
+/// Card showing account details like Full Name, Email, Mobile (if present), and Role.
 /// Strictly excludes technical UUIDs, API credentials, and internal timestamps.
 class ProfileDetailsCard extends StatelessWidget {
   const ProfileDetailsCard({super.key});
@@ -57,15 +57,13 @@ class ProfileDetailsCard extends StatelessWidget {
             color: colors.panel,
             borderRadius: BorderRadius.circular(ProfileTheme.largeRadius),
             border: Border.all(color: colors.border, width: 1.0),
-            boxShadow: colors.isDark
-                ? null
-                : [
-                    BoxShadow(
-                      color: colors.shadow,
-                      blurRadius: 14,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+            boxShadow: [
+              BoxShadow(
+                color: colors.shadow,
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             children: [
@@ -79,6 +77,7 @@ class ProfileDetailsCard extends StatelessWidget {
                 icon: Icons.email_outlined,
                 label: 'Email',
                 value: email.isNotEmpty ? email : 'Not provided',
+                isPlaceholder: email.isEmpty,
               ),
               if (phone.isNotEmpty) ...[
                 _RowDivider(color: colors.divider),
@@ -142,11 +141,13 @@ class _DetailRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final bool isPlaceholder;
 
   const _DetailRow({
     required this.icon,
     required this.label,
     required this.value,
+    this.isPlaceholder = false,
   });
 
   @override
@@ -158,10 +159,10 @@ class _DetailRow extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
-              color: colors.raised,
+              color: colors.secondarySurface,
               borderRadius: BorderRadius.circular(ProfileTheme.smallRadius),
             ),
             child: Icon(icon, color: colors.accent, size: 18),
@@ -185,9 +186,13 @@ class _DetailRow extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: colors.textPrimary,
+                    color: isPlaceholder
+                        ? colors.textSecondary
+                        : colors.textPrimary,
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: isPlaceholder
+                        ? FontWeight.w500
+                        : FontWeight.w600,
                   ),
                 ),
               ],
@@ -209,7 +214,7 @@ class _RowDivider extends StatelessWidget {
     return Divider(
       height: 1,
       thickness: 1,
-      indent: 64,
+      indent: 68,
       endIndent: 16,
       color: color,
     );

@@ -4,7 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
-
+import 'package:smart_homez/providers/subscription_provider.dart';
 import 'providers/alert_provider.dart';
 import 'providers/automation_provider.dart';
 import 'providers/auth_provider.dart';
@@ -23,8 +23,8 @@ import 'providers/family_provider.dart';
 import 'providers/notification_settings_provider.dart';
 import 'providers/profile_provider.dart';
 import 'providers/tariff_provider.dart';
-import 'providers/subscription_provider.dart';
-import 'providers/theme_provider.dart';
+import 'providers/scene_provider.dart';
+import 'screens/scenes/scenes_screen.dart';
 import 'screens/splash/splash_screen.dart';
 import 'theme/app_theme.dart';
 
@@ -36,12 +36,14 @@ Future<void> main() async {
   if (defaultTargetPlatform != TargetPlatform.windows) {
     await Firebase.initializeApp();
     try {
-      if (!kDebugMode) {
-        await FirebaseAppCheck.instance.activate(
-          providerAndroid: const AndroidPlayIntegrityProvider(),
-          providerApple: const AppleDeviceCheckProvider(),
-        );
-      }
+      await FirebaseAppCheck.instance.activate(
+        providerAndroid: kDebugMode
+            ? const AndroidDebugProvider()
+            : const AndroidPlayIntegrityProvider(),
+        providerApple: kDebugMode
+            ? const AppleDebugProvider()
+            : const AppleDeviceCheckProvider(),
+      );
     } catch (appCheckError) {
       debugPrint('[FirebaseAppCheck] Notice: $appCheckError');
     }
@@ -77,21 +79,22 @@ class SmartBuildingApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AlexaProvider()),
         ChangeNotifierProvider(create: (_) => HomeSetupProvider()),
         ChangeNotifierProvider(create: (_) => FamilyProvider()),
-        ChangeNotifierProvider(
-          create: (_) => ThemeProvider()..loadThemePreference(),
-        ),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
         ChangeNotifierProvider(create: (_) => TariffProvider()),
         ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
         ChangeNotifierProvider(create: (_) => NotificationSettingsProvider()),
         ChangeNotifierProvider(create: (_) => ClientNotificationProvider()),
+        ChangeNotifierProvider(create: (_) => SceneProvider()),
       ],
       child: MaterialApp(
         title: 'Hasomi',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: const VideoSplashScreen(),
-        routes: {'/homes/setup': (context) => const HomeSetupScreen()},
+        routes: {
+          '/homes/setup': (context) => const HomeSetupScreen(),
+          '/scenes': (context) => const ScenesScreen(),
+        },
       ),
     );
   }

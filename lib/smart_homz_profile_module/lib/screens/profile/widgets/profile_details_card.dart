@@ -57,15 +57,13 @@ class ProfileDetailsCard extends StatelessWidget {
             color: colors.panel,
             borderRadius: BorderRadius.circular(ProfileTheme.largeRadius),
             border: Border.all(color: colors.border, width: 1.0),
-            boxShadow: colors.isDark
-                ? null
-                : [
-                    BoxShadow(
-                      color: colors.shadow,
-                      blurRadius: 14,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+            boxShadow: [
+              BoxShadow(
+                color: colors.shadow,
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             children: [

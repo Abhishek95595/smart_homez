@@ -133,7 +133,9 @@ class EnergyProvider extends ChangeNotifier {
           switchoverMinutes: _dashboard!.switchoverMinutes,
           gridCost: double.parse(computedGridCost.toStringAsFixed(2)),
           backupCost: double.parse(computedBackupCost.toStringAsFixed(2)),
-          totalCost: double.parse((computedGridCost + computedBackupCost).toStringAsFixed(2)),
+          totalCost: double.parse(
+            (computedGridCost + computedBackupCost).toStringAsFixed(2),
+          ),
           yesterdayKwh: _dashboard!.yesterdayKwh,
         );
       }
@@ -175,30 +177,100 @@ class EnergyProvider extends ChangeNotifier {
           12,
           (i) => '${(now.hour - 11 + i + 24) % 24}:00',
         );
-        dataPoints = [0.18, 0.22, 0.35, 0.48, 0.62, 0.45, 0.38, 0.52, 0.74, 0.68, 0.55, 0.42];
-        gridData = dataPoints.map((v) => double.parse((v * 0.84).toStringAsFixed(2))).toList();
-        backupData = dataPoints.map((v) => double.parse((v * 0.16).toStringAsFixed(2))).toList();
+        dataPoints = [
+          0.18,
+          0.22,
+          0.35,
+          0.48,
+          0.62,
+          0.45,
+          0.38,
+          0.52,
+          0.74,
+          0.68,
+          0.55,
+          0.42,
+        ];
+        gridData = dataPoints
+            .map((v) => double.parse((v * 0.84).toStringAsFixed(2)))
+            .toList();
+        backupData = dataPoints
+            .map((v) => double.parse((v * 0.16).toStringAsFixed(2)))
+            .toList();
         break;
       case 'daily':
         labels = List.generate(14, (i) {
           final d = now.subtract(Duration(days: 13 - i));
           return '${d.day}/${d.month}';
         });
-        dataPoints = [4.2, 3.8, 5.1, 4.6, 3.9, 4.8, 5.5, 4.1, 3.7, 4.9, 5.2, 4.4, 3.8, 4.5];
-        gridData = dataPoints.map((v) => double.parse((v * 0.88).toStringAsFixed(1))).toList();
-        backupData = dataPoints.map((v) => double.parse((v * 0.12).toStringAsFixed(1))).toList();
+        dataPoints = [
+          4.2,
+          3.8,
+          5.1,
+          4.6,
+          3.9,
+          4.8,
+          5.5,
+          4.1,
+          3.7,
+          4.9,
+          5.2,
+          4.4,
+          3.8,
+          4.5,
+        ];
+        gridData = dataPoints
+            .map((v) => double.parse((v * 0.88).toStringAsFixed(1)))
+            .toList();
+        backupData = dataPoints
+            .map((v) => double.parse((v * 0.12).toStringAsFixed(1)))
+            .toList();
         break;
       case 'weekly':
         labels = List.generate(8, (i) => 'Wk ${i + 1}');
         dataPoints = [31.5, 29.8, 34.2, 32.1, 28.9, 33.4, 36.2, 30.8];
-        gridData = dataPoints.map((v) => double.parse((v * 0.86).toStringAsFixed(1))).toList();
-        backupData = dataPoints.map((v) => double.parse((v * 0.14).toStringAsFixed(1))).toList();
+        gridData = dataPoints
+            .map((v) => double.parse((v * 0.86).toStringAsFixed(1)))
+            .toList();
+        backupData = dataPoints
+            .map((v) => double.parse((v * 0.14).toStringAsFixed(1)))
+            .toList();
         break;
       case 'monthly':
-        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        dataPoints = [138.0, 126.5, 142.0, 158.2, 185.4, 210.0, 225.8, 218.4, 175.2, 148.6, 132.0, 128.5];
-        gridData = dataPoints.map((v) => double.parse((v * 0.85).toStringAsFixed(1))).toList();
-        backupData = dataPoints.map((v) => double.parse((v * 0.15).toStringAsFixed(1))).toList();
+        labels = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
+        dataPoints = [
+          138.0,
+          126.5,
+          142.0,
+          158.2,
+          185.4,
+          210.0,
+          225.8,
+          218.4,
+          175.2,
+          148.6,
+          132.0,
+          128.5,
+        ];
+        gridData = dataPoints
+            .map((v) => double.parse((v * 0.85).toStringAsFixed(1)))
+            .toList();
+        backupData = dataPoints
+            .map((v) => double.parse((v * 0.15).toStringAsFixed(1)))
+            .toList();
         break;
     }
 
@@ -229,7 +301,9 @@ class EnergyProvider extends ChangeNotifier {
       switchoverMinutes: 12.0,
       gridCost: double.parse(computedGridCost.toStringAsFixed(2)),
       backupCost: double.parse(computedBackupCost.toStringAsFixed(2)),
-      totalCost: double.parse((computedGridCost + computedBackupCost).toStringAsFixed(2)),
+      totalCost: double.parse(
+        (computedGridCost + computedBackupCost).toStringAsFixed(2),
+      ),
       yesterdayKwh: 4.2,
     );
   }
@@ -241,4 +315,3 @@ class EnergyProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
-

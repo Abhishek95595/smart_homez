@@ -61,17 +61,12 @@ class AppLogo extends StatelessWidget {
     );
 
     if (padding != EdgeInsets.zero) {
-      imageWidget = Padding(
-        padding: padding,
-        child: imageWidget,
-      );
+      imageWidget = Padding(padding: padding, child: imageWidget);
     }
 
     if (shadows != null && shadows!.isNotEmpty) {
       return Container(
-        decoration: BoxDecoration(
-          boxShadow: shadows,
-        ),
+        decoration: BoxDecoration(boxShadow: shadows),
         child: imageWidget,
       );
     }
@@ -136,7 +131,8 @@ class AppBrandHeader extends StatelessWidget {
           if (spacing > 0) SizedBox(width: spacing),
           Text(
             suffix,
-            style: suffixStyle ??
+            style:
+                suffixStyle ??
                 TextStyle(
                   color: effectiveColor,
                   fontSize: fontSize,

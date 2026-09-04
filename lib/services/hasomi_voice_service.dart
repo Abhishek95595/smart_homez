@@ -211,8 +211,8 @@ class HasomiVoiceService {
     final String firstName = cleanName.split(' ').first;
     final String displayName =
         (firstName.isNotEmpty && !firstName.toLowerCase().contains('otp'))
-            ? firstName
-            : 'Friend';
+        ? firstName
+        : 'Friend';
     return 'Hi $displayName, what can I help you with?';
   }
 

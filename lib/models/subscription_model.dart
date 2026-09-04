@@ -35,9 +35,11 @@ class SubscriptionPlan {
       name: json['name']?.toString() ?? 'Standard Plan',
       tagline: json['tagline']?.toString() ?? 'Essential smart home automation',
       monthlyPrice: (json['monthlyPrice'] ?? json['price'] ?? 0.0).toDouble(),
-      annualPrice: (json['annualPrice'] ?? (json['monthlyPrice'] ?? 0.0) * 10).toDouble(),
+      annualPrice: (json['annualPrice'] ?? (json['monthlyPrice'] ?? 0.0) * 10)
+          .toDouble(),
       currency: json['currency']?.toString() ?? '₹',
-      features: (json['features'] as List<dynamic>?)
+      features:
+          (json['features'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           <String>[],
@@ -51,20 +53,20 @@ class SubscriptionPlan {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'tagline': tagline,
-        'monthlyPrice': monthlyPrice,
-        'annualPrice': annualPrice,
-        'currency': currency,
-        'features': features,
-        'isPopular': isPopular,
-        'maxDevices': maxDevices,
-        'maxHomes': maxHomes,
-        'maxFamilyMembers': maxFamilyMembers,
-        'hasAIEnergyInsights': hasAIEnergyInsights,
-        'hasPrioritySupport': hasPrioritySupport,
-      };
+    'id': id,
+    'name': name,
+    'tagline': tagline,
+    'monthlyPrice': monthlyPrice,
+    'annualPrice': annualPrice,
+    'currency': currency,
+    'features': features,
+    'isPopular': isPopular,
+    'maxDevices': maxDevices,
+    'maxHomes': maxHomes,
+    'maxFamilyMembers': maxFamilyMembers,
+    'hasAIEnergyInsights': hasAIEnergyInsights,
+    'hasPrioritySupport': hasPrioritySupport,
+  };
 }
 
 class UserSubscription {
@@ -100,12 +102,17 @@ class UserSubscription {
     this.maxFamilyMembers = 6,
   });
 
-  bool get isActive => status.toLowerCase() == 'active' || status.toLowerCase() == 'trialing';
+  bool get isActive =>
+      status.toLowerCase() == 'active' || status.toLowerCase() == 'trialing';
 
   factory UserSubscription.fromJson(Map<String, dynamic> json) {
     return UserSubscription(
-      planId: json['planId']?.toString() ?? json['plan_id']?.toString() ?? 'pro',
-      planName: json['planName']?.toString() ?? json['plan_name']?.toString() ?? 'Pro Smart Living',
+      planId:
+          json['planId']?.toString() ?? json['plan_id']?.toString() ?? 'pro',
+      planName:
+          json['planName']?.toString() ??
+          json['plan_name']?.toString() ??
+          'Pro Smart Living',
       status: json['status']?.toString() ?? 'active',
       startDate: json['startDate'] != null
           ? DateTime.tryParse(json['startDate'].toString())
@@ -113,7 +120,10 @@ class UserSubscription {
       expiryDate: json['expiryDate'] != null
           ? DateTime.tryParse(json['expiryDate'].toString())
           : DateTime.now().add(const Duration(days: 335)),
-      billingCycle: json['billingCycle']?.toString() ?? json['billing_cycle']?.toString() ?? 'annual',
+      billingCycle:
+          json['billingCycle']?.toString() ??
+          json['billing_cycle']?.toString() ??
+          'annual',
       currentPrice: (json['currentPrice'] ?? json['price'] ?? 499.0).toDouble(),
       autoRenew: json['autoRenew'] ?? json['auto_renew'] ?? true,
       activeDevicesCount: json['activeDevicesCount'] ?? 8,
@@ -154,7 +164,8 @@ class UserSubscription {
       maxDevices: maxDevices ?? this.maxDevices,
       activeHomesCount: activeHomesCount ?? this.activeHomesCount,
       maxHomes: maxHomes ?? this.maxHomes,
-      activeFamilyMembersCount: activeFamilyMembersCount ?? this.activeFamilyMembersCount,
+      activeFamilyMembersCount:
+          activeFamilyMembersCount ?? this.activeFamilyMembersCount,
       maxFamilyMembers: maxFamilyMembers ?? this.maxFamilyMembers,
     );
   }
@@ -189,11 +200,19 @@ class SubscriptionInvoice {
 
   factory SubscriptionInvoice.fromJson(Map<String, dynamic> json) {
     return SubscriptionInvoice(
-      id: json['id']?.toString() ?? 'inv_${DateTime.now().millisecondsSinceEpoch}',
-      invoiceNumber: json['invoiceNumber']?.toString() ?? json['invoice_no']?.toString() ?? 'INV-2026-001',
-      date: json['date'] != null ? DateTime.parse(json['date'].toString()) : DateTime.now(),
+      id:
+          json['id']?.toString() ??
+          'inv_${DateTime.now().millisecondsSinceEpoch}',
+      invoiceNumber:
+          json['invoiceNumber']?.toString() ??
+          json['invoice_no']?.toString() ??
+          'INV-2026-001',
+      date: json['date'] != null
+          ? DateTime.parse(json['date'].toString())
+          : DateTime.now(),
       amount: (json['amount'] ?? 0.0).toDouble(),
-      taxAmount: (json['taxAmount'] ?? (json['amount'] ?? 0.0) * 0.18).toDouble(),
+      taxAmount: (json['taxAmount'] ?? (json['amount'] ?? 0.0) * 0.18)
+          .toDouble(),
       currency: json['currency']?.toString() ?? '₹',
       planName: json['planName']?.toString() ?? 'Pro Smart Living',
       billingPeriod: json['billingPeriod']?.toString() ?? 'Annual',
@@ -225,7 +244,9 @@ class PaymentMethodModel {
 
   factory PaymentMethodModel.fromJson(Map<String, dynamic> json) {
     return PaymentMethodModel(
-      id: json['id']?.toString() ?? 'pm_${DateTime.now().millisecondsSinceEpoch}',
+      id:
+          json['id']?.toString() ??
+          'pm_${DateTime.now().millisecondsSinceEpoch}',
       type: json['type']?.toString() ?? 'upi',
       title: json['title']?.toString() ?? 'Google Pay / UPI',
       subtitle: json['subtitle']?.toString() ?? 'user@okhdfcbank',
@@ -256,7 +277,9 @@ class RefundRequest {
       subscriptionId: json['subscriptionId']?.toString() ?? '',
       reason: json['reason']?.toString() ?? 'Not as expected',
       requestedAmount: (json['requestedAmount'] ?? 0.0).toDouble(),
-      requestDate: json['requestDate'] != null ? DateTime.parse(json['requestDate'].toString()) : DateTime.now(),
+      requestDate: json['requestDate'] != null
+          ? DateTime.parse(json['requestDate'].toString())
+          : DateTime.now(),
       status: json['status']?.toString() ?? 'pending',
     );
   }
