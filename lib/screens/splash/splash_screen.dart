@@ -40,7 +40,11 @@ class _VideoSplashScreenState extends State<VideoSplashScreen>
     );
 
     _initializeVideo();
-    _restoreUserSession();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _restoreUserSession();
+      }
+    });
   }
 
   @override

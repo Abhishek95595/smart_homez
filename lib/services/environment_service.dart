@@ -80,6 +80,22 @@ class EnvironmentService {
     }
   }
 
+  /// Read the home's current GPS / geofence / Wi-Fi SSID configuration.
+  Future<Map<String, dynamic>?> getHomeLocation() async {
+    try {
+      final Response<dynamic> response = await _api.get(
+        ApiEndpoints.environmentHomeLocation,
+      );
+      if (response.data is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(response.data);
+      }
+      return null;
+    } catch (error) {
+      debugPrint('[EnvironmentService] Get home location error: $error');
+      return null;
+    }
+  }
+
   /// Update and persist the home's exact location + geofence + Home Wi-Fi SSID.
   Future<bool> setHomeLocation(Map<String, dynamic> payload) async {
     try {

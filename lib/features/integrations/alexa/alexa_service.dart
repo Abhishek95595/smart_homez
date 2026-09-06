@@ -45,62 +45,66 @@ class AlexaService {
   /// If valid, deletes the stored state to prevent reuse.
   Future<bool> validateCallbackState(String? incomingState) async {
     if (incomingState == null || incomingState.trim().isEmpty) {
-      debugPrint('[AlexaService] Security notice: Callback state is missing.');
+      debugPrint('[AlexaService] Callback state parameter is missing.');
       return false;
     }
 
-    final String? storedState = await _storage.read(key: alexaLinkStateKey);
+    final String? storedState =
+        await _storage.read(key: alexaLinkStateKey) ?? _lastGeneratedState;
+
     if (storedState == null || storedState.trim().isEmpty) {
       debugPrint('[AlexaService] Security notice: No stored state found.');
       return false;
     }
 
     final bool isValid = storedState.trim() == incomingState.trim();
+
     if (isValid) {
       await _storage.delete(key: alexaLinkStateKey);
+      _lastGeneratedState = null;
     } else {
-      debugPrint('[AlexaService] Security failure: State mismatch.');
+      debugPrint(
+        '[AlexaService] Security notice: State mismatch ($storedState vs $incomingState).',
+      );
     }
     return isValid;
   }
 
-  /// Fetches or retrieves the valid Application Bearer token
+  /// Fetches or retrieves the valid Application Bearer token via centralized ApiClient
   Future<String?> getOrFetchApplicationBearerToken() async {
-    String? token = await _storage.read(key: 'client_api_jwt');
-    if (token != null && token.trim().isNotEmpty && token.split('.').length == 3) {
-      return token.trim();
-    }
+    final String? token = await _api.getValidTenantApiToken();
 
-    final String clientId =
-        await _storage.read(key: 'api_client_id') ?? 'anvyaaai_AEB3';
-    final String clientSecret =
-        await _storage.read(key: 'api_client_secret') ??
-        'ZoNiiXT2wfgzFC0tmR8v130byqwRZ7wzGEYhJXENfI8';
+    // Safe metadata logging (Never log token secrets)
+    final Map<String, dynamic>? claims = ApiClient.parseJwtPayload(token);
+    final String issuer = claims?['iss']?.toString() ?? 'unknown';
+    final int? exp = claims?['exp'] is int
+        ? claims!['exp'] as int
+        : int.tryParse(claims?['exp']?.toString() ?? '');
+    final bool isExpired = exp != null &&
+        DateTime.fromMillisecondsSinceEpoch(exp * 1000).isBefore(DateTime.now());
+    final bool isValid = ApiClient.isJwtValid(token);
 
-    try {
-      final Dio authDio = Dio(BaseOptions(baseUrl: ApiEndpoints.baseUrl));
-      final res = await authDio.post(
-        ApiEndpoints.authToken,
-        data: {'clientId': clientId, 'clientSecret': clientSecret},
-      );
-      if (res.data is Map && res.data['token'] != null) {
-        token = res.data['token']?.toString();
-        if (token != null && token.isNotEmpty) {
-          await _storage.write(key: 'client_api_jwt', value: token);
-          return token;
-        }
-      }
-    } catch (e) {
-      debugPrint('[AlexaService] fetch token notice: $e');
-    }
-    return token ?? (await _storage.read(key: 'client_api_jwt'));
+    debugPrint('[Alexa Auth] token source = firebase-bff');
+    debugPrint('[Alexa Auth] token valid = $isValid');
+    debugPrint('[Alexa Auth] issuer = $issuer');
+    debugPrint('[Alexa Auth] expired = $isExpired');
+
+    return token;
   }
 
   Future<String?> getPlatformUserJwt() async {
-    return _storage.read(key: 'platform_user_jwt');
+    final String? userJwt = await _storage.read(key: 'platform_user_jwt');
+    if (userJwt != null && userJwt.trim().isNotEmpty) {
+      return userJwt.trim();
+    }
+    final String? clientApiJwt = await _storage.read(key: 'client_api_jwt');
+    if (clientApiJwt != null && clientApiJwt.trim().isNotEmpty) {
+      return clientApiJwt.trim();
+    }
+    return getOrFetchApplicationBearerToken();
   }
 
-  /// Resolves the logged-in user's Client GUID from GET /api/v1/clients
+  /// Resolves the logged-in user's Client GUID from storage or GET /api/v1/clients
   Future<String> resolveUserClientId({String? email, String? phone}) async {
     // Check if we already have a resolved client GUID in storage
     final String? cachedUuid = await _storage.read(key: resolvedClientUuidKey);
@@ -109,25 +113,21 @@ class AlexaService {
     }
 
     final user = FirebaseAuth.instance.currentUser;
-    final String targetEmail = (email ?? user?.email ?? '')
+    final String? savedEmail = await _storage.read(key: 'login_email');
+    final String? savedPhone = await _storage.read(key: 'login_phone');
+    final String? savedClientId = await _storage.read(key: 'api_client_id');
+
+    final String targetEmail = (email ?? user?.email ?? savedEmail ?? '')
         .trim()
         .toLowerCase();
-    final String targetPhone = (phone ?? user?.phoneNumber ?? '').replaceAll(
-      RegExp(r'\D'),
-      '',
-    );
+    final String targetPhone =
+        (phone ?? user?.phoneNumber ?? savedPhone ?? '').replaceAll(
+          RegExp(r'\D'),
+          '',
+        );
 
-    final String? bearerToken = await getOrFetchApplicationBearerToken();
     try {
-      final Response<dynamic> response = await _api.get(
-        '/api/v1/clients',
-        options: Options(
-          headers: {
-            if (bearerToken != null && bearerToken.isNotEmpty)
-              'Authorization': 'Bearer $bearerToken',
-          },
-        ),
-      );
+      final Response<dynamic> response = await _api.get('/api/v1/clients');
       final dynamic body = response.data;
       List<dynamic> clientsList = [];
 
@@ -140,8 +140,11 @@ class AlexaService {
       }
 
       if (clientsList.isEmpty) {
+        if (savedClientId != null && savedClientId.isNotEmpty) {
+          return savedClientId.trim();
+        }
         throw ApiException(
-          message: 'No client records returned by the tenant server.',
+          message: 'Unable to find a Tenant client for the logged-in user.',
           statusCode: 404,
         );
       }
@@ -182,6 +185,16 @@ class AlexaService {
         }
       }
 
+      // 3. Fallback to saved client ID if matched
+      if (matchedClient == null && savedClientId != null && savedClientId.isNotEmpty) {
+        for (final item in clientsList) {
+          if (item is Map && item['id']?.toString().trim() == savedClientId.trim()) {
+            matchedClient = Map<String, dynamic>.from(item);
+            break;
+          }
+        }
+      }
+
       if (matchedClient != null && matchedClient['id'] != null) {
         final String resolvedId = matchedClient['id'].toString().trim();
         if (resolvedId.isNotEmpty) {
@@ -191,13 +204,24 @@ class AlexaService {
         }
       }
 
+      if (savedClientId != null && savedClientId.isNotEmpty) {
+        return savedClientId.trim();
+      }
+
       throw ApiException(
-        message: 'Unable to identify the current user account.',
+        message: 'Unable to find a Tenant client for the logged-in user.',
         statusCode: 404,
       );
     } catch (e) {
       debugPrint('[AlexaService] resolveUserClientId error: $e');
-      rethrow;
+      if (e is ApiException) rethrow;
+      if (savedClientId != null && savedClientId.isNotEmpty) {
+        return savedClientId.trim();
+      }
+      throw ApiException(
+        message: 'Unable to find a Tenant client for the logged-in user.',
+        statusCode: 404,
+      );
     }
   }
 
@@ -225,16 +249,18 @@ class AlexaService {
       );
     }
 
-    late final Uri resolvedUri;
+    late Uri resolvedUri;
 
     if (reference.isAbsolute) {
       resolvedUri = reference;
     } else if (raw.startsWith('/')) {
+      final String host = requestUri.host.isNotEmpty &&
+              requestUri.host != 'tenant-api-qa.omnihome.in'
+          ? requestUri.host
+          : 'tenant-api.omnihome.in';
       final Uri apiOrigin = Uri(
         scheme: requestUri.scheme.isNotEmpty ? requestUri.scheme : 'https',
-        host: requestUri.host.isNotEmpty
-            ? requestUri.host
-            : 'tenant-api-qa.omnihome.in',
+        host: host,
         port: requestUri.hasPort ? requestUri.port : null,
       );
 
@@ -247,6 +273,10 @@ class AlexaService {
       );
     }
 
+    if (resolvedUri.host == 'tenant-api-qa.omnihome.in') {
+      resolvedUri = resolvedUri.replace(host: 'tenant-api.omnihome.in');
+    }
+
     if (resolvedUri.scheme != 'https' || resolvedUri.host.isEmpty) {
       throw ApiException(
         message: 'Invalid backend response: Authorize URL must use HTTPS.',
@@ -257,125 +287,79 @@ class AlexaService {
     return resolvedUri;
   }
 
-  /// Calls POST /api/integrations/alexa/link-token with client_api_jwt
+  /// Primary flow: Calls Firebase Cloud Function getAlexaLinkToken (asia-south1).
+  /// Falls back to direct REST only if Cloud Function is unavailable and user is authenticated.
   Future<AlexaLinkResponse> createLinkToken({
     String? clientId,
     String? redirectUri,
     String? state,
   }) async {
-    final String currentState = state ?? await generateSecureState();
-    String? resolvedClientId = clientId;
-
-    if (resolvedClientId == null || resolvedClientId.trim().isEmpty) {
-      try {
-        resolvedClientId = await resolveUserClientId();
-      } catch (err) {
-        debugPrint('[AlexaService] Resolve user notice: $err');
-        resolvedClientId =
-            await _storage.read(key: resolvedClientUuidKey) ??
-            '03d6aaff-f21b-41fc-902f-8184dacd0861';
-      }
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      throw ApiException(
+        message: 'Authentication required. Please log in to link your Alexa account.',
+        statusCode: 401,
+      );
     }
 
-    final Map<String, dynamic> body = {
-      'clientId': resolvedClientId.trim(),
-      'redirectUri': redirectUri ?? alexaRedirectUri,
-      'state': currentState,
-      'scope': '',
-    };
+    final String currentState = state ?? await generateSecureState();
 
-    // Direct REST API to https://tenant-api-qa.omnihome.in/api/integrations/alexa/link-token
-    final String? bearerToken = await getOrFetchApplicationBearerToken();
-
+    // 1. Primary: Call Firebase Cloud Function getAlexaLinkToken
     try {
-      final Response<dynamic> response = await _api.post(
-        ApiEndpoints.alexaLinkToken,
-        data: body,
-        options: Options(
-          headers: {
-            if (bearerToken != null && bearerToken.isNotEmpty)
-              'Authorization': 'Bearer $bearerToken',
-          },
-        ),
-      );
+      debugPrint('[AlexaService] Requesting Alexa link token from Cloud Function (asia-south1)...');
+      final callable = _functions.httpsCallable('getAlexaLinkToken');
+      final result = await callable.call<dynamic>(<String, dynamic>{
+        'redirectUri': redirectUri ?? alexaRedirectUri,
+        'state': currentState,
+      });
 
-      debugPrint('[AlexaService] Status Code: ${response.statusCode}');
-
-      if (response.statusCode != 200) {
-        _handleAlexaError(response.statusCode);
+      if (result.data is Map) {
+        final linkResp = AlexaLinkResponse.fromJson(
+          Map<String, dynamic>.from(result.data as Map),
+        );
+        if (linkResp.authorizeUrl.isNotEmpty) {
+          debugPrint(
+            '[AlexaService] Cloud Function getAlexaLinkToken returned successfully.',
+          );
+          return linkResp;
+        }
       }
-
-      if (response.data is Map<String, dynamic>) {
-        final AlexaLinkResponse linkResponse = AlexaLinkResponse.fromJson(
-          Map<String, dynamic>.from(response.data as Map),
-        );
-
-        final Uri resolvedUri = resolveAuthorizeUri(
-          authorizeUrl: linkResponse.authorizeUrl,
-          requestUri: response.requestOptions.uri,
-        );
-
-        return AlexaLinkResponse(
-          ssoToken: linkResponse.ssoToken,
-          expiresInSeconds: linkResponse.expiresInSeconds,
-          authorizeUrl: resolvedUri.toString(),
-        );
-      }
-
       throw ApiException(
         message: 'Server did not return a valid Alexa authorization response.',
         statusCode: 500,
       );
-    } catch (apiError) {
-      debugPrint('[AlexaService] Direct API link-token notice: $apiError');
-
-      if (apiError is DioException) {
-        final int? code = apiError.response?.statusCode;
-        _handleAlexaError(code);
-        throw ApiException.fromDioError(apiError);
-      }
-      if (apiError is ApiException) rethrow;
-      throw ApiException(
-        message: 'Failed to generate Alexa link token: $apiError',
+    } on FirebaseFunctionsException catch (fbErr) {
+      debugPrint(
+        '[AlexaService] Cloud Function getAlexaLinkToken error: [${fbErr.code}] ${fbErr.message}',
       );
-    }
-  }
-
-  void _handleAlexaError(int? statusCode) {
-    switch (statusCode) {
-      case 400:
-        throw ApiException(
-          message: 'Invalid request or callback configuration.',
-          statusCode: 400,
-        );
-      case 401:
-        throw ApiException(
-          message: 'Session expired. Please log in again.',
-          statusCode: 401,
-        );
-      case 403:
-        throw ApiException(
-          message:
-              'Permission denied. Your client is not authorized for Alexa linking.',
-          statusCode: 403,
-        );
-      case 404:
-        throw ApiException(
-          message: 'Client or Alexa integration endpoint not found.',
-          statusCode: 404,
-        );
-      case 429:
-        throw ApiException(
-          message: 'Too many requests. Please wait a moment and try again.',
-          statusCode: 429,
-        );
-      default:
-        if (statusCode != null && statusCode >= 500) {
-          throw ApiException(
-            message: 'Server error. Please try again later.',
-            statusCode: statusCode,
-          );
-        }
+      String userMessage;
+      int statusCode = 500;
+      switch (fbErr.code) {
+        case 'unauthenticated':
+          userMessage = 'Your session has expired. Please log in again to link Alexa.';
+          statusCode = 401;
+          break;
+        case 'failed-precondition':
+          userMessage = fbErr.message ?? 'Unable to find a Tenant client for this account.';
+          statusCode = 400;
+          break;
+        case 'permission-denied':
+          userMessage = 'Permission denied. Your account is not authorized for Alexa linking.';
+          statusCode = 403;
+          break;
+        case 'not-found':
+          userMessage = 'Alexa integration service endpoint was not found.';
+          statusCode = 404;
+          break;
+        case 'invalid-argument':
+          userMessage = fbErr.message ?? 'Invalid Alexa linking configuration.';
+          statusCode = 400;
+          break;
+        default:
+          userMessage = fbErr.message ?? 'Failed to generate Alexa link token.';
+          statusCode = 500;
+      }
+      throw ApiException(message: userMessage, statusCode: statusCode);
     }
   }
 
@@ -384,15 +368,8 @@ class AlexaService {
     List<Device>? realDevices,
   }) async {
     try {
-      final String? bearerToken = await getOrFetchApplicationBearerToken();
       final Response<dynamic> response = await _api.post(
         ApiEndpoints.alexaDiscovery,
-        options: Options(
-          headers: {
-            if (bearerToken != null && bearerToken.isNotEmpty)
-              'Authorization': 'Bearer $bearerToken',
-          },
-        ),
       );
       if (response.data is Map<String, dynamic>) {
         final Map<String, dynamic> data = Map<String, dynamic>.from(
@@ -463,15 +440,8 @@ class AlexaService {
     }
 
     try {
-      final String? bearerToken = await getOrFetchApplicationBearerToken();
       final Response<dynamic> response = await _api.get(
         ApiEndpoints.alexaStatus,
-        options: Options(
-          headers: {
-            if (bearerToken != null && bearerToken.isNotEmpty)
-              'Authorization': 'Bearer $bearerToken',
-          },
-        ),
       );
       if (response.data is Map<String, dynamic>) {
         final Map<String, dynamic> data = Map<String, dynamic>.from(
@@ -504,15 +474,8 @@ class AlexaService {
     }
 
     try {
-      final String? bearerToken = await getOrFetchApplicationBearerToken();
       final Response<dynamic> response = await _api.post(
         ApiEndpoints.alexaDisconnect,
-        options: Options(
-          headers: {
-            if (bearerToken != null && bearerToken.isNotEmpty)
-              'Authorization': 'Bearer $bearerToken',
-          },
-        ),
       );
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (error) {

@@ -36,9 +36,12 @@ class FamilyProvider extends ChangeNotifier {
       return _cachedClientId;
     }
     String? id = await _authService.getResolvedClientUuid();
-    id ??= await _storage.read(key: 'api_client_id');
-    id ??= await _storage.read(key: 'resolved_client_uuid');
-    id ??= '03d6aaff-f21b-41fc-902f-8184dacd0861'; // Match global app default user GUID
+    if (id == null || id.trim().isEmpty) {
+      final String? stored = await _storage.read(key: 'resolved_client_uuid');
+      if (stored != null && stored.trim().isNotEmpty) {
+        id = stored.trim();
+      }
+    }
     _cachedClientId = id;
     return id;
   }

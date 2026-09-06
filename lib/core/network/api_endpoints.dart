@@ -1,5 +1,15 @@
 abstract final class ApiEndpoints {
-  static const String baseUrl = 'https://tenant-api-qa.omnihome.in';
+  static const String baseUrl = 'https://tenant-api.omnihome.in';
+
+  // =============================================================
+  // PRODUCTION TENANT API IDENTITY CONFIGURATION
+  // =============================================================
+  static const String productionTenantId =
+      '6d11e924-d046-400d-bc30-62a06e13de61';
+  static const String productionClientId = 'anvyaai_823B';
+  static const String expectedJwtIssuer = 'AuraBrain';
+  static const String expectedJwtAudience = 'AuraBrainMobile';
+  static const String expectedJwtPermission = 'write';
 
   // Cloud Functions / BFF Backend Base URL
   static const String cloudFunctionsBaseUrl =
@@ -7,7 +17,6 @@ abstract final class ApiEndpoints {
   static const String bffSessionVerify = '/session/verify';
 
   // Auth
-  static const String authToken = '/api/Auth/token';
   static const String authLogin = '/api/Auth/login';
   static const String sendOtp = '/auth/send-otp';
   static const String verifyOtp = '/auth/verify-otp';
@@ -47,7 +56,16 @@ abstract final class ApiEndpoints {
   static const String createClient = '$clients/createClient';
   static const String verifyClient = '$clients/createClient/verify';
 
-  static String client(String clientId) => '$clients/$clientId';
+  /// Normalizes a client identifier, trimming whitespace.
+  static String normalizeClientGuid(String? clientId) {
+    if (clientId == null || clientId.trim().isEmpty) {
+      throw ArgumentError('Client ID must not be null or empty.');
+    }
+    return clientId.trim();
+  }
+
+  static String client([String? clientId]) =>
+      '$clients/${normalizeClientGuid(clientId)}';
 
   static String resetPassword(String clientId) =>
       '${client(clientId)}/reset-password';

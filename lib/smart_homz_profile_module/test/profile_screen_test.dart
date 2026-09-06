@@ -151,7 +151,7 @@ void main() {
   group('2. ClientProfile Model Tests', () {
     test('parses snake_case backend payload correctly', () {
       final json = {
-        'client_id': 'df0df9e3-0e47-4d46-810e-3c4f5c267d69',
+        'client_id': '6782976c-e9a4-41c9-a754-05e4ba0a97b2',
         'client_name': 'Abhishek Verma',
         'email': 'abhishek@aurabrain.com',
         'phone': '+919876543210',
@@ -165,7 +165,7 @@ void main() {
 
       final profile = ClientProfile.fromJson(json);
 
-      expect(profile.id, equals('df0df9e3-0e47-4d46-810e-3c4f5c267d69'));
+      expect(profile.id, equals('6782976c-e9a4-41c9-a754-05e4ba0a97b2'));
       expect(profile.name, equals('Abhishek Verma'));
       expect(profile.email, equals('abhishek@aurabrain.com'));
       expect(profile.phone, equals('+919876543210'));
@@ -180,7 +180,7 @@ void main() {
 
     test('parses camelCase payload and calculates safe 0-device ratio', () {
       final json = {
-        'id': 'df0df9e3-0e47-4d46-810e-3c4f5c267d69',
+        'id': '6782976c-e9a4-41c9-a754-05e4ba0a97b2',
         'name': 'Resident User',
         'email': 'resident@example.com',
         'deviceCount': 0,
@@ -199,7 +199,7 @@ void main() {
   group('3. ProfileService Tests', () {
     late FakeApiClient fakeApi;
     late ProfileService profileService;
-    const validUuid = 'df0df9e3-0e47-4d46-810e-3c4f5c267d69';
+    const validUuid = '6782976c-e9a4-41c9-a754-05e4ba0a97b2';
 
     setUp(() {
       fakeApi = FakeApiClient();
@@ -263,7 +263,7 @@ void main() {
     late FakeApiClient fakeApi;
     late ProfileService profileService;
     late ProfileProvider profileProvider;
-    const validUuid = 'df0df9e3-0e47-4d46-810e-3c4f5c267d69';
+    const validUuid = '6782976c-e9a4-41c9-a754-05e4ba0a97b2';
 
     setUp(() {
       fakeApi = FakeApiClient();
@@ -331,7 +331,7 @@ void main() {
     late DeviceProvider deviceProvider;
     late PropertyProvider propertyProvider;
     late ThemeProvider themeProvider;
-    const validUuid = 'df0df9e3-0e47-4d46-810e-3c4f5c267d69';
+    const validUuid = '6782976c-e9a4-41c9-a754-05e4ba0a97b2';
 
     setUp(() {
       authProvider = AuthProvider();
@@ -530,7 +530,7 @@ void main() {
     late DeviceProvider deviceProvider;
     late PropertyProvider propertyProvider;
     late ThemeProvider themeProvider;
-    const validUuid = 'df0df9e3-0e47-4d46-810e-3c4f5c267d69';
+    const validUuid = '6782976c-e9a4-41c9-a754-05e4ba0a97b2';
 
     setUp(() {
       authProvider = AuthProvider();

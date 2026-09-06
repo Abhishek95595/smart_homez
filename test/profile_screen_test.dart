@@ -37,6 +37,7 @@ class FakeApiClient implements ApiClient {
   @override
   Future<Response<dynamic>> get(
     String path, {
+    Options? options,
     Map<String, dynamic>? queryParameters,
   }) async {
     requestedPaths.add(path);
@@ -55,6 +56,7 @@ class FakeApiClient implements ApiClient {
   Future<Response<dynamic>> post(
     String path, {
     dynamic data,
+    Options? options,
     Map<String, dynamic>? queryParameters,
   }) async {
     requestedPaths.add(path);

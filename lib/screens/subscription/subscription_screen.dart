@@ -23,10 +23,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     _tabController = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = context.read<AuthProvider>();
-      final clientId = auth.resolvedClientId ??
-          auth.resolvedClientUuid ??
-          '03d6aaff-f21b-41fc-902f-8184dacd0861';
-      context.read<SubscriptionProvider>().loadSubscriptionData(clientId);
+      final clientId = auth.resolvedClientId ?? auth.resolvedClientUuid;
+      if (clientId != null && clientId.isNotEmpty) {
+        context.read<SubscriptionProvider>().loadSubscriptionData(clientId);
+      }
     });
   }
 

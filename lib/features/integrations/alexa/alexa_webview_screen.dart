@@ -38,7 +38,11 @@ class _AlexaWebViewScreenState extends State<AlexaWebViewScreen> {
   void initState() {
     super.initState();
 
-    _lastUrl = widget.authorizeUri.toString();
+    final Uri effectiveUri = (widget.authorizeUri.host == 'tenant-api-qa.omnihome.in')
+        ? widget.authorizeUri.replace(host: 'tenant-api.omnihome.in')
+        : widget.authorizeUri;
+
+    _lastUrl = effectiveUri.toString();
 
     final bool hasToken = widget.bearerToken != null && widget.bearerToken!.isNotEmpty;
     debugPrint('[AlexaWebView] Platform JWT available: $hasToken');
@@ -56,14 +60,39 @@ class _AlexaWebViewScreenState extends State<AlexaWebViewScreen> {
           onNavigationRequest: (NavigationRequest request) {
             final String url = request.url;
             _lastUrl = url;
-            final bool isInitial = url == widget.authorizeUri.toString();
+            final bool isInitial = url == effectiveUri.toString();
             debugPrint('[AlexaWebView] Navigation Request: url=$url (Is initial request: $isInitial)');
 
             final uri = Uri.tryParse(url);
-            if (uri != null && uri.scheme == widget.redirectScheme) {
-              debugPrint('[AlexaWebView] Intercepted custom scheme callback: $url');
+            final String scheme = uri?.scheme.toLowerCase() ?? '';
+            final String host = uri?.host.toLowerCase() ?? '';
+            final String path = uri?.path.toLowerCase() ?? '';
+            final String lowerUrl = url.toLowerCase();
+
+            final bool isCustomScheme = scheme.isNotEmpty &&
+                scheme != 'http' &&
+                scheme != 'https' &&
+                scheme != 'about' &&
+                scheme != 'data' &&
+                scheme != 'javascript';
+
+            final bool isCallback = scheme == widget.redirectScheme.toLowerCase() ||
+                scheme == 'hasomi.com.homeautomation' ||
+                scheme == 'omnihome.in.homeautomation' ||
+                scheme == 'app1' ||
+                host == 'alexa-callback' ||
+                path.contains('alexa-callback') ||
+                host == 'alexa-link' ||
+                path.contains('alexa-link') ||
+                lowerUrl.contains('alexa-callback') ||
+                lowerUrl.contains('alexa-link') ||
+                lowerUrl.contains('omnihome.in.homeautomation') ||
+                lowerUrl.contains('hasomi.com.homeautomation');
+
+            if (isCustomScheme || isCallback) {
+              debugPrint('[AlexaWebView] Intercepted callback / custom scheme: $url');
               if (mounted) {
-                Navigator.pop(context, uri);
+                Navigator.pop(context, uri ?? Uri.parse(url));
               }
               return NavigationDecision.prevent;
             }
@@ -71,13 +100,13 @@ class _AlexaWebViewScreenState extends State<AlexaWebViewScreen> {
           },
           onPageStarted: (String url) {
             _lastUrl = url;
-            final bool isInitial = url == widget.authorizeUri.toString();
+            final bool isInitial = url == effectiveUri.toString();
             debugPrint('[AlexaWebView] Page Load Started: url=$url (Is initial request: $isInitial)');
             if (mounted) setState(() => _isLoading = true);
           },
           onPageFinished: (String url) {
             _lastUrl = url;
-            final bool isInitial = url == widget.authorizeUri.toString();
+            final bool isInitial = url == effectiveUri.toString();
             debugPrint('[AlexaWebView] Page Load Finished: url=$url (Is initial request: $isInitial)');
             if (mounted) {
               setState(() {
@@ -89,8 +118,8 @@ class _AlexaWebViewScreenState extends State<AlexaWebViewScreen> {
           },
           onHttpError: (HttpResponseError error) {
             final int? statusCode = error.response?.statusCode;
-            final String url = error.request?.uri?.toString() ?? _lastUrl ?? 'unknown';
-            final bool isInitial = url == widget.authorizeUri.toString();
+            final String url = error.request?.uri.toString() ?? _lastUrl ?? 'unknown';
+            final bool isInitial = url == effectiveUri.toString();
             debugPrint(
               '[AlexaWebView] HTTP Error: code=$statusCode, url=$url (Is initial request: $isInitial)',
             );
@@ -114,10 +143,37 @@ class _AlexaWebViewScreenState extends State<AlexaWebViewScreen> {
           },
           onWebResourceError: (WebResourceError error) {
             final String url = _lastUrl ?? 'unknown';
-            final bool isInitial = url == widget.authorizeUri.toString();
+            final bool isInitial = url == effectiveUri.toString();
             debugPrint(
               '[AlexaWebView] Web Resource Error: code=${error.errorCode}, description=${error.description}, url=$url (Is initial request: $isInitial)',
             );
+
+            final uri = Uri.tryParse(url);
+            final String scheme = uri?.scheme.toLowerCase() ?? '';
+            final String host = uri?.host.toLowerCase() ?? '';
+            final String path = uri?.path.toLowerCase() ?? '';
+            final String lowerUrl = url.toLowerCase();
+
+            final bool isCallback = scheme == widget.redirectScheme.toLowerCase() ||
+                scheme == 'hasomi.com.homeautomation' ||
+                scheme == 'omnihome.in.homeautomation' ||
+                scheme == 'app1' ||
+                host == 'alexa-callback' ||
+                path.contains('alexa-callback') ||
+                host == 'alexa-link' ||
+                path.contains('alexa-link') ||
+                lowerUrl.contains('alexa-callback') ||
+                lowerUrl.contains('alexa-link') ||
+                lowerUrl.contains('omnihome.in.homeautomation') ||
+                lowerUrl.contains('hasomi.com.homeautomation');
+
+            if (isCallback) {
+              debugPrint('[AlexaWebView] Rescued callback from WebResourceError: $url');
+              if (mounted) {
+                Navigator.pop(context, uri ?? Uri.parse(url));
+              }
+              return;
+            }
 
             // Only display main frame loading failures
             if (error.isForMainFrame ?? true) {
@@ -133,7 +189,7 @@ class _AlexaWebViewScreenState extends State<AlexaWebViewScreen> {
         ),
       )
       ..loadRequest(
-        widget.authorizeUri,
+        effectiveUri,
         headers: requestHeaders,
       );
   }

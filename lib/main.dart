@@ -35,15 +35,15 @@ Future<void> main() async {
   // machine-specific Firebase desktop configuration.
   if (defaultTargetPlatform != TargetPlatform.windows) {
     await Firebase.initializeApp();
-    try {
-      if (!kDebugMode) {
+    if (!kDebugMode) {
+      try {
         await FirebaseAppCheck.instance.activate(
           providerAndroid: const AndroidPlayIntegrityProvider(),
           providerApple: const AppleDeviceCheckProvider(),
         );
+      } catch (appCheckError) {
+        debugPrint('[FirebaseAppCheck] Notice: $appCheckError');
       }
-    } catch (appCheckError) {
-      debugPrint('[FirebaseAppCheck] Notice: $appCheckError');
     }
   }
   await Hive.initFlutter();

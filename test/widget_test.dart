@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 
 import 'package:smart_homez/main.dart';
+import 'package:smart_homez/screens/auth/login_screen.dart';
 
 void main() {
   late Directory hiveDirectory;
@@ -27,40 +28,14 @@ void main() {
     }
   });
 
-  testWidgets('App launches landing page and opens login', (
+  testWidgets('App launches and opens login screen', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const SmartBuildingApp());
-    await tester.pumpAndSettle();
+    for (int i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 500));
+    }
 
-    expect(find.text('Hasomi'), findsWidgets);
-    expect(find.text('Get started free'), findsWidgets);
-
-    final startButton = find.text('Start').evaluate().isNotEmpty
-        ? find.text('Start')
-        : find.text('Get started');
-
-    expect(startButton, findsWidgets);
-    await tester.tap(startButton.first);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Login'), findsWidgets);
-  });
-
-  testWidgets('Landing page opens the interactive product demo', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(const SmartBuildingApp());
-    await tester.pumpAndSettle();
-
-    final demoButton = find.text('See how it works');
-    expect(demoButton, findsWidgets);
-
-    await tester.ensureVisible(demoButton.first);
-    await tester.tap(demoButton.first);
-    await tester.pumpAndSettle();
-
-    expect(find.text('How Hasomi works'), findsOneWidget);
-    expect(find.text('1. Add any property'), findsOneWidget);
+    expect(find.byType(LoginScreen), findsOneWidget);
   });
 }

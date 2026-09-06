@@ -96,9 +96,8 @@ class _EnergyScreenState extends State<EnergyScreen>
 
   void _fetchData() {
     final auth = context.read<AuthProvider>();
-    final clientId = auth.resolvedClientId ??
-        auth.resolvedClientUuid ??
-        '03d6aaff-f21b-41fc-902f-8184dacd0861';
+    final clientId = auth.resolvedClientId ?? auth.resolvedClientUuid;
+    if (clientId == null || clientId.isEmpty) return;
     final deviceProvider = context.read<DeviceProvider>();
     final calculatedWatts = _calculateTotalActiveWatts(deviceProvider.devices);
     final liveWatts = calculatedWatts > 0
