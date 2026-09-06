@@ -348,7 +348,7 @@ class _CurrentPlanTab extends StatelessWidget {
                   ),
                   Switch.adaptive(
                     value: sub.autoRenew,
-                    activeColor: const Color(0xFF00A38E),
+                    activeTrackColor: const Color(0xFF00A38E),
                     onChanged: (val) async {
                       await subscriptionProvider.toggleAutoRenew(clientId, val);
                     },
@@ -736,7 +736,7 @@ class _CheckoutModal extends StatefulWidget {
 }
 
 class _CheckoutModalState extends State<_CheckoutModal> {
-  String _selectedMethod = 'pm_1';
+  final String _selectedMethod = 'pm_1';
   final TextEditingController _couponController = TextEditingController();
   double _discount = 0.0;
   bool _isProcessing = false;
@@ -1102,15 +1102,21 @@ class _RefundModalState extends State<_RefundModal> {
             ),
           ),
           const SizedBox(height: 8),
-          ..._reasons.map(
-            (r) => RadioListTile<String>(
-              value: r,
-              groupValue: _selectedReason,
-              onChanged: (val) => setState(() => _selectedReason = val!),
-              title: Text(r, style: const TextStyle(fontSize: 13)),
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              activeColor: const Color(0xFF00A38E),
+          RadioGroup<String>(
+            groupValue: _selectedReason,
+            onChanged: (val) {
+              if (val != null) setState(() => _selectedReason = val);
+            },
+            child: Column(
+              children: _reasons.map(
+                (r) => RadioListTile<String>(
+                  value: r,
+                  title: Text(r, style: const TextStyle(fontSize: 13)),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  activeColor: const Color(0xFF00A38E),
+                ),
+              ).toList(),
             ),
           ),
           const SizedBox(height: 16),
@@ -1278,10 +1284,10 @@ class _ActiveSubscriptionHero extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00A38E).withOpacity(0.2),
+                  color: const Color(0xFF00A38E).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: const Color(0xFF00A38E).withOpacity(0.4),
+                    color: const Color(0xFF00A38E).withValues(alpha: 0.4),
                   ),
                 ),
                 child: Row(
