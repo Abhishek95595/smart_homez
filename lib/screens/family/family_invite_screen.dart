@@ -8,8 +8,6 @@ import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
 import '../../providers/family_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/app_navigation_drawer.dart';
-import '../../widgets/app_navigation_leading.dart';
 
 class FamilyInviteScreen extends StatefulWidget {
   const FamilyInviteScreen({super.key});
@@ -25,12 +23,11 @@ class _FamilyInviteScreenState extends State<FamilyInviteScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final auth = context.read<AuthProvider>();
-      final clientUuid =
-          auth.resolvedClientUuid ??
-          auth.resolvedClientId ??
-          '6782976c-e9a4-41c9-a754-05e4ba0a97b2';
-      context.read<FamilyProvider>().setClientId(clientUuid);
-      context.read<FamilyProvider>().fetchMembers(silent: true);
+      final clientUuid = auth.resolvedClientUuid ?? auth.resolvedClientId;
+      if (clientUuid != null && clientUuid.isNotEmpty) {
+        context.read<FamilyProvider>().setClientId(clientUuid);
+        context.read<FamilyProvider>().fetchMembers(silent: true);
+      }
     });
   }
 
@@ -150,17 +147,18 @@ class _FamilyInviteScreenState extends State<FamilyInviteScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: const AppNavigationDrawer(),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        leading: Builder(
-          builder: (ctx) => AppNavigationLeading.drawer(
-            color: const Color(0xFF0F172A),
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: Color(0xFF0F172A),
+            size: 24,
           ),
+          onPressed: () => Navigator.maybePop(context),
         ),
         title: const Text(
           'Family & Device Access',

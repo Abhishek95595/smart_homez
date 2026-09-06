@@ -38,11 +38,11 @@ class AlexaLinkResponse {
         map['url']?.toString() ??
         '';
 
-    if (authUrl.contains('tenant-api-qa.omnihome.in') ||
-        authUrl.contains('tenant-api.omnihome.in')) {
-      authUrl = authUrl
-          .replaceAll('tenant-api-qa.omnihome.in', 'omnihome.in')
-          .replaceAll('tenant-api.omnihome.in', 'omnihome.in');
+    if (authUrl.contains('tenant-api-qa.omnihome.in')) {
+      authUrl = authUrl.replaceAll(
+        'tenant-api-qa.omnihome.in',
+        'tenant-api.omnihome.in',
+      );
     }
 
     return AlexaLinkResponse(

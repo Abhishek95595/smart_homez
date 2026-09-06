@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../core/network/api_endpoints.dart';
 import '../core/network/api_exception.dart';
 import '../models/app_user.dart';
 import '../models/auth_response.dart';
@@ -30,9 +29,9 @@ class AuthProvider extends ChangeNotifier {
     AuthService? authService,
     ClientService? clientService,
     FlutterSecureStorage? storage,
-  }) : _authService = authService ?? AuthService(),
-       _clientService = clientService ?? ClientService(),
-       _storage = storage ?? const FlutterSecureStorage();
+  })  : _authService = authService ?? AuthService(),
+        _clientService = clientService ?? ClientService(),
+        _storage = storage ?? const FlutterSecureStorage();
 
   final AuthService _authService;
   final ClientService _clientService;
@@ -118,9 +117,7 @@ class AuthProvider extends ChangeNotifier {
             email: cleanIdentifier,
             password: secret,
           );
-          _apiToken =
-              await _authService.fetchTenantApiTokenFromBff() ??
-              authResponse.token;
+          _apiToken = await _authService.fetchTenantApiTokenFromBff() ?? authResponse.token;
         } else {
           _apiToken = await _authService.fetchTenantApiTokenFromBff();
         }
@@ -224,15 +221,13 @@ class AuthProvider extends ChangeNotifier {
         }
       }
 
-      final String resolvedGuid =
-          (finalClientId != null && finalClientId.isNotEmpty)
-          ? finalClientId
-          : ApiEndpoints.productionClientGuid;
+      final String resolvedGuid = finalClientId ?? '';
+      _resolvedClientUuid = resolvedGuid.isNotEmpty ? resolvedGuid : null;
 
-      _resolvedClientUuid = resolvedGuid;
-
-      await _authService.saveResolvedClientUuid(resolvedGuid);
-      await _authService.saveUserId(resolvedGuid);
+      if (resolvedGuid.isNotEmpty) {
+        await _authService.saveResolvedClientUuid(resolvedGuid);
+        await _authService.saveUserId(resolvedGuid);
+      }
       if (_apiToken != null && _apiToken!.isNotEmpty) {
         await _authService.savePlatformUserJwt(_apiToken!);
       }
@@ -263,14 +258,16 @@ class AuthProvider extends ChangeNotifier {
       // PHASE 4: LOAD REAL API DATA
       // ========================================================
 
-      propertyProvider.setClientId(resolvedGuid);
+      if (resolvedGuid.isNotEmpty) {
+        propertyProvider.setClientId(resolvedGuid);
 
-      await Future.wait([
-        propertyProvider.syncFromApi(resolvedGuid),
-        deviceProvider.syncFromApi(resolvedGuid),
-      ]);
+        await Future.wait([
+          propertyProvider.syncFromApi(resolvedGuid),
+          deviceProvider.syncFromApi(resolvedGuid),
+        ]);
 
-      await deviceProvider.startRealtimeSync(resolvedGuid);
+        await deviceProvider.startRealtimeSync(resolvedGuid);
+      }
 
       _errorMessage = null;
       notifyListeners();
@@ -399,29 +396,32 @@ class AuthProvider extends ChangeNotifier {
               sessionResult['status'] == 'registrationRequired') {
             _sessionStatus = TenantSessionStatus.registrationRequired;
           } else {
-            // Fallback to production tenant client for logged in Firebase user
-            _resolvedClientUuid =
-                (await _authService.getResolvedClientUuid()) ??
-                '6782976c-e9a4-41c9-a754-05e4ba0a97b2';
-            await _authService.saveResolvedClientUuid(_resolvedClientUuid!);
-            _sessionStatus = TenantSessionStatus.authenticated;
-            _currentUser = AppUser(
-              id: currentUser.uid,
-              name: currentUser.displayName ?? 'Aditya Vikram Singh',
-              email: currentUser.email ?? 'aditya.vikram.singh@anvyaai.com',
-              phone: currentUser.phoneNumber ?? '+917007672401',
-              role: UserRole.resident,
-              tenantId: 'aurabrain',
-              avatarInitials: 'AV',
-            );
+            final savedUuid = await _authService.getResolvedClientUuid();
+            if (savedUuid != null && savedUuid.isNotEmpty) {
+              _resolvedClientUuid = savedUuid;
+              _sessionStatus = TenantSessionStatus.authenticated;
+              _currentUser = AppUser(
+                id: currentUser.uid,
+                name: currentUser.displayName ?? 'Smart Home User',
+                email: currentUser.email ?? '',
+                phone: currentUser.phoneNumber ?? '',
+                role: UserRole.resident,
+                tenantId: 'aurabrain',
+                avatarInitials: 'SH',
+              );
+            } else {
+              _sessionStatus = TenantSessionStatus.unauthenticated;
+            }
           }
 
-          propertyProvider.setClientId(_resolvedClientUuid!);
-          await Future.wait([
-            propertyProvider.syncFromApi(_resolvedClientUuid!),
-            deviceProvider.syncFromApi(_resolvedClientUuid!),
-            deviceProvider.startRealtimeSync(_resolvedClientUuid!),
-          ]);
+          if (_resolvedClientUuid != null) {
+            propertyProvider.setClientId(_resolvedClientUuid!);
+            await Future.wait([
+              propertyProvider.syncFromApi(_resolvedClientUuid!),
+              deviceProvider.syncFromApi(_resolvedClientUuid!),
+              deviceProvider.startRealtimeSync(_resolvedClientUuid!),
+            ]);
+          }
         } catch (restoreErr) {
           debugPrint(
             '[AuthProvider] Firebase Session restore failed: $restoreErr',
@@ -437,8 +437,7 @@ class AuthProvider extends ChangeNotifier {
       final String? savedPassword = await _authService.getSavedPassword();
 
       try {
-        final String? bffToken = await _authService
-            .fetchTenantApiTokenFromBff();
+        final String? bffToken = await _authService.fetchTenantApiTokenFromBff();
         if (bffToken != null && bffToken.isNotEmpty) {
           savedToken = bffToken;
         } else if (savedEmail != null &&
@@ -459,11 +458,13 @@ class AuthProvider extends ChangeNotifier {
         debugPrint('[AuthProvider] Restore token notice: $tErr');
       }
 
-      final String savedClientUuid =
-          (await _authService.getResolvedClientUuid()) ??
-          '6782976c-e9a4-41c9-a754-05e4ba0a97b2';
+      final String? savedClientUuid =
+          await _authService.getResolvedClientUuid();
 
-      if (savedToken == null || savedToken.isEmpty) {
+      if (savedToken == null ||
+          savedToken.isEmpty ||
+          savedClientUuid == null ||
+          savedClientUuid.isEmpty) {
         return;
       }
 
@@ -592,28 +593,25 @@ class AuthProvider extends ChangeNotifier {
           debugPrint(
             '[AuthProvider] Firebase phone verification failed: ${e.code} - ${e.message}',
           );
-          // If Firebase is throttled (too-many-requests), quota exceeded, or failing AppCheck,
-          // automatically fall back to direct backend OTP service so user is never blocked!
-          if (e.code == 'too-many-requests' ||
-              e.code == 'quota-exceeded' ||
-              e.code == 'app-not-authorized' ||
-              e.code == 'invalid-app-credential') {
-            try {
-              debugPrint(
-                '[AuthProvider] Falling back to backend sendOtp service...',
-              );
-              final response = await _authService.sendOtp(phone: phone);
-              if (response.success) {
-                _otpSent = true;
-                notifyListeners();
-                if (!completer.isCompleted) completer.complete();
-                return;
-              }
-            } catch (fallbackErr) {
-              debugPrint(
-                '[AuthProvider] Backend fallback sendOtp error: $fallbackErr',
-              );
+          // If Firebase is throttled, missing initial state, quota exceeded, Play Integrity failed,
+          // or failing AppCheck/reCAPTCHA, automatically fall back to backend OTP service so user is never blocked!
+          try {
+            debugPrint(
+              '[AuthProvider] Falling back to backend sendOtp service...',
+            );
+            final response = await _authService.sendOtp(phone: phone);
+            if (response.success) {
+              _verificationId = null;
+              _otpSent = true;
+              _errorMessage = null;
+              notifyListeners();
+              if (!completer.isCompleted) completer.complete();
+              return;
             }
+          } catch (fallbackErr) {
+            debugPrint(
+              '[AuthProvider] Backend fallback sendOtp error: $fallbackErr',
+            );
           }
           _fail('Failed to send OTP: ${e.message ?? e.code}');
           if (!completer.isCompleted) {
@@ -714,8 +712,7 @@ class AuthProvider extends ChangeNotifier {
         }
 
         _apiToken = response.token;
-        _resolvedClientUuid =
-            response.clientId ?? ApiEndpoints.productionClientGuid;
+        _resolvedClientUuid = response.clientId;
         String clientName = 'Smart Home User';
         if (_resolvedClientUuid != null && _resolvedClientUuid!.isNotEmpty) {
           try {
@@ -728,7 +725,7 @@ class AuthProvider extends ChangeNotifier {
         }
 
         _currentUser = AppUser(
-          id: _resolvedClientUuid!,
+          id: _resolvedClientUuid ?? '',
           name: clientName,
           email: '',
           phone: phone.trim(),
@@ -761,9 +758,8 @@ class AuthProvider extends ChangeNotifier {
 
       Map<String, dynamic> sessionResult = {};
       try {
-        sessionResult = await _authService.getTenantSession(
-          fcmToken: 'MOCK_DEVICE_FCM_TOKEN',
-        );
+        sessionResult = await _authService
+            .getTenantSession(fcmToken: 'MOCK_DEVICE_FCM_TOKEN');
 
         if (sessionResult['success'] == true &&
             sessionResult['status'] == 'authenticated') {
@@ -813,9 +809,9 @@ class AuthProvider extends ChangeNotifier {
 
       final String finalDisplayName =
           (resolvedName.isNotEmpty &&
-              !resolvedName.toLowerCase().contains('otp'))
-          ? resolvedName
-          : 'Smart Home User';
+                  !resolvedName.toLowerCase().contains('otp'))
+              ? resolvedName
+              : 'Smart Home User';
 
       _currentUser = AppUser(
         id: userCred.user?.uid ?? _resolvedClientUuid ?? '',

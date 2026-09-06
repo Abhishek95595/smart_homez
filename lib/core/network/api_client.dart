@@ -29,48 +29,30 @@ class ApiClient {
 
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (RequestOptions options, RequestInterceptorHandler handler) async {
-          try {
-            String path = options.path;
+        onRequest:
+            (RequestOptions options, RequestInterceptorHandler handler) async {
+              try {
+                String path = options.path;
 
-            // Hard safety guard: Normalize any /api/v1/clients/{clientId} path to productionClientGuid
-            final clientPathRegex = RegExp(
-              r'^/api/v1/clients/([0-9a-fA-F-]+)(/.*)?$',
-            );
-            final match = clientPathRegex.firstMatch(path);
-            if (match != null) {
-              final extractedId = match.group(1);
-              final rest = match.group(2) ?? '';
-              if (extractedId != 'resolve' &&
-                  extractedId != 'createClient' &&
-                  extractedId != ApiEndpoints.productionClientGuid) {
-                path =
-                    '/api/v1/clients/${ApiEndpoints.productionClientGuid}$rest';
-                options.path = path;
+                // Obtain the authoritative valid Tenant API JWT
+                final String? token = await getValidTenantApiToken();
+
+                if (token != null && token.trim().isNotEmpty) {
+                  options.headers['Authorization'] = 'Bearer ${token.trim()}';
+                  debugPrint('[API] Tenant JWT source = tenant_api_jwt');
+                  debugPrint('[API] Tenant = ${ApiEndpoints.productionTenantId}');
+                  debugPrint('[API] AuraBrain ClientId = ${ApiEndpoints.productionClientId}');
+                } else {
+                  options.headers.remove('Authorization');
+                }
+
+                debugPrint('[API Request] ${options.method} $path');
+                return handler.next(options);
+              } catch (error) {
+                debugPrint('[API Auth] Request interceptor error: $error');
+                return handler.next(options);
               }
-            }
-
-            // Obtain the authoritative valid Tenant API JWT
-            final String? token = await getValidTenantApiToken();
-
-            if (token != null && token.trim().isNotEmpty) {
-              options.headers['Authorization'] = 'Bearer ${token.trim()}';
-              debugPrint('[API] Tenant JWT source = tenant_api_jwt');
-              debugPrint('[API] Tenant = ${ApiEndpoints.productionTenantId}');
-              debugPrint(
-                '[API] AuraBrain ClientId = ${ApiEndpoints.expectedTenantClientId}',
-              );
-            } else {
-              options.headers.remove('Authorization');
-            }
-
-            debugPrint('[API Request] ${options.method} $path');
-            return handler.next(options);
-          } catch (error) {
-            debugPrint('[API Auth] Request interceptor error: $error');
-            return handler.next(options);
-          }
-        },
+            },
 
         onResponse:
             (Response<dynamic> response, ResponseInterceptorHandler handler) {
@@ -112,8 +94,8 @@ class ApiClient {
                     headers: options.headers,
                   ),
                 );
-                final Response<dynamic> retryResponse = await retryDio
-                    .fetch<dynamic>(options);
+                final Response<dynamic> retryResponse =
+                    await retryDio.fetch<dynamic>(options);
                 return handler.resolve(retryResponse);
               }
             } catch (retryErr) {
@@ -171,9 +153,7 @@ class ApiClient {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
-        debugPrint(
-          '[API Auth] No Firebase user authenticated, cannot request Tenant API token.',
-        );
+        debugPrint('[API Auth] No Firebase user authenticated, cannot request Tenant API token.');
         return null;
       }
 
@@ -251,10 +231,10 @@ class ApiClient {
       return false;
     }
 
-    // 4. Verify Expected Tenant Client ID
+    // 4. Verify Production Client ID
     final dynamic clientId = decoded['ClientId'] ?? decoded['clientId'];
     if (clientId == null ||
-        clientId.toString() != ApiEndpoints.expectedTenantClientId) {
+        clientId.toString() != ApiEndpoints.productionClientId) {
       return false;
     }
 

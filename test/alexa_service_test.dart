@@ -13,7 +13,7 @@ String _createTestJwt({
   String iss = 'AuraBrain',
   String aud = 'AuraBrainMobile',
   String tenantId = '6d11e924-d046-400d-bc30-62a06e13de61',
-  String clientId = 'anvyaaai_AEB3',
+  String clientId = 'anvyaai_823B',
   String permissionLevel = 'write',
   int? exp,
 }) {
@@ -158,7 +158,7 @@ void main() {
         expect(
           response.authorizeUrl,
           equals(
-            'https://omnihome.in/oauth/authorize?response_type=code&client_id=omnihome-alexa&sso_token=$ssoToken&redirect_uri=hasomi.com.homeautomation%3A%2F%2Falexa-callback&state=c4d03795-ad24-4b32-8ce5-6376969cf843',
+            'https://tenant-api.omnihome.in/oauth/authorize?response_type=code&client_id=omnihome-alexa&sso_token=$ssoToken&redirect_uri=hasomi.com.homeautomation%3A%2F%2Falexa-callback&state=c4d03795-ad24-4b32-8ce5-6376969cf843',
           ),
         );
       },
@@ -178,7 +178,7 @@ void main() {
         expect(
           resolved.toString(),
           equals(
-            'https://omnihome.in/oauth/authorize?response_type=code&client_id=omnihome-alexa&sso_token=sso_123',
+            'https://tenant-api.omnihome.in/oauth/authorize?response_type=code&client_id=omnihome-alexa&sso_token=sso_123',
           ),
         );
       },
@@ -297,13 +297,6 @@ void main() {
   });
 
   group('Architectural Security & Token Isolation Tests', () {
-    test('Production Client GUID invariant is enforced', () {
-      expect(
-        ApiEndpoints.productionClientGuid,
-        equals('6782976c-e9a4-41c9-a754-05e4ba0a97b2'),
-      );
-    });
-
     test('Production Tenant ID invariant is enforced', () {
       expect(
         ApiEndpoints.productionTenantId,
@@ -311,8 +304,8 @@ void main() {
       );
     });
 
-    test('Expected Tenant Client ID invariant is enforced', () {
-      expect(ApiEndpoints.expectedTenantClientId, equals('anvyaaai_AEB3'));
+    test('Production Client ID invariant is enforced', () {
+      expect(ApiEndpoints.productionClientId, equals('anvyaai_823B'));
     });
 
     test('Expected JWT claims parameters are enforced', () {
@@ -329,96 +322,69 @@ void main() {
       );
     });
 
-    test(
-      'Simultaneous token refresh deduplication via in-flight mutex',
-      () async {
-        int bffCallCount = 0;
-        Future<String?>? inFlightRefresh;
+    test('Simultaneous token refresh deduplication via in-flight mutex', () async {
+      int bffCallCount = 0;
+      Future<String?>? inFlightRefresh;
 
-        Future<String?> simulateRefresh() {
-          if (inFlightRefresh != null) {
-            return inFlightRefresh!;
-          }
-          inFlightRefresh =
-              Future.delayed(const Duration(milliseconds: 50), () {
-                bffCallCount++;
-                return _createTestJwt();
-              }).whenComplete(() {
-                inFlightRefresh = null;
-              });
+      Future<String?> simulateRefresh() {
+        if (inFlightRefresh != null) {
           return inFlightRefresh!;
         }
+        inFlightRefresh = Future.delayed(
+          const Duration(milliseconds: 50),
+          () {
+            bffCallCount++;
+            return _createTestJwt();
+          },
+        ).whenComplete(() {
+          inFlightRefresh = null;
+        });
+        return inFlightRefresh!;
+      }
 
-        // Simulate 5 concurrent 401s triggering refresh at the exact same moment
-        final results = await Future.wait([
-          simulateRefresh(),
-          simulateRefresh(),
-          simulateRefresh(),
-          simulateRefresh(),
-          simulateRefresh(),
-        ]);
+      // Simulate 5 concurrent 401s triggering refresh at the exact same moment
+      final results = await Future.wait([
+        simulateRefresh(),
+        simulateRefresh(),
+        simulateRefresh(),
+        simulateRefresh(),
+        simulateRefresh(),
+      ]);
 
-        expect(bffCallCount, equals(1));
-        expect(results, hasLength(5));
-        for (final res in results) {
-          expect(ApiClient.isJwtValid(res), isTrue);
-        }
-      },
-    );
+      expect(bffCallCount, equals(1));
+      expect(results, hasLength(5));
+      for (final res in results) {
+        expect(ApiClient.isJwtValid(res), isTrue);
+      }
+    });
 
-    test('Client GUID normalization converts QA GUID to production GUID', () {
+    test('Client GUID normalization preserves valid client GUIDs and rejects empty/null', () {
+      const validUuid = 'd3b07384-d113-404c-83b6-2a6c8e312a0e';
       expect(
-        ApiEndpoints.normalizeClientGuid(
-          '03d6aaff-f21b-41fc-902f-8184dacd0861',
-        ),
-        equals(ApiEndpoints.productionClientGuid),
+        ApiEndpoints.normalizeClientGuid(validUuid),
+        equals(validUuid),
       );
       expect(
-        ApiEndpoints.normalizeClientGuid(
-          'df0df9e3-0e47-4d46-810e-3c4f5c267d69',
-        ),
-        equals(ApiEndpoints.productionClientGuid),
+        () => ApiEndpoints.normalizeClientGuid(null),
+        throwsArgumentError,
       );
       expect(
-        ApiEndpoints.normalizeClientGuid(null),
-        equals(ApiEndpoints.productionClientGuid),
-      );
-      expect(
-        ApiEndpoints.normalizeClientGuid(''),
-        equals(ApiEndpoints.productionClientGuid),
-      );
-      expect(
-        ApiEndpoints.normalizeClientGuid(ApiEndpoints.productionClientGuid),
-        equals(ApiEndpoints.productionClientGuid),
+        () => ApiEndpoints.normalizeClientGuid(''),
+        throwsArgumentError,
       );
     });
 
-    test(
-      'ApiEndpoints.clientNotifications constructs strictly production client GUID route',
-      () {
-        final endpoint = ApiEndpoints.clientNotifications(
-          '03d6aaff-f21b-41fc-902f-8184dacd0861',
-        );
-        expect(
-          endpoint,
-          startsWith(
-            '/api/v1/clients/6782976c-e9a4-41c9-a754-05e4ba0a97b2/notifications',
-          ),
-        );
-      },
-    );
-
-    test(
-      'ApiEndpoints.clientHomes constructs strictly production client GUID route',
-      () {
-        final endpoint = ApiEndpoints.clientHomes(
-          '03d6aaff-f21b-41fc-902f-8184dacd0861',
-        );
-        expect(
-          endpoint,
-          equals('/api/v1/clients/6782976c-e9a4-41c9-a754-05e4ba0a97b2/homes'),
-        );
-      },
-    );
+    test('ApiEndpoints.clientHomes constructs client GUID route dynamically', () {
+      const clientId = 'c1234567-89ab-cdef-0123-456789abcdef';
+      final endpoint = ApiEndpoints.clientHomes(clientId);
+      expect(
+        endpoint,
+        equals('/api/v1/clients/$clientId/homes'),
+      );
+    });
   });
 }
+
+
+
+

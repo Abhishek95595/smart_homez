@@ -5,8 +5,6 @@ import 'package:provider/provider.dart';
 import '../../models/subscription_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/subscription_provider.dart';
-import '../../widgets/app_navigation_drawer.dart';
-import '../../widgets/app_navigation_leading.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -25,11 +23,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     _tabController = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = context.read<AuthProvider>();
-      final clientId =
-          auth.resolvedClientId ??
-          auth.resolvedClientUuid ??
-          '6782976c-e9a4-41c9-a754-05e4ba0a97b2';
-      context.read<SubscriptionProvider>().loadSubscriptionData(clientId);
+      final clientId = auth.resolvedClientId ?? auth.resolvedClientUuid;
+      if (clientId != null && clientId.isNotEmpty) {
+        context.read<SubscriptionProvider>().loadSubscriptionData(clientId);
+      }
     });
   }
 
@@ -64,17 +61,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: const AppNavigationDrawer(),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 1,
         shadowColor: const Color(0x10000000),
-        leading: Builder(
-          builder: (ctx) => AppNavigationLeading.drawer(
-            color: const Color(0xFF0F172A),
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
+        leading: IconButton(
+          tooltip: 'Back',
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Color(0xFF0F172A),
+            size: 20,
           ),
+          onPressed: () => Navigator.maybePop(context),
         ),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,7 +122,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       ),
       body: subscriptionProvider.isLoading && sub == null
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF00A38E)),
+              child: CircularProgressIndicator(
+                color: Color(0xFF00A38E),
+              ),
             )
           : TabBarView(
               controller: _tabController,
@@ -132,10 +133,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                 _PlansTab(onCheckout: _openCheckout),
 
                 // Tab 2: Current Plan & Limits
-                _CurrentPlanTab(
-                  onOpenRefund: () =>
-                      sub != null ? _openRefundModal(sub) : null,
-                ),
+                _CurrentPlanTab(onOpenRefund: () => sub != null ? _openRefundModal(sub) : null),
 
                 // Tab 3: Invoices & History
                 const _InvoicesTab(),
@@ -243,15 +241,9 @@ class _CurrentPlanTab extends StatelessWidget {
       return const Center(child: Text('No active subscription found.'));
     }
 
-    final devProgress = sub.maxDevices > 0
-        ? (sub.activeDevicesCount / sub.maxDevices).clamp(0.0, 1.0)
-        : 0.0;
-    final homeProgress = sub.maxHomes > 0
-        ? (sub.activeHomesCount / sub.maxHomes).clamp(0.0, 1.0)
-        : 0.0;
-    final famProgress = sub.maxFamilyMembers > 0
-        ? (sub.activeFamilyMembersCount / sub.maxFamilyMembers).clamp(0.0, 1.0)
-        : 0.0;
+    final devProgress = sub.maxDevices > 0 ? (sub.activeDevicesCount / sub.maxDevices).clamp(0.0, 1.0) : 0.0;
+    final homeProgress = sub.maxHomes > 0 ? (sub.activeHomesCount / sub.maxHomes).clamp(0.0, 1.0) : 0.0;
+    final famProgress = sub.maxFamilyMembers > 0 ? (sub.activeFamilyMembersCount / sub.maxFamilyMembers).clamp(0.0, 1.0) : 0.0;
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(
@@ -356,7 +348,7 @@ class _CurrentPlanTab extends StatelessWidget {
                   ),
                   Switch.adaptive(
                     value: sub.autoRenew,
-                    activeTrackColor: const Color(0xFF00A38E),
+                    activeColor: const Color(0xFF00A38E),
                     onChanged: (val) async {
                       await subscriptionProvider.toggleAutoRenew(clientId, val);
                     },
@@ -407,9 +399,7 @@ class _CurrentPlanTab extends StatelessWidget {
                           ),
                         );
                         if (confirm == true) {
-                          await subscriptionProvider.cancelSubscription(
-                            clientId,
-                          );
+                          await subscriptionProvider.cancelSubscription(clientId);
                         }
                       },
                       icon: const Icon(Icons.cancel_outlined, size: 16),
@@ -578,9 +568,7 @@ class _InvoicesTab extends StatelessWidget {
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(
-                            'Downloading ${inv.invoiceNumber}.pdf...',
-                          ),
+                          content: Text('Downloading ${inv.invoiceNumber}.pdf...'),
                           backgroundColor: const Color(0xFF00A38E),
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -748,7 +736,7 @@ class _CheckoutModal extends StatefulWidget {
 }
 
 class _CheckoutModalState extends State<_CheckoutModal> {
-  final String _selectedMethod = 'pm_1';
+  String _selectedMethod = 'pm_1';
   final TextEditingController _couponController = TextEditingController();
   double _discount = 0.0;
   bool _isProcessing = false;
@@ -797,11 +785,7 @@ class _CheckoutModalState extends State<_CheckoutModal> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(
-                  Icons.check_circle_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -821,11 +805,8 @@ class _CheckoutModalState extends State<_CheckoutModal> {
 
   @override
   Widget build(BuildContext context) {
-    final isAnnual =
-        context.watch<SubscriptionProvider>().selectedBillingCycle == 'annual';
-    final basePrice = isAnnual
-        ? widget.plan.annualPrice
-        : widget.plan.monthlyPrice;
+    final isAnnual = context.watch<SubscriptionProvider>().selectedBillingCycle == 'annual';
+    final basePrice = isAnnual ? widget.plan.annualPrice : widget.plan.monthlyPrice;
     final discountAmount = basePrice * _discount;
     final discountedBase = basePrice - discountAmount;
     final gst = discountedBase * 0.18;
@@ -909,10 +890,7 @@ class _CheckoutModalState extends State<_CheckoutModal> {
             ),
             child: Column(
               children: [
-                _SummaryRow(
-                  label: 'Plan Subtotal',
-                  value: '₹ ${basePrice.toStringAsFixed(0)}',
-                ),
+                _SummaryRow(label: 'Plan Subtotal', value: '₹ ${basePrice.toStringAsFixed(0)}'),
                 if (_discount > 0) ...[
                   const SizedBox(height: 6),
                   _SummaryRow(
@@ -922,10 +900,7 @@ class _CheckoutModalState extends State<_CheckoutModal> {
                   ),
                 ],
                 const SizedBox(height: 6),
-                _SummaryRow(
-                  label: 'Applicable GST (18%)',
-                  value: '₹ ${gst.toStringAsFixed(0)}',
-                ),
+                _SummaryRow(label: 'Applicable GST (18%)', value: '₹ ${gst.toStringAsFixed(0)}'),
                 const Divider(height: 18, color: Color(0xFFE2E8F0)),
                 _SummaryRow(
                   label: 'Total Payable',
@@ -947,10 +922,7 @@ class _CheckoutModalState extends State<_CheckoutModal> {
                   textCapitalization: TextCapitalization.characters,
                   decoration: InputDecoration(
                     hintText: 'Promo Code (try SMART20)',
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(
@@ -965,10 +937,7 @@ class _CheckoutModalState extends State<_CheckoutModal> {
                 onPressed: _applyCoupon,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0F172A),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1066,9 +1035,7 @@ class _RefundModalState extends State<_RefundModal> {
                 ? '✅ Refund request submitted. You will receive an update in 24 hours.'
                 : 'Failed to submit refund request.',
           ),
-          backgroundColor: success
-              ? const Color(0xFF00A38E)
-              : const Color(0xFFEF4444),
+          backgroundColor: success ? const Color(0xFF00A38E) : const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -1135,25 +1102,15 @@ class _RefundModalState extends State<_RefundModal> {
             ),
           ),
           const SizedBox(height: 8),
-          RadioGroup<String>(
-            groupValue: _selectedReason,
-            onChanged: (val) {
-              if (val != null) {
-                setState(() => _selectedReason = val);
-              }
-            },
-            child: Column(
-              children: _reasons
-                  .map(
-                    (r) => RadioListTile<String>(
-                      value: r,
-                      title: Text(r, style: const TextStyle(fontSize: 13)),
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                      activeColor: const Color(0xFF00A38E),
-                    ),
-                  )
-                  .toList(),
+          ..._reasons.map(
+            (r) => RadioListTile<String>(
+              value: r,
+              groupValue: _selectedReason,
+              onChanged: (val) => setState(() => _selectedReason = val!),
+              title: Text(r, style: const TextStyle(fontSize: 13)),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              activeColor: const Color(0xFF00A38E),
             ),
           ),
           const SizedBox(height: 16),
@@ -1222,9 +1179,7 @@ class _SummaryRow extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
-            color:
-                color ??
-                (isBold ? const Color(0xFF00A38E) : const Color(0xFF0F172A)),
+            color: color ?? (isBold ? const Color(0xFF00A38E) : const Color(0xFF0F172A)),
             fontSize: isBold ? 16 : 13,
             fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
           ),
@@ -1321,15 +1276,12 @@ class _ActiveSubscriptionHero extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00A38E).withValues(alpha: 0.2),
+                  color: const Color(0xFF00A38E).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: const Color(0xFF00A38E).withValues(alpha: 0.4),
+                    color: const Color(0xFF00A38E).withOpacity(0.4),
                   ),
                 ),
                 child: Row(
@@ -1502,10 +1454,7 @@ class _PlanCard extends StatelessWidget {
               ),
               if (plan.isPopular)
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE6F7F5),
                     borderRadius: BorderRadius.circular(8),

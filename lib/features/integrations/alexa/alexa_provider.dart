@@ -14,7 +14,10 @@ class AlexaWebViewData {
   final Uri uri;
   final String token;
 
-  AlexaWebViewData({required this.uri, required this.token});
+  AlexaWebViewData({
+    required this.uri,
+    required this.token,
+  });
 }
 
 class AlexaProvider extends ChangeNotifier {
@@ -75,8 +78,7 @@ class AlexaProvider extends ChangeNotifier {
     final String path = uri.path.toLowerCase();
     final String url = uri.toString().toLowerCase();
 
-    final bool isCallback =
-        scheme == 'hasomi.com.homeautomation' ||
+    final bool isCallback = scheme == 'hasomi.com.homeautomation' ||
         scheme == 'omnihome.in.homeautomation' ||
         scheme == 'app1' ||
         host == 'alexa-callback' ||
@@ -89,9 +91,7 @@ class AlexaProvider extends ChangeNotifier {
         url.contains('hasomi.com.homeautomation');
 
     if (isCallback) {
-      Map<String, String> params = Map<String, String>.from(
-        uri.queryParameters,
-      );
+      Map<String, String> params = Map<String, String>.from(uri.queryParameters);
       if (params.isEmpty && uri.fragment.isNotEmpty) {
         try {
           params = Uri.splitQueryString(uri.fragment);
@@ -207,6 +207,7 @@ class AlexaProvider extends ChangeNotifier {
       if (rawUrl.isEmpty ||
           tempUri == null ||
           !tempUri.hasScheme ||
+          tempUri.scheme != 'https' ||
           tempUri.host.isEmpty) {
         _errorMessage =
             'Invalid backend response: Authorize URL is not an absolute URL.';

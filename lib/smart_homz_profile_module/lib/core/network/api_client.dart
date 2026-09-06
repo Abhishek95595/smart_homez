@@ -24,55 +24,51 @@ class ApiClient {
 
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (RequestOptions options, RequestInterceptorHandler handler) async {
-          try {
-            String path = options.path;
+        onRequest:
+            (RequestOptions options, RequestInterceptorHandler handler) async {
+              try {
+                String path = options.path;
 
-            // Hard safety guard: Normalize any /api/v1/clients/{clientId} path to productionClientGuid
-            final clientPathRegex = RegExp(
-              r'^/api/v1/clients/([0-9a-fA-F-]+)(/.*)?$',
-            );
-            final match = clientPathRegex.firstMatch(path);
-            if (match != null) {
-              final extractedId = match.group(1);
-              final rest = match.group(2) ?? '';
-              if (extractedId != 'resolve' &&
-                  extractedId != 'createClient' &&
-                  extractedId != ApiEndpoints.productionClientGuid) {
-                path =
-                    '/api/v1/clients/${ApiEndpoints.productionClientGuid}$rest';
-                options.path = path;
+                // Hard safety guard: Normalize any /api/v1/clients/{clientId} path to productionClientGuid
+                final clientPathRegex = RegExp(r'^/api/v1/clients/([0-9a-fA-F-]+)(/.*)?$');
+                final match = clientPathRegex.firstMatch(path);
+                if (match != null) {
+                  final extractedId = match.group(1);
+                  final rest = match.group(2) ?? '';
+                  if (extractedId != 'resolve' &&
+                      extractedId != 'createClient' &&
+                      extractedId != ApiEndpoints.productionClientGuid) {
+                    path = '/api/v1/clients/${ApiEndpoints.productionClientGuid}$rest';
+                    options.path = path;
+                  }
+                }
+
+                String? token = await _storage.read(key: 'tenant_api_jwt');
+                if (!isJwtValid(token)) {
+                  final String? legacy = await _storage.read(key: 'client_api_jwt');
+                  if (isJwtValid(legacy)) {
+                    token = legacy;
+                    await _storage.write(key: 'tenant_api_jwt', value: token);
+                  }
+                  await _storage.delete(key: 'client_api_jwt');
+                }
+
+                if (token != null && token.trim().isNotEmpty) {
+                  options.headers['Authorization'] = 'Bearer ${token.trim()}';
+                  debugPrint('[API] Tenant JWT source = tenant_api_jwt');
+                  debugPrint('[API] Tenant = ${ApiEndpoints.productionTenantId}');
+                  debugPrint('[API] AuraBrain ClientId = ${ApiEndpoints.productionClientId}');
+                } else {
+                  options.headers.remove('Authorization');
+                }
+
+                debugPrint('[API Request] ${options.method} $path');
+                return handler.next(options);
+              } catch (error) {
+                debugPrint('[API Auth] Request interceptor error: $error');
+                return handler.next(options);
               }
-            }
-
-            String? token = await _storage.read(key: 'tenant_api_jwt');
-            if (!isJwtValid(token)) {
-              final String? legacy = await _storage.read(key: 'client_api_jwt');
-              if (isJwtValid(legacy)) {
-                token = legacy;
-                await _storage.write(key: 'tenant_api_jwt', value: token);
-              }
-              await _storage.delete(key: 'client_api_jwt');
-            }
-
-            if (token != null && token.trim().isNotEmpty) {
-              options.headers['Authorization'] = 'Bearer ${token.trim()}';
-              debugPrint('[API] Tenant JWT source = tenant_api_jwt');
-              debugPrint('[API] Tenant = ${ApiEndpoints.productionTenantId}');
-              debugPrint(
-                '[API] AuraBrain ClientId = ${ApiEndpoints.expectedTenantClientId}',
-              );
-            } else {
-              options.headers.remove('Authorization');
-            }
-
-            debugPrint('[API Request] ${options.method} $path');
-            return handler.next(options);
-          } catch (error) {
-            debugPrint('[API Auth] Request interceptor error: $error');
-            return handler.next(options);
-          }
-        },
+            },
 
         onResponse:
             (Response<dynamic> response, ResponseInterceptorHandler handler) {
@@ -170,26 +166,26 @@ class ApiClient {
           return false;
         }
 
-        // 4. Verify Expected Tenant Client ID
+        // 4. Verify Production Client ID
         final dynamic clientId = decoded['ClientId'] ?? decoded['clientId'];
         if (clientId == null ||
-            clientId.toString() != ApiEndpoints.expectedTenantClientId) {
+            clientId.toString() != 'anvyaai_823B') {
           return false;
         }
 
         // 5. Verify Permission Level
         final dynamic permission =
             decoded['PermissionLevel'] ?? decoded['permissionLevel'];
-        if (permission == null || permission.toString() != 'write') {
+        if (permission == null ||
+            permission.toString() != 'write') {
           return false;
         }
 
         // 6. Verify Expiration
         if (decoded['exp'] == null) return false;
         final dynamic exp = decoded['exp'];
-        final int expSeconds = exp is int
-            ? exp
-            : int.tryParse(exp.toString()) ?? 0;
+        final int expSeconds =
+            exp is int ? exp : int.tryParse(exp.toString()) ?? 0;
         final int nowSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         if (expSeconds <= nowSeconds) {
           return false;

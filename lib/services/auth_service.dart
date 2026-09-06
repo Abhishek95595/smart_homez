@@ -260,28 +260,10 @@ class AuthService {
 
   Future<String?> getResolvedClientUuid() async {
     final String? stored = await _storage.read(key: _resolvedClientUuidKey);
-    final bool needsMigration =
-        stored == null ||
-        stored.trim().isEmpty ||
-        stored.trim() != ApiEndpoints.productionClientGuid;
-    final String resolvedValue = ApiEndpoints.productionClientGuid;
-
-    if (needsMigration) {
-      await _storage.write(
-        key: _resolvedClientUuidKey,
-        value: ApiEndpoints.productionClientGuid,
-      );
-      await _storage.write(
-        key: 'user_id',
-        value: ApiEndpoints.productionClientGuid,
-      );
+    if (stored != null && stored.trim().isNotEmpty) {
+      return stored.trim();
     }
-
-    debugPrint('[Client UUID] stored value = $stored');
-    debugPrint('[Client UUID] resolved value = $resolvedValue');
-    debugPrint('[Client UUID] migrated = ${needsMigration ? "true" : "false"}');
-
-    return resolvedValue;
+    return null;
   }
 
   Future<void> saveResolvedClientUuid(String clientUuid) async {

@@ -406,8 +406,7 @@ class AuthProvider extends ChangeNotifier {
       final String? savedPassword = await _authService.getSavedPassword();
 
       try {
-        final String? bffToken = await _authService
-            .fetchTenantApiTokenFromBff();
+        final String? bffToken = await _authService.fetchTenantApiTokenFromBff();
         if (bffToken != null && bffToken.isNotEmpty) {
           savedToken = bffToken;
         } else if (savedEmail != null &&
@@ -704,9 +703,8 @@ class AuthProvider extends ChangeNotifier {
 
       Map<String, dynamic> sessionResult = {};
       try {
-        sessionResult = await _authService.getTenantSession(
-          fcmToken: 'MOCK_DEVICE_FCM_TOKEN',
-        );
+        sessionResult = await _authService
+            .getTenantSession(fcmToken: 'MOCK_DEVICE_FCM_TOKEN');
 
         if (sessionResult['success'] == true &&
             sessionResult['status'] == 'authenticated') {
@@ -753,9 +751,9 @@ class AuthProvider extends ChangeNotifier {
 
       final String finalDisplayName =
           (resolvedName.isNotEmpty &&
-              !resolvedName.toLowerCase().contains('otp'))
-          ? resolvedName
-          : 'Smart Home User';
+                  !resolvedName.toLowerCase().contains('otp'))
+              ? resolvedName
+              : 'Smart Home User';
 
       _currentUser = AppUser(
         id: userCred.user?.uid ?? _resolvedClientUuid ?? '',

@@ -51,12 +51,13 @@ class _MainShellState extends State<MainShell> {
       final deviceProvider = context.read<DeviceProvider>();
       final propertyProvider = context.read<PropertyProvider>();
 
-      final clientUuid =
-          auth.resolvedClientUuid ?? '6782976c-e9a4-41c9-a754-05e4ba0a97b2';
-      propertyProvider.setClientId(clientUuid);
-      propertyProvider.syncFromApi(clientUuid);
-      deviceProvider.syncFromApi(clientUuid);
-      deviceProvider.startRealtimeSync(clientUuid);
+      final clientUuid = auth.resolvedClientUuid;
+      if (clientUuid != null && clientUuid.isNotEmpty) {
+        propertyProvider.setClientId(clientUuid);
+        propertyProvider.syncFromApi(clientUuid);
+        deviceProvider.syncFromApi(clientUuid);
+        deviceProvider.startRealtimeSync(clientUuid);
+      }
 
       if (auth.token != null) {
         debugPrint('[MainShell] Activating real-time services...');

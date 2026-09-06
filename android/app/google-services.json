@@ -28,6 +28,14 @@
             "package_name": "com.smartbuildingmanager.flutter_app",
             "certificate_hash": "68df4e836cd38c97948520bbd3c52ee031e7b08c"
           }
+        },
+        {
+          "client_id": "280979635008-3m4hckntprtckhb2bucnp5kov7coucih.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.smartbuildingmanager.flutter_app",
+            "certificate_hash": "f2b6cae905909d4221d658902a5b5279558832bd"
+          }
         }
       ],
       "api_key": [
