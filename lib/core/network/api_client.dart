@@ -37,19 +37,18 @@ class ApiClient {
                 // Obtain the authoritative valid Tenant API JWT
                 final String? token = await getValidTenantApiToken();
 
-                options.headers['X-Client-Id'] = ApiEndpoints.productionClientId;
-                options.headers['X-Client-Secret'] =
-                    '4nxdsSxTeIdentqeOo8NegLzsxT5BMZxsznlo3xZkGSA';
+                // Attach user client ID if resolved
+                final String? clientId = await _storage.read(key: 'api_client_id') ??
+                    await _storage.read(key: 'resolved_client_uuid');
+                if (clientId != null && clientId.isNotEmpty) {
+                  options.headers['X-Client-Id'] = clientId.trim();
+                }
 
                 if (token != null && token.trim().isNotEmpty) {
                   options.headers['Authorization'] = 'Bearer ${token.trim()}';
-                  debugPrint('[API] Tenant JWT source = tenant_api_jwt');
-                  debugPrint(
-                    '[API] Tenant = ${ApiEndpoints.productionTenantId}',
-                  );
-                  debugPrint(
-                    '[API] AuraBrain ClientId = ${ApiEndpoints.productionClientId}',
-                  );
+                  debugPrint('[API] Tenant JWT attached to request');
+                } else {
+                  options.headers.remove('Authorization');
                 }
 
                 debugPrint('[API Request] ${options.method} $path');
@@ -218,47 +217,6 @@ class ApiClient {
       }
     } catch (e) {
       debugPrint('[API Auth] Error fetching Tenant token from BFF: $e');
-    }
-
-    // 2. Direct REST fallback: Request token from /api/Auth/token
-    try {
-      debugPrint('[API Auth] Fetching fresh token directly from /api/Auth/token...');
-      final Dio directDio = Dio(
-        BaseOptions(
-          baseUrl: ApiEndpoints.baseUrl,
-          connectTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 10),
-          headers: {'Content-Type': 'application/json'},
-        ),
-      );
-
-      final response = await directDio.post<dynamic>(
-        '/api/Auth/token',
-        data: {
-          'clientId': ApiEndpoints.productionClientId,
-          'clientSecret': '4nxdsSxTeIdentqeOo8NegLzsxT5BMZxsznlo3xZkGSA',
-        },
-      );
-
-      final dynamic data = response.data;
-      if (data is Map) {
-        final String? token = data['token']?.toString();
-        if (token != null && token.isNotEmpty) {
-          debugPrint('[API Auth] Direct token exchange SUCCESS');
-          final String? expiresAt = data['expiresAt']?.toString();
-          if (expiresAt != null) {
-            await _storage.write(
-              key: tenantApiJwtExpiresAtKey,
-              value: expiresAt,
-            );
-          }
-          await _storage.write(key: tenantApiJwtKey, value: token);
-          _cachedMemoryToken = token;
-          return token;
-        }
-      }
-    } catch (directErr) {
-      debugPrint('[API Auth] Direct token exchange error: $directErr');
     }
 
     return null;

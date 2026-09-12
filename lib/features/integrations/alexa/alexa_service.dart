@@ -359,8 +359,7 @@ class AlexaService {
         },
         options: Options(
           headers: <String, dynamic>{
-            'X-Client-Id': ApiEndpoints.productionClientId,
-            'X-Client-Secret': '4nxdsSxTeIdentqeOo8NegLzsxT5BMZxsznlo3xZkGSA',
+            if (clientId.isNotEmpty) 'X-Client-Id': clientId,
             if (userToken != null && userToken.isNotEmpty)
               'Authorization': 'Bearer $userToken',
           },
