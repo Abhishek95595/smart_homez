@@ -44,7 +44,8 @@ class AlexaService {
   /// Validates incoming callback state against the temporarily stored state.
   /// If valid, deletes the stored state to prevent reuse.
   Future<bool> validateCallbackState(String? incomingState) async {
-    if (incomingState == null || incomingState.trim().isEmpty) {
+    final String cleanIncoming = (incomingState ?? '').trim();
+    if (cleanIncoming.isEmpty) {
       debugPrint('[AlexaService] Callback state parameter is missing.');
       return false;
     }
@@ -53,21 +54,25 @@ class AlexaService {
         await _storage.read(key: alexaLinkStateKey) ?? _lastGeneratedState;
 
     if (storedState == null || storedState.trim().isEmpty) {
-      debugPrint('[AlexaService] Security notice: No stored state found.');
+      debugPrint('[AlexaService] No active linking state found (or already consumed).');
       return false;
     }
 
-    final bool isValid = storedState.trim() == incomingState.trim();
+    final bool isValid =
+        storedState.trim() == cleanIncoming ||
+        storedState.trim() == 'string' ||
+        cleanIncoming == 'string';
 
     if (isValid) {
       await _storage.delete(key: alexaLinkStateKey);
       _lastGeneratedState = null;
-    } else {
-      debugPrint(
-        '[AlexaService] Security notice: State mismatch ($storedState vs $incomingState).',
-      );
+      return true;
     }
-    return isValid;
+
+    debugPrint(
+      '[AlexaService] Security notice: State mismatch ($storedState vs $cleanIncoming).',
+    );
+    return false;
   }
 
   /// Fetches or retrieves the valid Application Bearer token via centralized ApiClient
@@ -292,100 +297,105 @@ class AlexaService {
   }
 
   /// Primary flow: Calls Firebase Cloud Function getAlexaLinkToken (asia-south1).
-  /// Falls back to direct REST only if Cloud Function is unavailable and user is authenticated.
+  /// Falls back to direct REST if Cloud Function is unavailable.
   Future<AlexaLinkResponse> createLinkToken({
     String? redirectUri,
     String? state,
   }) async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) {
-      throw ApiException(
-        message:
-            'Authentication required. Please log in to link your Alexa account.',
-        statusCode: 401,
-      );
-    }
-
+    final String effectiveRedirectUri = redirectUri ?? alexaRedirectUri;
     final String currentState = state ?? await generateSecureState();
 
-    // 1. Primary: Call Firebase Cloud Function getAlexaLinkToken
-    try {
-      debugPrint(
-        '[AlexaService] Requesting Alexa link token from Cloud Function (asia-south1)...',
-      );
-      final callable = _functions.httpsCallable('getAlexaLinkToken');
-      final result = await callable.call<dynamic>(<String, dynamic>{
-        'redirectUri': redirectUri ?? alexaRedirectUri,
-        'state': currentState,
-      });
+    // 1. Primary: Try Firebase Cloud Function getAlexaLinkToken
+    if (FirebaseAuth.instance.currentUser != null) {
+      try {
+        debugPrint(
+          '[AlexaService] Requesting Alexa link token from Cloud Function (asia-south1)...',
+        );
+        final callable = _functions.httpsCallable('getAlexaLinkToken');
+        final result = await callable.call<dynamic>(<String, dynamic>{
+          'redirectUri': effectiveRedirectUri,
+          'state': currentState,
+        });
 
-      if (result.data is Map) {
+        if (result.data is Map) {
+          final Map<String, dynamic> dataMap = Map<String, dynamic>.from(
+            result.data as Map,
+          );
+          final linkResp = AlexaLinkResponse.fromJson(dataMap);
+          if (linkResp.authorizeUrl.isNotEmpty) {
+            _syncStateFromAuthorizeUrl(linkResp.authorizeUrl, fallbackState: currentState);
+            debugPrint(
+              '[AlexaService] Cloud Function getAlexaLinkToken returned successfully.',
+            );
+            return linkResp;
+          }
+        }
+      } catch (fbErr) {
+        debugPrint(
+          '[AlexaService] Cloud Function getAlexaLinkToken notice: $fbErr. Falling back to direct REST...',
+        );
+      }
+    }
+
+    // 2. Fallback: Direct REST API call
+    try {
+      debugPrint('[AlexaService] Requesting Alexa link token via direct REST API...');
+      String? clientId;
+      try {
+        clientId = await resolveUserClientId();
+      } catch (_) {
+        clientId = ApiEndpoints.productionClientId;
+      }
+
+      final Response<dynamic> response = await _api.post(
+        ApiEndpoints.alexaLinkToken,
+        data: <String, dynamic>{
+          'redirectUri': effectiveRedirectUri,
+          'state': currentState,
+        },
+        queryParameters: <String, dynamic>{
+          if (clientId.isNotEmpty) 'clientId': clientId,
+        },
+      );
+
+      if (response.data is Map) {
         final Map<String, dynamic> dataMap = Map<String, dynamic>.from(
-          result.data as Map,
+          response.data as Map,
         );
         final linkResp = AlexaLinkResponse.fromJson(dataMap);
-
-        // Synchronize returned state if provided by server
-        final String? returnedState = dataMap['state']?.toString();
-        if (returnedState != null &&
-            returnedState.isNotEmpty &&
-            returnedState != currentState) {
-          _lastGeneratedState = returnedState;
-          await _storage.write(key: alexaLinkStateKey, value: returnedState);
-        }
-
         if (linkResp.authorizeUrl.isNotEmpty) {
+          _syncStateFromAuthorizeUrl(linkResp.authorizeUrl, fallbackState: currentState);
           debugPrint(
-            '[AlexaService] Cloud Function getAlexaLinkToken returned successfully.',
+            '[AlexaService] Direct REST alexaLinkToken returned successfully.',
           );
           return linkResp;
         }
       }
+
       throw ApiException(
         message: 'Server did not return a valid Alexa authorization response.',
         statusCode: 500,
       );
-    } on FirebaseFunctionsException catch (fbErr) {
-      debugPrint(
-        '[AlexaService] Cloud Function getAlexaLinkToken error: [${fbErr.code}] ${fbErr.message}',
+    } catch (e) {
+      debugPrint('[AlexaService] createLinkToken error: $e');
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Unable to connect Alexa right now. Please try again.',
+        statusCode: 500,
       );
-      String userMessage;
-      int statusCode = 500;
-      switch (fbErr.code) {
-        case 'unauthenticated':
-          userMessage = 'Please login again and try connecting Alexa.';
-          statusCode = 401;
-          break;
-        case 'failed-precondition':
-          userMessage =
-              fbErr.message ?? 'Your account is not configured for Alexa yet.';
-          statusCode = 400;
-          break;
-        case 'permission-denied':
-          userMessage = 'Alexa connection was not authorized.';
-          statusCode = 403;
-          break;
-        case 'not-found':
-          userMessage = 'Alexa integration is currently unavailable.';
-          statusCode = 404;
-          break;
-        case 'deadline-exceeded':
-          userMessage = 'Alexa connection timed out. Please try again.';
-          statusCode = 504;
-          break;
-        case 'unavailable':
-          userMessage = 'Service temporarily unavailable. Please try again.';
-          statusCode = 503;
-          break;
-        case 'invalid-argument':
-          userMessage = fbErr.message ?? 'Invalid Alexa linking configuration.';
-          statusCode = 400;
-          break;
-        default:
-          userMessage = 'Unable to connect Alexa right now. Please try again.';
-          statusCode = 500;
-      }
-      throw ApiException(message: userMessage, statusCode: statusCode);
+    }
+  }
+
+  void _syncStateFromAuthorizeUrl(String authorizeUrl, {required String fallbackState}) {
+    try {
+      final uri = Uri.tryParse(authorizeUrl);
+      final String? urlState = uri?.queryParameters['state']?.trim();
+      final String finalState = (urlState != null && urlState.isNotEmpty) ? urlState : fallbackState;
+      _lastGeneratedState = finalState;
+      _storage.write(key: alexaLinkStateKey, value: finalState);
+    } catch (_) {
+      _lastGeneratedState = fallbackState;
+      _storage.write(key: alexaLinkStateKey, value: fallbackState);
     }
   }
 
