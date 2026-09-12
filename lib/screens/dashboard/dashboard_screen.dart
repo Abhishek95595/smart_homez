@@ -1160,22 +1160,9 @@ class _SmartAssistantVoiceBanner extends StatelessWidget {
     AlexaProvider alexaProvider,
   ) async {
     final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
-    final result = await alexaProvider.connectAlexa();
+    await alexaProvider.startAlexaLink('app1://alexa-callback', 'any');
 
-    if (result != null) {
-      final returnedUri = await navigator.push<Uri>(
-        MaterialPageRoute(
-          builder: (_) => AlexaWebViewScreen(
-            authorizeUri: result.uri,
-            bearerToken: result.token,
-          ),
-        ),
-      );
-      if (returnedUri != null) {
-        await alexaProvider.handleCallbackUri(returnedUri);
-      }
-    } else if (alexaProvider.errorMessage != null &&
+    if (alexaProvider.errorMessage != null &&
         alexaProvider.errorMessage!.isNotEmpty) {
       messenger.showSnackBar(
         SnackBar(

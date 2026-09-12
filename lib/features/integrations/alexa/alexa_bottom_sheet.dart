@@ -84,21 +84,10 @@ class AlexaBottomSheet extends StatelessWidget {
                   ? null
                   : () async {
                       Navigator.pop(context);
-                      final result = await alexaProvider.connectAlexa();
-                      if (result != null && context.mounted) {
-                        final returnedUri = await Navigator.of(context)
-                            .push<Uri>(
-                              MaterialPageRoute(
-                                builder: (_) => AlexaWebViewScreen(
-                                  authorizeUri: result.uri,
-                                  bearerToken: result.token,
-                                ),
-                              ),
-                            );
-                        if (returnedUri != null) {
-                          await alexaProvider.handleCallbackUri(returnedUri);
-                        }
-                      }
+                      await alexaProvider.startAlexaLink(
+                        'app1://alexa-callback',
+                        'any',
+                      );
                     },
               icon: isConnecting
                   ? const SizedBox(
@@ -111,7 +100,7 @@ class AlexaBottomSheet extends StatelessWidget {
                     )
                   : const Icon(Icons.link_rounded, size: 20),
               label: Text(
-                isConnecting ? 'Connecting...' : 'Connect Alexa',
+                isConnecting ? 'Connecting...' : 'Link to Alexa',
                 style: const TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 14,

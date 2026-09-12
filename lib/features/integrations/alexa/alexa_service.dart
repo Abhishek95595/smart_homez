@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/network/api_client.dart';
@@ -24,7 +27,8 @@ class AlexaService {
       FirebaseFunctions.instanceFor(region: 'asia-south1');
 
   /// Production Alexa Deep Link & Scope Constants
-  static const String alexaRedirectUri =
+  static const String alexaRedirectUri = 'app1://alexa-callback';
+  static const String legacyAlexaRedirectUri =
       'hasomi.com.homeautomation://alexa-callback';
   static const String alexaScope = 'alexa::skills:account_linking';
   static const String alexaLinkStateKey = 'alexa_link_state';
@@ -404,6 +408,40 @@ class AlexaService {
     } catch (_) {
       _lastGeneratedState = fallbackState;
       _storage.write(key: alexaLinkStateKey, value: fallbackState);
+    }
+  }
+
+  /// Main function — API call + open browser (LaunchMode.externalApplication)
+  Future<void> startAlexaLink(String redirectUri, String state) async {
+    final String? userToken = await getPlatformUserJwt() ?? '';
+    debugPrint('[AlexaService] startAlexaLink -> redirectUri: $redirectUri, state: $state');
+
+    final res = await http.post(
+      Uri.parse('https://omnihome.in/api/integrations/alexa/link-token'),
+      headers: {
+        'Authorization': 'Bearer $userToken',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'redirectUri': redirectUri, 'state': state}),
+    );
+
+    final dynamic data = jsonDecode(res.body);
+    final String? authorizeUrl = (data is Map)
+        ? (data['authorizeUrl']?.toString() ??
+            data['authorizationUrl']?.toString() ??
+            data['data']?['authorizeUrl']?.toString())
+        : null;
+
+    if (authorizeUrl != null && authorizeUrl.isNotEmpty) {
+      _syncStateFromAuthorizeUrl(authorizeUrl, fallbackState: state);
+      debugPrint('[AlexaService] Launching authorizeUrl: $authorizeUrl');
+      await launchUrl(Uri.parse(authorizeUrl), mode: LaunchMode.externalApplication);
+    } else {
+      throw ApiException(
+        message: data?['error']?.toString() ??
+            'Server did not return a valid Alexa authorization URL.',
+        statusCode: res.statusCode,
+      );
     }
   }
 

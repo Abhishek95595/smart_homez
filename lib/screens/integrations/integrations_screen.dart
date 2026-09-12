@@ -182,23 +182,10 @@ class _IntegrationsScreenState extends State<IntegrationsScreen>
 
   Future<void> _linkAlexa() async {
     final alexaProvider = context.read<AlexaProvider>();
-    final navigator = Navigator.of(context);
-    final result = await alexaProvider.connectAlexa();
+    await alexaProvider.startAlexaLink('app1://alexa-callback', 'any');
     if (!mounted) return;
 
-    if (result != null) {
-      final returnedUri = await navigator.push<Uri>(
-        MaterialPageRoute(
-          builder: (_) => AlexaWebViewScreen(
-            authorizeUri: result.uri,
-            bearerToken: result.token,
-          ),
-        ),
-      );
-      if (returnedUri != null) {
-        await alexaProvider.handleCallbackUri(returnedUri);
-      }
-    } else if (alexaProvider.errorMessage != null) {
+    if (alexaProvider.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(alexaProvider.errorMessage!),

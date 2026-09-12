@@ -73,8 +73,18 @@ class AlexaProvider extends ChangeNotifier {
 
     final String scheme = uri.scheme.toLowerCase();
     final String host = uri.host.toLowerCase();
+
+    // 1. Deep-link handler for "Continue in App" / alexa-link trigger
+    if (scheme == 'app1' && host == 'alexa-link') {
+      final redirectUri =
+          uri.queryParameters['redirect_uri'] ?? 'app1://alexa-callback';
+      final state = uri.queryParameters['state'] ?? 'any';
+      startAlexaLink(redirectUri, state);
+      return;
+    }
+
     final bool isCallback =
-        scheme == 'hasomi.com.homeautomation' &&
+        (scheme == 'app1' || scheme == 'hasomi.com.homeautomation') &&
         host == 'alexa-callback';
 
     if (isCallback) {
@@ -197,6 +207,27 @@ class AlexaProvider extends ChangeNotifier {
       notifyListeners();
     }
     return _status;
+  }
+
+  /// Direct 1-Click Alexa account linking flow via external browser
+  Future<void> startAlexaLink([
+    String redirectUri = 'app1://alexa-callback',
+    String state = 'any',
+  ]) async {
+    _state = AlexaConnectionState.connecting;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _service.startAlexaLink(redirectUri, state);
+      _state = AlexaConnectionState.notConnected;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[AlexaProvider] startAlexaLink error: $e');
+      _errorMessage = e is ApiException ? e.message : e.toString();
+      _state = AlexaConnectionState.error;
+      notifyListeners();
+    }
   }
 
   /// Connect Alexa flow: Calls POST /api/integrations/alexa/link-token & returns authorizeUri and token

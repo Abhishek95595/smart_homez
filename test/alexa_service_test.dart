@@ -404,7 +404,7 @@ void main() {
     test('Default redirect URI matches exact configured scheme', () {
       expect(
         AlexaService.alexaRedirectUri,
-        equals('hasomi.com.homeautomation://alexa-callback'),
+        equals('app1://alexa-callback'),
       );
     });
   });
