@@ -424,7 +424,7 @@ async function resolveAuraClient(token, phone, email, name) {
  */
 exports.getTenantSession = (0, https_1.onCall)({
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false, // production will enforceAppCheck
     minInstances: 1, // Keep warm to prevent cold starts
 }, async (request) => {
@@ -514,7 +514,7 @@ exports.getTenantSession = (0, https_1.onCall)({
  */
 exports.registerTenantClient = (0, https_1.onCall)({
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
 }, async (request) => {
     if (!request.auth) {
@@ -668,7 +668,7 @@ exports.registerTenantClient = (0, https_1.onCall)({
  */
 exports.verifyTenantClient = (0, https_1.onCall)({
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
 }, async (request) => {
     if (!request.auth) {
@@ -759,7 +759,7 @@ exports.verifyTenantClient = (0, https_1.onCall)({
  */
 exports.resendTenantRegistrationOtp = (0, https_1.onCall)({
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
 }, async (request) => {
     if (!request.auth) {
@@ -803,7 +803,7 @@ exports.resendTenantRegistrationOtp = (0, https_1.onCall)({
  */
 exports.getHomes = (0, https_1.onCall)({
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
 }, async (request) => {
     if (!request.auth) {
@@ -824,7 +824,7 @@ exports.getHomes = (0, https_1.onCall)({
  */
 exports.getFloors = (0, https_1.onCall)({
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
 }, async (request) => {
     if (!request.auth) {
@@ -850,7 +850,7 @@ exports.getFloors = (0, https_1.onCall)({
  */
 exports.getRooms = (0, https_1.onCall)({
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
 }, async (request) => {
     if (!request.auth) {
@@ -876,7 +876,7 @@ exports.getRooms = (0, https_1.onCall)({
  */
 exports.getDevices = (0, https_1.onCall)({
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
 }, async (request) => {
     if (!request.auth) {
@@ -897,7 +897,7 @@ exports.getDevices = (0, https_1.onCall)({
  */
 exports.getDevice = (0, https_1.onCall)({
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
 }, async (request) => {
     if (!request.auth) {
@@ -925,7 +925,7 @@ exports.getDevice = (0, https_1.onCall)({
  */
 exports.sendDeviceCommand = (0, https_1.onCall)({
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
 }, async (request) => {
     if (!request.auth) {
@@ -1012,7 +1012,7 @@ exports.sendDeviceCommand = (0, https_1.onCall)({
  */
 exports.getDashboard = (0, https_1.onCall)({
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
     minInstances: 1, // Keep warm to prevent cold starts
 }, async (request) => {
@@ -1046,7 +1046,7 @@ exports.getDashboard = (0, https_1.onCall)({
  */
 exports.syncDevices = (0, https_1.onCall)({
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
 }, async (request) => {
     if (!request.auth) {
@@ -1413,24 +1413,24 @@ exports.getTenantApiToken = (0, https_1.onCall)({
         let cId = "";
         let cSecret = "";
         try {
-            if (AURABRAIN_CLIENT_ID.value())
-                cId = AURABRAIN_CLIENT_ID.value();
-            else if (TENANT_CLIENT_ID.value())
+            if (TENANT_CLIENT_ID.value())
                 cId = TENANT_CLIENT_ID.value();
-            if (AURABRAIN_CLIENT_SECRET.value())
-                cSecret = AURABRAIN_CLIENT_SECRET.value();
-            else if (TENANT_CLIENT_SECRET.value())
+            else if (AURABRAIN_CLIENT_ID.value())
+                cId = AURABRAIN_CLIENT_ID.value();
+            if (TENANT_CLIENT_SECRET.value())
                 cSecret = TENANT_CLIENT_SECRET.value();
+            else if (AURABRAIN_CLIENT_SECRET.value())
+                cSecret = AURABRAIN_CLIENT_SECRET.value();
         }
         catch (_) {
-            if (process.env.AURABRAIN_CLIENT_ID)
-                cId = process.env.AURABRAIN_CLIENT_ID;
-            else if (process.env.TENANT_CLIENT_ID)
+            if (process.env.TENANT_CLIENT_ID)
                 cId = process.env.TENANT_CLIENT_ID;
-            if (process.env.AURABRAIN_CLIENT_SECRET)
-                cSecret = process.env.AURABRAIN_CLIENT_SECRET;
-            else if (process.env.TENANT_CLIENT_SECRET)
+            else if (process.env.AURABRAIN_CLIENT_ID)
+                cId = process.env.AURABRAIN_CLIENT_ID;
+            if (process.env.TENANT_CLIENT_SECRET)
                 cSecret = process.env.TENANT_CLIENT_SECRET;
+            else if (process.env.AURABRAIN_CLIENT_SECRET)
+                cSecret = process.env.AURABRAIN_CLIENT_SECRET;
         }
         if (!cId || !cSecret) {
             throw new https_1.HttpsError("failed-precondition", "Missing required backend secrets for Tenant token generation.");

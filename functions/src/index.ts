@@ -497,7 +497,7 @@ async function resolveAuraClient(
 export const getTenantSession = onCall(
   {
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false, // production will enforceAppCheck
     minInstances: 1, // Keep warm to prevent cold starts
   },
@@ -603,7 +603,7 @@ export const getTenantSession = onCall(
 export const registerTenantClient = onCall(
   {
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
   },
   async (request) => {
@@ -781,7 +781,7 @@ export const registerTenantClient = onCall(
 export const verifyTenantClient = onCall(
   {
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
   },
   async (request) => {
@@ -896,7 +896,7 @@ export const verifyTenantClient = onCall(
 export const resendTenantRegistrationOtp = onCall(
   {
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
   },
   async (request) => {
@@ -955,7 +955,7 @@ export const resendTenantRegistrationOtp = onCall(
 export const getHomes = onCall(
   {
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
   },
   async (request) => {
@@ -984,7 +984,7 @@ export const getHomes = onCall(
 export const getFloors = onCall(
   {
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
   },
   async (request) => {
@@ -1019,7 +1019,7 @@ export const getFloors = onCall(
 export const getRooms = onCall(
   {
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
   },
   async (request) => {
@@ -1054,7 +1054,7 @@ export const getRooms = onCall(
 export const getDevices = onCall(
   {
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
   },
   async (request) => {
@@ -1083,7 +1083,7 @@ export const getDevices = onCall(
 export const getDevice = onCall(
   {
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
   },
   async (request) => {
@@ -1120,7 +1120,7 @@ export const getDevice = onCall(
 export const sendDeviceCommand = onCall(
   {
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
   },
   async (request) => {
@@ -1220,7 +1220,7 @@ export const sendDeviceCommand = onCall(
 export const getDashboard = onCall(
   {
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
     minInstances: 1, // Keep warm to prevent cold starts
   },
@@ -1264,7 +1264,7 @@ export const getDashboard = onCall(
 export const syncDevices = onCall(
   {
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
   },
   async (request) => {
@@ -1816,17 +1816,17 @@ export const getTenantApiToken = onCall(
       let cId = "";
       let cSecret = "";
       try {
-        if (AURABRAIN_CLIENT_ID.value()) cId = AURABRAIN_CLIENT_ID.value();
-        else if (TENANT_CLIENT_ID.value()) cId = TENANT_CLIENT_ID.value();
+        if (TENANT_CLIENT_ID.value()) cId = TENANT_CLIENT_ID.value();
+        else if (AURABRAIN_CLIENT_ID.value()) cId = AURABRAIN_CLIENT_ID.value();
 
-        if (AURABRAIN_CLIENT_SECRET.value()) cSecret = AURABRAIN_CLIENT_SECRET.value();
-        else if (TENANT_CLIENT_SECRET.value()) cSecret = TENANT_CLIENT_SECRET.value();
+        if (TENANT_CLIENT_SECRET.value()) cSecret = TENANT_CLIENT_SECRET.value();
+        else if (AURABRAIN_CLIENT_SECRET.value()) cSecret = AURABRAIN_CLIENT_SECRET.value();
       } catch (_) {
-        if (process.env.AURABRAIN_CLIENT_ID) cId = process.env.AURABRAIN_CLIENT_ID;
-        else if (process.env.TENANT_CLIENT_ID) cId = process.env.TENANT_CLIENT_ID;
+        if (process.env.TENANT_CLIENT_ID) cId = process.env.TENANT_CLIENT_ID;
+        else if (process.env.AURABRAIN_CLIENT_ID) cId = process.env.AURABRAIN_CLIENT_ID;
 
-        if (process.env.AURABRAIN_CLIENT_SECRET) cSecret = process.env.AURABRAIN_CLIENT_SECRET;
-        else if (process.env.TENANT_CLIENT_SECRET) cSecret = process.env.TENANT_CLIENT_SECRET;
+        if (process.env.TENANT_CLIENT_SECRET) cSecret = process.env.TENANT_CLIENT_SECRET;
+        else if (process.env.AURABRAIN_CLIENT_SECRET) cSecret = process.env.AURABRAIN_CLIENT_SECRET;
       }
 
       if (!cId || !cSecret) {
