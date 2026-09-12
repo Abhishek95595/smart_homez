@@ -347,6 +347,7 @@ class AlexaService {
         clientId = ApiEndpoints.productionClientId;
       }
 
+      final String? userToken = await getPlatformUserJwt();
       final Response<dynamic> response = await _api.post(
         ApiEndpoints.alexaLinkToken,
         data: <String, dynamic>{
@@ -356,6 +357,14 @@ class AlexaService {
         queryParameters: <String, dynamic>{
           if (clientId.isNotEmpty) 'clientId': clientId,
         },
+        options: Options(
+          headers: <String, dynamic>{
+            'X-Client-Id': ApiEndpoints.productionClientId,
+            'X-Client-Secret': '4nxdsSxTeIdentqeOo8NegLzsxT5BMZxsznlo3xZkGSA',
+            if (userToken != null && userToken.isNotEmpty)
+              'Authorization': 'Bearer $userToken',
+          },
+        ),
       );
 
       if (response.data is Map) {

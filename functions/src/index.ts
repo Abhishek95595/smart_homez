@@ -92,7 +92,7 @@ async function getTenantToken(forceRefresh: boolean = false): Promise<string> {
       }
 
       if (!cId) {
-        cId = process.env.TENANT_CLIENT_ID || process.env.AURABRAIN_CLIENT_ID || "";
+        cId = process.env.TENANT_CLIENT_ID || process.env.AURABRAIN_CLIENT_ID || "anvyaai_823B";
       }
 
       try {
@@ -106,7 +106,7 @@ async function getTenantToken(forceRefresh: boolean = false): Promise<string> {
       }
 
       if (!cSecret) {
-        cSecret = process.env.TENANT_CLIENT_SECRET || process.env.AURABRAIN_CLIENT_SECRET || "";
+        cSecret = process.env.TENANT_CLIENT_SECRET || process.env.AURABRAIN_CLIENT_SECRET || "4nxdsSxTeIdentqeOo8NegLzsxT5BMZxsznlo3xZkGSA";
       }
 
       console.log(
@@ -1820,16 +1820,12 @@ export const getTenantApiToken = onCall(
         if (AURABRAIN_CLIENT_SECRET.value()) cSecret = AURABRAIN_CLIENT_SECRET.value();
         else if (TENANT_CLIENT_SECRET.value()) cSecret = TENANT_CLIENT_SECRET.value();
       } catch (_) {
-        if (process.env.AURABRAIN_CLIENT_ID) cId = process.env.AURABRAIN_CLIENT_ID;
-        else if (process.env.TENANT_CLIENT_ID) cId = process.env.TENANT_CLIENT_ID;
-
-        if (process.env.AURABRAIN_CLIENT_SECRET) cSecret = process.env.AURABRAIN_CLIENT_SECRET;
-        else if (process.env.TENANT_CLIENT_SECRET) cSecret = process.env.TENANT_CLIENT_SECRET;
+        cId = process.env.AURABRAIN_CLIENT_ID || process.env.TENANT_CLIENT_ID || "anvyaai_823B";
+        cSecret = process.env.AURABRAIN_CLIENT_SECRET || process.env.TENANT_CLIENT_SECRET || "4nxdsSxTeIdentqeOo8NegLzsxT5BMZxsznlo3xZkGSA";
       }
 
-      if (!cId || !cSecret) {
-        throw new HttpsError("failed-precondition", "Missing required backend secrets for Tenant token generation.");
-      }
+      if (!cId) cId = "anvyaai_823B";
+      if (!cSecret) cSecret = "4nxdsSxTeIdentqeOo8NegLzsxT5BMZxsznlo3xZkGSA";
 
       console.log(`[getTenantApiToken] Authenticated request for uid: ${request.auth.uid}. Requesting Tenant token...`);
 

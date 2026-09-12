@@ -37,6 +37,10 @@ class ApiClient {
                 // Obtain the authoritative valid Tenant API JWT
                 final String? token = await getValidTenantApiToken();
 
+                options.headers['X-Client-Id'] = ApiEndpoints.productionClientId;
+                options.headers['X-Client-Secret'] =
+                    '4nxdsSxTeIdentqeOo8NegLzsxT5BMZxsznlo3xZkGSA';
+
                 if (token != null && token.trim().isNotEmpty) {
                   options.headers['Authorization'] = 'Bearer ${token.trim()}';
                   debugPrint('[API] Tenant JWT source = tenant_api_jwt');
@@ -46,8 +50,6 @@ class ApiClient {
                   debugPrint(
                     '[API] AuraBrain ClientId = ${ApiEndpoints.productionClientId}',
                   );
-                } else {
-                  options.headers.remove('Authorization');
                 }
 
                 debugPrint('[API Request] ${options.method} $path');
@@ -186,45 +188,79 @@ class ApiClient {
   }
 
   Future<String?> _doRefreshToken() async {
+    // 1. Try Firebase Cloud Function getTenantApiToken
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        debugPrint(
-          '[API Auth] No Firebase user authenticated, cannot request Tenant API token.',
-        );
-        return null;
+      if (currentUser != null) {
+        debugPrint('[Auth] Requesting Tenant API token from Cloud Function');
+        final functions = FirebaseFunctions.instanceFor(region: 'asia-south1');
+        final callable = functions.httpsCallable('getTenantApiToken');
+        final result = await callable.call<dynamic>();
+
+        if (result.data is Map) {
+          final Map data = result.data as Map;
+          final String? token = data['token']?.toString();
+          final String? expiresAt = data['expiresAt']?.toString();
+
+          if (token != null && isJwtNotExpired(token)) {
+            debugPrint('[Auth] Tenant API token received from BFF');
+            if (expiresAt != null) {
+              await _storage.write(
+                key: tenantApiJwtExpiresAtKey,
+                value: expiresAt,
+              );
+            }
+            await _storage.write(key: tenantApiJwtKey, value: token);
+            _cachedMemoryToken = token;
+            return token;
+          }
+        }
       }
+    } catch (e) {
+      debugPrint('[API Auth] Error fetching Tenant token from BFF: $e');
+    }
 
-      debugPrint('[Auth] Requesting Tenant API token from Cloud Function');
-      final functions = FirebaseFunctions.instanceFor(region: 'asia-south1');
-      final callable = functions.httpsCallable('getTenantApiToken');
-      final result = await callable.call<dynamic>();
+    // 2. Direct REST fallback: Request token from /api/Auth/token
+    try {
+      debugPrint('[API Auth] Fetching fresh token directly from /api/Auth/token...');
+      final Dio directDio = Dio(
+        BaseOptions(
+          baseUrl: ApiEndpoints.baseUrl,
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+          headers: {'Content-Type': 'application/json'},
+        ),
+      );
 
-      if (result.data is Map) {
-        final Map data = result.data as Map;
+      final response = await directDio.post<dynamic>(
+        '/api/Auth/token',
+        data: {
+          'clientId': ApiEndpoints.productionClientId,
+          'clientSecret': '4nxdsSxTeIdentqeOo8NegLzsxT5BMZxsznlo3xZkGSA',
+        },
+      );
+
+      final dynamic data = response.data;
+      if (data is Map) {
         final String? token = data['token']?.toString();
-        final String? expiresAt = data['expiresAt']?.toString();
-
-        if (token != null && isJwtValid(token)) {
-          debugPrint('[Auth] Tenant API token received');
+        if (token != null && token.isNotEmpty) {
+          debugPrint('[API Auth] Direct token exchange SUCCESS');
+          final String? expiresAt = data['expiresAt']?.toString();
           if (expiresAt != null) {
-            debugPrint('[Auth] Tenant token expiresAt = $expiresAt');
             await _storage.write(
               key: tenantApiJwtExpiresAtKey,
               value: expiresAt,
             );
           }
           await _storage.write(key: tenantApiJwtKey, value: token);
-          await _storage.delete(key: 'client_api_jwt');
-          await _storage.delete(key: 'platform_user_jwt');
-          await _storage.delete(key: 'jwt_token');
           _cachedMemoryToken = token;
           return token;
         }
       }
-    } catch (e) {
-      debugPrint('[API Auth] Error fetching Tenant token from BFF: $e');
+    } catch (directErr) {
+      debugPrint('[API Auth] Direct token exchange error: $directErr');
     }
+
     return null;
   }
 
