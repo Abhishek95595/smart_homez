@@ -139,27 +139,33 @@ class ApiClient {
     // 1. Check authoritative tenant_api_jwt key in persistent storage
     String? token = await _storage.read(key: tenantApiJwtKey);
 
-    // Legacy migration check if tenant_api_jwt is not yet set
+    // Check platform_user_jwt and legacy client_api_jwt
     if (token == null || token.isEmpty) {
-      final String? legacyClient = await _storage.read(key: 'client_api_jwt');
-      if (isJwtValid(legacyClient)) {
-        token = legacyClient;
-        await _storage.write(key: tenantApiJwtKey, value: token);
-      }
-      await _storage.delete(key: 'client_api_jwt');
+      token = await _storage.read(key: 'platform_user_jwt');
+    }
+    if (token == null || token.isEmpty) {
+      token = await _storage.read(key: 'client_api_jwt');
     }
 
-    if (token != null && isJwtValid(token)) {
-      _cachedMemoryToken = token;
-      return token;
+    if (token != null && token.isNotEmpty) {
+      if (isJwtValid(token)) {
+        _cachedMemoryToken = token;
+        return token;
+      }
+      if (isJwtNotExpired(token)) {
+        _cachedMemoryToken = token;
+        return token;
+      }
     }
 
     // 2. Token is missing or expired -> request fresh token through Firebase BFF
     final freshToken = await _refreshToken();
-    if (freshToken != null && isJwtValid(freshToken)) {
+    if (freshToken != null && freshToken.isNotEmpty) {
       _cachedMemoryToken = freshToken;
+      return freshToken;
     }
-    return freshToken;
+
+    return token;
   }
 
   Future<String?> _refreshToken() async {
@@ -289,6 +295,17 @@ class ApiClient {
     }
 
     return true;
+  }
+
+  static bool isJwtNotExpired(String? token) {
+    if (token == null || token.trim().isEmpty) return false;
+    final Map<String, dynamic>? decoded = parseJwtPayload(token);
+    if (decoded == null) return token.trim().isNotEmpty;
+    if (decoded['exp'] == null) return true;
+    final dynamic exp = decoded['exp'];
+    final int expSeconds = exp is int ? exp : int.tryParse(exp.toString()) ?? 0;
+    final int nowSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    return expSeconds > (nowSeconds + 10);
   }
 
   // =============================================================

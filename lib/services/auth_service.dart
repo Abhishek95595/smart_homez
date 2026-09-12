@@ -55,6 +55,7 @@ class AuthService {
         throw Exception('JWT token was not returned by the API.');
       }
 
+      await _storage.write(key: tenantApiJwtKey, value: token);
       await _storage.write(key: platformUserJwtKey, value: token);
       await _storage.write(key: clientApiJwtKey, value: token);
       await _storage.delete(key: 'jwt_token');
