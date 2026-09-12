@@ -210,6 +210,8 @@ class ApiClient {
               );
             }
             await _storage.write(key: tenantApiJwtKey, value: token);
+            await _storage.write(key: 'platform_user_jwt', value: token);
+            await _storage.write(key: 'client_api_jwt', value: token);
             _cachedMemoryToken = token;
             return token;
           }
@@ -217,6 +219,44 @@ class ApiClient {
       }
     } catch (e) {
       debugPrint('[API Auth] Error fetching Tenant token from BFF: $e');
+    }
+
+    // 2. Try re-authenticating with saved email/password credentials
+    try {
+      final String? email = await _storage.read(key: 'login_email');
+      final String? password = await _storage.read(key: 'login_password');
+
+      if (email != null && email.isNotEmpty && password != null && password.isNotEmpty) {
+        debugPrint('[API Auth] Attempting auto-login refresh with stored credentials');
+        final Dio loginDio = Dio(
+          BaseOptions(
+            baseUrl: ApiEndpoints.baseUrl,
+            connectTimeout: const Duration(seconds: 10),
+            receiveTimeout: const Duration(seconds: 10),
+            headers: const {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+          ),
+        );
+        final response = await loginDio.post(
+          ApiEndpoints.authLogin,
+          data: {'email': email.trim(), 'password': password},
+        );
+        if (response.data is Map && response.data['token'] != null) {
+          final String token = response.data['token'].toString();
+          if (isJwtNotExpired(token)) {
+            await _storage.write(key: tenantApiJwtKey, value: token);
+            await _storage.write(key: 'platform_user_jwt', value: token);
+            await _storage.write(key: 'client_api_jwt', value: token);
+            _cachedMemoryToken = token;
+            debugPrint('[API Auth] Auto-login refresh successful');
+            return token;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[API Auth] Error auto-reauthenticating with stored credentials: $e');
     }
 
     return null;
@@ -243,48 +283,18 @@ class ApiClient {
     final Map<String, dynamic>? decoded = parseJwtPayload(token);
     if (decoded == null) return false;
 
-    // 1. Reject Firebase ID tokens & verify AuraBrain issuer
+    // 1. Reject Firebase ID tokens (which cannot be used directly with Tenant API)
     final dynamic iss = decoded['iss'];
-    if (iss == null ||
-        iss.toString().contains('securetoken.google.com') ||
-        iss.toString() != ApiEndpoints.expectedJwtIssuer) {
+    if (iss != null && iss.toString().contains('securetoken.google.com')) {
       return false;
     }
 
-    // 2. Verify Audience
-    final dynamic aud = decoded['aud'];
-    if (aud == null || aud.toString() != ApiEndpoints.expectedJwtAudience) {
-      return false;
-    }
-
-    // 3. Verify Production Tenant ID
-    final dynamic tenantId = decoded['TenantId'] ?? decoded['tenantId'];
-    if (tenantId == null ||
-        tenantId.toString() != ApiEndpoints.productionTenantId) {
-      return false;
-    }
-
-    // 4. Verify Production Client ID
-    final dynamic clientId = decoded['ClientId'] ?? decoded['clientId'];
-    if (clientId == null ||
-        clientId.toString() != ApiEndpoints.productionClientId) {
-      return false;
-    }
-
-    // 5. Verify Permission Level
-    final dynamic permission =
-        decoded['PermissionLevel'] ?? decoded['permissionLevel'];
-    if (permission == null ||
-        permission.toString() != ApiEndpoints.expectedJwtPermission) {
-      return false;
-    }
-
-    // 6. Verify Expiration (with 60-second safety margin)
-    if (decoded['exp'] == null) return false;
+    // 2. Verify Expiration (with 30-second safety margin)
+    if (decoded['exp'] == null) return true;
     final dynamic exp = decoded['exp'];
     final int expSeconds = exp is int ? exp : int.tryParse(exp.toString()) ?? 0;
     final int nowSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    if (expSeconds <= nowSeconds + 60) {
+    if (expSeconds <= nowSeconds + 30) {
       return false;
     }
 

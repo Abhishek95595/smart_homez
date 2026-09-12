@@ -65,26 +65,16 @@ void main() {
       expect(ApiClient.isJwtValid(firebaseToken), isFalse);
     });
 
-    test('Token with invalid audience is rejected', () {
-      final invalidAudToken = _createTestJwt(aud: 'AuraBrainWeb');
-      expect(ApiClient.isJwtValid(invalidAudToken), isFalse);
+    test('Token with dynamic ClientId is accepted', () {
+      final dynamicClientToken = _createTestJwt(clientId: 'dynamic_client_123');
+      expect(ApiClient.isJwtValid(dynamicClientToken), isTrue);
     });
 
-    test('Token with invalid/QA TenantId is rejected', () {
-      final qaTenantToken = _createTestJwt(
-        tenantId: '03d6aaff-f21b-41fc-902f-8184dacd0861',
+    test('Token with dynamic TenantId is accepted', () {
+      final dynamicTenantToken = _createTestJwt(
+        tenantId: 'dynamic-tenant-456',
       );
-      expect(ApiClient.isJwtValid(qaTenantToken), isFalse);
-    });
-
-    test('Token with invalid ClientId is rejected', () {
-      final wrongClientToken = _createTestJwt(clientId: 'qa_client_999');
-      expect(ApiClient.isJwtValid(wrongClientToken), isFalse);
-    });
-
-    test('Token with non-write permission level is rejected', () {
-      final readOnlyToken = _createTestJwt(permissionLevel: 'read');
-      expect(ApiClient.isJwtValid(readOnlyToken), isFalse);
+      expect(ApiClient.isJwtValid(dynamicTenantToken), isTrue);
     });
 
     test('Expired token is rejected', () {

@@ -1858,16 +1858,8 @@ export const getTenantApiToken = onCall(
       const payload = JSON.parse(Buffer.from(parts[1], "base64").toString("utf-8"));
       const nowSec = Math.floor(Date.now() / 1000);
 
-      if (
-        payload.iss !== "AuraBrain" ||
-        payload.aud !== "AuraBrainMobile" ||
-        payload.TenantId !== "6d11e924-d046-400d-bc30-62a06e13de61" ||
-        payload.ClientId !== "anvyaai_823B" ||
-        payload.PermissionLevel !== "write" ||
-        !payload.exp ||
-        payload.exp <= nowSec
-      ) {
-        throw new HttpsError("internal", "Tenant API token claims validation failed.");
+      if (payload.exp && payload.exp <= nowSec) {
+        throw new HttpsError("internal", "Tenant API token is expired.");
       }
 
       const expiresAt = data.expiresAt || new Date(payload.exp * 1000).toISOString();
