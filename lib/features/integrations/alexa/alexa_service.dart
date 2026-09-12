@@ -416,31 +416,76 @@ class AlexaService {
     final String? userToken = await getPlatformUserJwt() ?? '';
     debugPrint('[AlexaService] startAlexaLink -> redirectUri: $redirectUri, state: $state');
 
-    final res = await http.post(
-      Uri.parse('https://omnihome.in/api/integrations/alexa/link-token'),
-      headers: {
-        'Authorization': 'Bearer $userToken',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'redirectUri': redirectUri, 'state': state}),
-    );
+    final List<String> endpoints = [
+      'https://tenant-api.omnihome.in/api/integrations/alexa/link-token',
+      'https://omnihome.in/api/integrations/alexa/link-token',
+    ];
 
-    final dynamic data = jsonDecode(res.body);
-    final String? authorizeUrl = (data is Map)
-        ? (data['authorizeUrl']?.toString() ??
-            data['authorizationUrl']?.toString() ??
-            data['data']?['authorizeUrl']?.toString())
-        : null;
+    String? resolvedAuthorizeUrl;
+    int lastStatusCode = 0;
 
-    if (authorizeUrl != null && authorizeUrl.isNotEmpty) {
-      _syncStateFromAuthorizeUrl(authorizeUrl, fallbackState: state);
-      debugPrint('[AlexaService] Launching authorizeUrl: $authorizeUrl');
-      await launchUrl(Uri.parse(authorizeUrl), mode: LaunchMode.externalApplication);
+    for (final endpoint in endpoints) {
+      try {
+        debugPrint('[AlexaService] Trying $endpoint...');
+        final res = await http.post(
+          Uri.parse(endpoint),
+          headers: {
+            if (userToken != null && userToken.isNotEmpty)
+              'Authorization': 'Bearer $userToken',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({'redirectUri': redirectUri, 'state': state}),
+        );
+
+        lastStatusCode = res.statusCode;
+        debugPrint(
+          '[AlexaService] $endpoint response: status=${res.statusCode}, body=${res.body}',
+        );
+
+        if (res.body.trim().isNotEmpty) {
+          final dynamic data = jsonDecode(res.body);
+          if (data is Map) {
+            resolvedAuthorizeUrl = data['authorizeUrl']?.toString() ??
+                data['authorizationUrl']?.toString() ??
+                data['authUrl']?.toString() ??
+                data['url']?.toString() ??
+                data['data']?['authorizeUrl']?.toString() ??
+                data['result']?['authorizeUrl']?.toString();
+            if (resolvedAuthorizeUrl != null && resolvedAuthorizeUrl.isNotEmpty) {
+              break;
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('[AlexaService] Endpoint $endpoint notice: $e');
+      }
+    }
+
+    // Fallback: If direct HTTP endpoints did not return URL, try createLinkToken
+    if (resolvedAuthorizeUrl == null || resolvedAuthorizeUrl.isEmpty) {
+      try {
+        final linkResp = await createLinkToken(
+          redirectUri: redirectUri,
+          state: state,
+        );
+        resolvedAuthorizeUrl = linkResp.authorizeUrl;
+      } catch (e) {
+        debugPrint('[AlexaService] createLinkToken fallback notice: $e');
+      }
+    }
+
+    if (resolvedAuthorizeUrl != null && resolvedAuthorizeUrl.isNotEmpty) {
+      _syncStateFromAuthorizeUrl(resolvedAuthorizeUrl, fallbackState: state);
+      debugPrint('[AlexaService] Launching authorizeUrl: $resolvedAuthorizeUrl');
+      await launchUrl(
+        Uri.parse(resolvedAuthorizeUrl),
+        mode: LaunchMode.externalApplication,
+      );
     } else {
       throw ApiException(
-        message: data?['error']?.toString() ??
-            'Server did not return a valid Alexa authorization URL.',
-        statusCode: res.statusCode,
+        message:
+            'Unable to connect Alexa (status $lastStatusCode). Please try again.',
+        statusCode: lastStatusCode != 0 ? lastStatusCode : 500,
       );
     }
   }
