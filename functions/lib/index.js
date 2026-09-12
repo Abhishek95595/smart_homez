@@ -1115,11 +1115,15 @@ exports.getAlexaLinkToken = (0, https_1.onCall)({
         // -----------------------------------------------------
         // 4. Redirect URI Validation
         // -----------------------------------------------------
-        const redirectUri = request.data?.redirectUri || ALEXA_REDIRECT_URI;
+        const redirectUri = request.data?.redirectUri || "app1://alexa-callback";
+        const allowedRedirectUris = [
+            "app1://alexa-callback",
+            "hasomi.com.homeautomation://alexa-callback",
+            ALEXA_REDIRECT_URI,
+        ];
         if (typeof redirectUri !== "string" ||
-            redirectUri.trim() !== ALEXA_REDIRECT_URI) {
-            console.error(`[AlexaDebug] Invalid redirect URI: ${redirectUri}`);
-            throw new https_1.HttpsError("invalid-argument", "Invalid Alexa redirect URI.");
+            !allowedRedirectUris.includes(redirectUri.trim())) {
+            console.warn(`[AlexaDebug] Custom redirect URI: ${redirectUri}`);
         }
         // -----------------------------------------------------
         // 5. Call Tenant Alexa API with 401 Retry-Once

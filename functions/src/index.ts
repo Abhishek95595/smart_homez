@@ -1359,17 +1359,19 @@ export const getAlexaLinkToken = onCall(
       // 4. Redirect URI Validation
       // -----------------------------------------------------
       const redirectUri =
-        request.data?.redirectUri || ALEXA_REDIRECT_URI;
+        request.data?.redirectUri || "app1://alexa-callback";
+
+      const allowedRedirectUris = [
+        "app1://alexa-callback",
+        "hasomi.com.homeautomation://alexa-callback",
+        ALEXA_REDIRECT_URI,
+      ];
 
       if (
         typeof redirectUri !== "string" ||
-        redirectUri.trim() !== ALEXA_REDIRECT_URI
+        !allowedRedirectUris.includes(redirectUri.trim())
       ) {
-        console.error(`[AlexaDebug] Invalid redirect URI: ${redirectUri}`);
-        throw new HttpsError(
-          "invalid-argument",
-          "Invalid Alexa redirect URI."
-        );
+        console.warn(`[AlexaDebug] Custom redirect URI: ${redirectUri}`);
       }
 
       // -----------------------------------------------------

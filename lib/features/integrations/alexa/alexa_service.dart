@@ -424,53 +424,61 @@ class AlexaService {
     String? resolvedAuthorizeUrl;
     int lastStatusCode = 0;
 
-    for (final endpoint in endpoints) {
+    // 1. Primary: If user is logged in via Firebase Auth, use Cloud Function broker
+    if (FirebaseAuth.instance.currentUser != null) {
       try {
-        debugPrint('[AlexaService] Trying $endpoint...');
-        final res = await http.post(
-          Uri.parse(endpoint),
-          headers: {
-            if (userToken != null && userToken.isNotEmpty)
-              'Authorization': 'Bearer $userToken',
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode({'redirectUri': redirectUri, 'state': state}),
-        );
-
-        lastStatusCode = res.statusCode;
-        debugPrint(
-          '[AlexaService] $endpoint response: status=${res.statusCode}, body=${res.body}',
-        );
-
-        if (res.body.trim().isNotEmpty) {
-          final dynamic data = jsonDecode(res.body);
-          if (data is Map) {
-            resolvedAuthorizeUrl = data['authorizeUrl']?.toString() ??
-                data['authorizationUrl']?.toString() ??
-                data['authUrl']?.toString() ??
-                data['url']?.toString() ??
-                data['data']?['authorizeUrl']?.toString() ??
-                data['result']?['authorizeUrl']?.toString();
-            if (resolvedAuthorizeUrl != null && resolvedAuthorizeUrl.isNotEmpty) {
-              break;
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('[AlexaService] Endpoint $endpoint notice: $e');
-      }
-    }
-
-    // Fallback: If direct HTTP endpoints did not return URL, try createLinkToken
-    if (resolvedAuthorizeUrl == null || resolvedAuthorizeUrl.isEmpty) {
-      try {
+        debugPrint('[AlexaService] Requesting link token via Cloud Function broker...');
         final linkResp = await createLinkToken(
           redirectUri: redirectUri,
           state: state,
         );
         resolvedAuthorizeUrl = linkResp.authorizeUrl;
       } catch (e) {
-        debugPrint('[AlexaService] createLinkToken fallback notice: $e');
+        debugPrint('[AlexaService] Cloud Function broker notice: $e');
+      }
+    }
+
+    // 2. Direct HTTP endpoints
+    if (resolvedAuthorizeUrl == null || resolvedAuthorizeUrl.isEmpty) {
+      final String? tenantJwt = await getOrFetchApplicationBearerToken();
+      final String tokenToUse = (tenantJwt != null && tenantJwt.isNotEmpty)
+          ? tenantJwt
+          : (userToken ?? '');
+
+      for (final endpoint in endpoints) {
+        try {
+          debugPrint('[AlexaService] Trying direct HTTP endpoint: $endpoint...');
+          final res = await http.post(
+            Uri.parse(endpoint),
+            headers: {
+              if (tokenToUse.isNotEmpty) 'Authorization': 'Bearer $tokenToUse',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({'redirectUri': redirectUri, 'state': state}),
+          );
+
+          lastStatusCode = res.statusCode;
+          debugPrint(
+            '[AlexaService] $endpoint response: status=${res.statusCode}, body=${res.body}',
+          );
+
+          if (res.body.trim().isNotEmpty) {
+            final dynamic data = jsonDecode(res.body);
+            if (data is Map) {
+              resolvedAuthorizeUrl = data['authorizeUrl']?.toString() ??
+                  data['authorizationUrl']?.toString() ??
+                  data['authUrl']?.toString() ??
+                  data['url']?.toString() ??
+                  data['data']?['authorizeUrl']?.toString() ??
+                  data['result']?['authorizeUrl']?.toString();
+              if (resolvedAuthorizeUrl != null && resolvedAuthorizeUrl.isNotEmpty) {
+                break;
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint('[AlexaService] Endpoint $endpoint notice: $e');
+        }
       }
     }
 
