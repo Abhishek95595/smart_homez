@@ -7,9 +7,8 @@ import 'device_service.dart';
 
 /// Polling-based real-time synchronization.
 ///
-/// The backend SSE event schema has not yet been confirmed, so this service
-/// reliably refreshes devices from the API at a short interval. It updates
-/// the app when a device is changed from Tinxy, another app, or a wall switch.
+/// Refreshes devices from the API at a safe 10-second interval. It updates
+/// the app when a device state is changed externally.
 class RealtimeService {
   RealtimeService._internal();
 
@@ -23,7 +22,7 @@ class RealtimeService {
   Timer? _refreshTimer;
   String? _clientId;
 
-  bool _requestInProgress = false;
+  bool _isRefreshing = false;
   bool _isRunning = false;
 
   int _consecutiveErrors = 0;
@@ -34,45 +33,66 @@ class RealtimeService {
 
   Future<void> start({
     required String clientId,
-    Duration refreshInterval = const Duration(milliseconds: 500),
+    Duration refreshInterval = const Duration(seconds: 10),
   }) async {
     final String cleanClientId = clientId.trim();
 
     if (cleanClientId.isEmpty) {
+      debugPrint('[RealtimeService] Cannot start: client ID is empty.');
+      return;
+    }
+
+    // Prevent duplicate timers if already running with the exact same client ID
+    if (_isRunning &&
+        _clientId == cleanClientId &&
+        _refreshTimer != null &&
+        _refreshTimer!.isActive) {
       debugPrint(
-        '[RealtimeService] Cannot start: '
-        'client ID is empty.',
+        '[RealtimeService] Already running with active timer for client: $cleanClientId',
       );
       return;
     }
+
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
 
     _clientId = cleanClientId;
     _isRunning = true;
     _consecutiveErrors = 0;
 
-    _refreshTimer?.cancel();
-
+    // Initial safe refresh
     await refreshNow();
 
-    _refreshTimer = Timer.periodic(refreshInterval, (_) => refreshNow());
+    if (!_isRunning || _clientId != cleanClientId) {
+      return;
+    }
+
+    _refreshTimer = Timer.periodic(refreshInterval, (_) {
+      if (_isRunning && _clientId == cleanClientId) {
+        refreshNow();
+      }
+    });
 
     debugPrint(
-      '[RealtimeService] Started polling every '
-      '${refreshInterval.inSeconds}s.',
+      '[RealtimeService] Started with ${refreshInterval.inSeconds}s interval',
     );
   }
 
   Future<void> refreshNow() async {
     final String? clientId = _clientId;
 
-    if (!_isRunning ||
-        clientId == null ||
-        clientId.isEmpty ||
-        _requestInProgress) {
+    if (!_isRunning || clientId == null || clientId.isEmpty) {
       return;
     }
 
-    _requestInProgress = true;
+    if (_isRefreshing) {
+      debugPrint(
+        '[RealtimeService] Refresh skipped: previous request still running',
+      );
+      return;
+    }
+
+    _isRefreshing = true;
 
     try {
       final List<DeviceModel> devices = await _deviceService.getDevices(
@@ -85,10 +105,7 @@ class RealtimeService {
         _deviceController.add(devices);
       }
 
-      debugPrint(
-        '[RealtimeService] Refreshed '
-        '${devices.length} devices.',
-      );
+      debugPrint('[RealtimeService] Refreshed ${devices.length} devices.');
     } catch (error) {
       _consecutiveErrors++;
       debugPrint(
@@ -97,12 +114,12 @@ class RealtimeService {
 
       if (_consecutiveErrors >= 3) {
         debugPrint(
-          '[RealtimeService] Pausing polling due to API access permissions.',
+          '[RealtimeService] Pausing polling due to repeated errors or rate limits.',
         );
         stop();
       }
     } finally {
-      _requestInProgress = false;
+      _isRefreshing = false;
     }
   }
 
@@ -112,7 +129,7 @@ class RealtimeService {
 
     _isRunning = false;
     _clientId = null;
-    _requestInProgress = false;
+    _isRefreshing = false;
 
     debugPrint('[RealtimeService] Stopped.');
   }

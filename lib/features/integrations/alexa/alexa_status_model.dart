@@ -2,6 +2,7 @@ enum AlexaConnectionState {
   notConnected,
   scanning,
   connecting,
+  linked,
   connected,
   syncing,
   error,

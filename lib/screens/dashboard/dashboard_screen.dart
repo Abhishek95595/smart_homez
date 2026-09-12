@@ -69,8 +69,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final firstName = rawName.split(' ').first;
     final userName =
         (firstName.isNotEmpty && !firstName.toLowerCase().contains('otp'))
-            ? firstName
-            : 'Friend';
+        ? firstName
+        : 'Friend';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -91,13 +91,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onPressed: () => openAppDrawer(btnCtx),
           ),
         ),
-        title: const AppBrandHeader(
-          fontSize: 24,
-          spacing: 0,
-        ),
-        actions: const [
-          NotificationBellButton(),
-        ],
+        title: const AppBrandHeader(fontSize: 24, spacing: 0),
+        actions: const [NotificationBellButton()],
       ),
       body: SafeArea(
         top: false,
@@ -137,13 +132,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               title: 'Schedules',
               actionLabel: 'View All',
               onAction: () {
-                final mainShellState = context.findAncestorStateOfType<MainShellState>();
+                final mainShellState = context
+                    .findAncestorStateOfType<MainShellState>();
                 if (mainShellState != null) {
                   mainShellState.onTabTapped(2);
                 } else {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const AutomationsScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const AutomationsScreen(),
+                    ),
                   );
                 }
               },
@@ -1735,10 +1733,7 @@ class _ScheduleToggleSwitch extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
 
-  const _ScheduleToggleSwitch({
-    required this.value,
-    required this.onChanged,
-  });
+  const _ScheduleToggleSwitch({required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {

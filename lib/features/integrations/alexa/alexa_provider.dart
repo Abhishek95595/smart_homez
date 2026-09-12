@@ -14,15 +14,13 @@ class AlexaWebViewData {
   final Uri uri;
   final String token;
 
-  AlexaWebViewData({
-    required this.uri,
-    required this.token,
-  });
+  AlexaWebViewData({required this.uri, required this.token});
 }
 
 class AlexaProvider extends ChangeNotifier {
   final AlexaService _service;
   StreamSubscription<Uri>? _appLinkSubscription;
+  final Set<String> _handledCallbackStates = <String>{};
 
   AlexaProvider({AlexaService? alexaService})
     : _service = alexaService ?? AlexaService() {
@@ -75,49 +73,69 @@ class AlexaProvider extends ChangeNotifier {
 
     final String scheme = uri.scheme.toLowerCase();
     final String host = uri.host.toLowerCase();
-    final String path = uri.path.toLowerCase();
-    final String url = uri.toString().toLowerCase();
-
-    final bool isCallback = scheme == 'hasomi.com.homeautomation' ||
-        scheme == 'omnihome.in.homeautomation' ||
-        scheme == 'app1' ||
-        host == 'alexa-callback' ||
-        path.contains('alexa-callback') ||
-        host == 'alexa-link' ||
-        path.contains('alexa-link') ||
-        url.contains('alexa-callback') ||
-        url.contains('alexa-link') ||
-        url.contains('omnihome.in.homeautomation') ||
-        url.contains('hasomi.com.homeautomation');
+    final bool isCallback =
+        scheme == 'hasomi.com.homeautomation' &&
+        host == 'alexa-callback';
 
     if (isCallback) {
-      Map<String, String> params = Map<String, String>.from(uri.queryParameters);
+      Map<String, String> params = Map<String, String>.from(
+        uri.queryParameters,
+      );
       if (params.isEmpty && uri.fragment.isNotEmpty) {
         try {
           params = Uri.splitQueryString(uri.fragment);
         } catch (_) {}
       }
 
-      final String? state = params['state'];
+      final String? state = params['state']?.trim();
+      if (state != null && state.isNotEmpty && _handledCallbackStates.contains(state)) {
+        debugPrint('[AlexaProvider] Ignoring duplicate Alexa callback for the same state.');
+        return;
+      }
+      if (state != null && state.isNotEmpty) {
+        _handledCallbackStates.add(state);
+      }
+
       final bool isValidState = await _service.validateCallbackState(state);
 
       if (!isValidState) {
         _errorMessage =
-            'Security verification failed: State mismatch or invalid callback.';
+            'Alexa connection could not be verified: State mismatch or invalid callback.';
         _state = AlexaConnectionState.error;
         notifyListeners();
         return;
       }
 
-      // Valid callback: show success and update state
-      _status = _status.copyWith(linked: true);
-      _state = AlexaConnectionState.connected;
-      _successMessage = 'Alexa account linked successfully';
-      _errorMessage = null;
+      // Verify actual linked status with backend before marking connected
+      _isLoading = true;
       notifyListeners();
 
-      // Refresh live server status
-      await fetchStatus();
+      try {
+        _status = await _service.getStatus();
+        if (_status.connected) {
+          _state = AlexaConnectionState.connected;
+          _successMessage = 'Alexa account linked successfully';
+          _errorMessage = null;
+        } else if (_status.linked) {
+          _state = AlexaConnectionState.linked;
+          _successMessage = 'Alexa account linked successfully';
+          _errorMessage = null;
+        } else {
+          _state = AlexaConnectionState.notConnected;
+          _errorMessage =
+              'Alexa linking could not be confirmed by the server. Please try again.';
+          _successMessage = null;
+        }
+      } catch (e) {
+        debugPrint('[AlexaProvider] Error verifying link status: $e');
+        _state = AlexaConnectionState.notConnected;
+        _errorMessage =
+            'Failed to verify Alexa link status with server. Please try again.';
+        _successMessage = null;
+      } finally {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -164,8 +182,10 @@ class AlexaProvider extends ChangeNotifier {
     notifyListeners();
     try {
       _status = await _service.getStatus();
-      if (_status.linked || _status.connected) {
+      if (_status.connected) {
         _state = AlexaConnectionState.connected;
+      } else if (_status.linked) {
+        _state = AlexaConnectionState.linked;
       } else {
         _state = AlexaConnectionState.notConnected;
       }
@@ -183,7 +203,6 @@ class AlexaProvider extends ChangeNotifier {
   /// for the caller to open in the in-app WebView screen.
   /// Returns the authorize data on success, or null on failure.
   Future<AlexaWebViewData?> connectAlexa({
-    String? clientId,
     String? redirectUri,
     String? state,
   }) async {
@@ -195,7 +214,6 @@ class AlexaProvider extends ChangeNotifier {
 
     try {
       final AlexaLinkResponse result = await _service.createLinkToken(
-        clientId: clientId,
         redirectUri: redirectUri ?? AlexaService.alexaRedirectUri,
         state: state,
       );
@@ -225,20 +243,11 @@ class AlexaProvider extends ChangeNotifier {
         'path=${uri.path}',
       );
 
-      final String? platformToken = await _service.getPlatformUserJwt();
-      final String? bearerToken = platformToken?.trim().isNotEmpty == true
-          ? platformToken!.trim()
-          : await _service.getOrFetchApplicationBearerToken();
-
-      debugPrint(
-        '[Alexa] Token available for WebView: ${bearerToken?.isNotEmpty == true}',
-      );
-
       // Reset connecting state — caller will navigate to WebView
       _state = AlexaConnectionState.notConnected;
       _errorMessage = null;
       notifyListeners();
-      return AlexaWebViewData(uri: uri, token: bearerToken?.trim() ?? '');
+      return AlexaWebViewData(uri: uri, token: '');
     } on ApiException catch (e) {
       debugPrint('[AlexaProvider] Api error: ${e.message}');
       _errorMessage = e.message;

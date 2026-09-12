@@ -229,7 +229,8 @@ class MainShellState extends State<MainShell> {
                 setState(() => _isDrawerOpen = isOpened);
               }
             },
-            floatingActionButton: (safeIndex == 0 &&
+            floatingActionButton:
+                (safeIndex == 0 &&
                     !_isDrawerOpen &&
                     !desktop &&
                     !_isChildRouteActive)

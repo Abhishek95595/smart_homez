@@ -8,7 +8,7 @@ import 'api_service.dart';
 
 class DeviceService {
   DeviceService({ApiService? apiService})
-      : _apiService = apiService ?? ApiService();
+    : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
 
@@ -24,7 +24,9 @@ class DeviceService {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       try {
-        final response = await _apiService.get(ApiEndpoints.clientDevices(clientId));
+        final response = await _apiService.get(
+          ApiEndpoints.clientDevices(clientId),
+        );
         return _parseDevices(response.data);
       } catch (e) {
         debugPrint('[DeviceService] REST getDevices fallback error: $e');
@@ -39,7 +41,9 @@ class DeviceService {
     } catch (error) {
       debugPrint('[DeviceService] Callable getDevices error: $error');
       try {
-        final response = await _apiService.get(ApiEndpoints.clientDevices(clientId));
+        final response = await _apiService.get(
+          ApiEndpoints.clientDevices(clientId),
+        );
         return _parseDevices(response.data);
       } catch (e) {
         return <DeviceModel>[];
@@ -107,7 +111,9 @@ class DeviceService {
       }
       return true;
     } catch (e) {
-      debugPrint('[DeviceService] REST command error: $e, persisting local state');
+      debugPrint(
+        '[DeviceService] REST command error: $e, persisting local state',
+      );
       return true;
     }
   }

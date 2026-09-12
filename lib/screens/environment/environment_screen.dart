@@ -59,12 +59,12 @@ class _EnvironmentScreenState extends State<EnvironmentScreen>
     setState(() => _isLoading = true);
     try {
       final results = await Future.wait([
-        _envService.getSolarStatus(),       // 0
-        _envService.getDuskDawn(),           // 1
-        _envService.getWeatherPrompts(),     // 2
-        _envService.getPresence(),           // 3
-        _envService.getHomeLocation(),       // 4
-        _envService.getWidgets(),            // 5
+        _envService.getSolarStatus(), // 0
+        _envService.getDuskDawn(), // 1
+        _envService.getWeatherPrompts(), // 2
+        _envService.getPresence(), // 3
+        _envService.getHomeLocation(), // 4
+        _envService.getWidgets(), // 5
       ]);
 
       if (mounted) {
@@ -77,14 +77,16 @@ class _EnvironmentScreenState extends State<EnvironmentScreen>
             _duskDawnMode = duskDawn['mode']?.toString() ?? 'automatic';
           }
 
-          _weatherPrompts = (results[2] as List?)
+          _weatherPrompts =
+              (results[2] as List?)
                   ?.whereType<Map>()
                   .map((e) => Map<String, dynamic>.from(e))
                   .toList() ??
               [];
           _presenceData = results[3] as Map<String, dynamic>?;
           _locationData = results[4] as Map<String, dynamic>?;
-          _widgetScenes = (results[5] as List?)
+          _widgetScenes =
+              (results[5] as List?)
                   ?.whereType<Map>()
                   .map((e) => Map<String, dynamic>.from(e))
                   .toList() ??
@@ -787,9 +789,7 @@ class _GlassMetricCard extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: ringColor.withValues(alpha: 0.15),
-        ),
+        border: Border.all(color: ringColor.withValues(alpha: 0.15)),
         boxShadow: [
           BoxShadow(
             color: ringColor.withValues(alpha: 0.08),
@@ -818,10 +818,7 @@ class _GlassMetricCard extends StatelessWidget {
                 width: 36,
                 height: 36,
                 child: CustomPaint(
-                  painter: _RingPainter(
-                    progress: progress,
-                    color: ringColor,
-                  ),
+                  painter: _RingPainter(progress: progress, color: ringColor),
                   child: Center(
                     child: Text(
                       '${(progress * 100).round()}',
@@ -970,9 +967,7 @@ class _DuskDawnPremiumCard extends StatelessWidget {
             : null,
         color: enabled ? null : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: enabled
-            ? null
-            : Border.all(color: const Color(0xFFE2E8F0)),
+        border: enabled ? null : Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           if (enabled)
             BoxShadow(
@@ -1093,9 +1088,8 @@ class _PresenceCard extends StatelessWidget {
       return s == 'home' || s == 'present';
     }).length;
 
-    final isOccupied = homeState == 'occupied' ||
-        homeState == 'home' ||
-        homeCount > 0;
+    final isOccupied =
+        homeState == 'occupied' || homeState == 'home' || homeCount > 0;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1127,9 +1121,7 @@ class _PresenceCard extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isOccupied
-                      ? Icons.home_rounded
-                      : Icons.home_outlined,
+                  isOccupied ? Icons.home_rounded : Icons.home_outlined,
                   color: isOccupied
                       ? const Color(0xFF16A34A)
                       : const Color(0xFFF59E0B),
@@ -1226,16 +1218,10 @@ class _PresenceCard extends StatelessWidget {
                         shape: BoxShape.circle,
                         gradient: isHome
                             ? const LinearGradient(
-                                colors: [
-                                  Color(0xFF10B981),
-                                  Color(0xFF059669),
-                                ],
+                                colors: [Color(0xFF10B981), Color(0xFF059669)],
                               )
                             : const LinearGradient(
-                                colors: [
-                                  Color(0xFF94A3B8),
-                                  Color(0xFF64748B),
-                                ],
+                                colors: [Color(0xFF94A3B8), Color(0xFF64748B)],
                               ),
                       ),
                       child: Center(
@@ -1346,7 +1332,11 @@ class _HomeLocationCard extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               gradient: const LinearGradient(
-                colors: [Color(0xFFE0F2FE), Color(0xFFBAE6FD), Color(0xFF7DD3FC)],
+                colors: [
+                  Color(0xFFE0F2FE),
+                  Color(0xFFBAE6FD),
+                  Color(0xFF7DD3FC),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -1437,10 +1427,7 @@ class _HomeLocationCard extends StatelessWidget {
 
           if (ssid != null && ssid.isNotEmpty) ...[
             const SizedBox(height: 8),
-            _LocationChip(
-              icon: Icons.wifi_rounded,
-              label: ssid,
-            ),
+            _LocationChip(icon: Icons.wifi_rounded, label: ssid),
           ],
         ],
       ),
@@ -1496,7 +1483,8 @@ class _WeatherPromptCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final title = prompt['title']?.toString() ?? 'Climate Tip';
-    final desc = prompt['description']?.toString() ??
+    final desc =
+        prompt['description']?.toString() ??
         'Optimized for natural comfort & savings.';
     final type = prompt['type']?.toString() ?? '';
 
@@ -1533,9 +1521,7 @@ class _WeatherPromptCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: accent.withValues(alpha: 0.12),
-        ),
+        border: Border.all(color: accent.withValues(alpha: 0.12)),
         boxShadow: [
           BoxShadow(
             color: accent.withValues(alpha: 0.06),
@@ -1639,9 +1625,7 @@ class _WidgetShortcutsRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: color.withValues(alpha: 0.15),
-              ),
+              border: Border.all(color: color.withValues(alpha: 0.15)),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

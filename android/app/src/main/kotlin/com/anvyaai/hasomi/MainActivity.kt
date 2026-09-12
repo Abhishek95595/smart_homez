@@ -1,4 +1,4 @@
-package com.smartbuildingmanager.flutter_app
+package com.anvyaai.hasomi
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -8,7 +8,7 @@
 PRODUCT_NAME = Hasomi
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.smartbuildingmanager.flutterApp
+PRODUCT_BUNDLE_IDENTIFIER = com.anvyaai.hasomi
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.smartbuildingmanager. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.anvyaai.hasomi. All rights reserved.

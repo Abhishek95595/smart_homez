@@ -96,9 +96,11 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
         if (rootNav.canPop()) {
           rootNav.popUntil((route) => route.isFirst);
         } else {
-          rootNav.pushReplacement(MaterialPageRoute(
-            builder: (_) => MainShell(initialIndex: tabIndex),
-          ));
+          rootNav.pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => MainShell(initialIndex: tabIndex),
+            ),
+          );
         }
       }
     }
@@ -860,7 +862,7 @@ class _SmartDrawerMenuCard extends StatelessWidget {
         border: Border.all(
           color: isExpanded
               ? (letterColor ?? iconColor ?? const Color(0xFF00A38E))
-                  .withValues(alpha: 0.4)
+                    .withValues(alpha: 0.4)
               : const Color(0xFFE2E8F0),
           width: 1.15,
         ),

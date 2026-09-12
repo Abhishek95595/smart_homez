@@ -145,7 +145,7 @@ void main() {
       () {
         const ssoToken = '6Bi79fIm4d4tM6O2N2wxkym93KicdkyM5JyMQNmXCJw';
         const dynamicAuthorizeUrl =
-            'https://tenant-api-qa.omnihome.in/oauth/authorize?response_type=code&client_id=omnihome-alexa&sso_token=$ssoToken&redirect_uri=hasomi.com.homeautomation%3A%2F%2Falexa-callback&state=c4d03795-ad24-4b32-8ce5-6376969cf843';
+            'https://tenant-api.omnihome.in/oauth/authorize?response_type=code&client_id=omnihome-alexa&sso_token=$ssoToken&redirect_uri=hasomi.com.homeautomation%3A%2F%2Falexa-callback&state=c4d03795-ad24-4b32-8ce5-6376969cf843';
 
         final responseMap = {
           'ssoToken': ssoToken,
@@ -157,9 +157,7 @@ void main() {
         expect(response.ssoToken, equals(ssoToken));
         expect(
           response.authorizeUrl,
-          equals(
-            'https://tenant-api.omnihome.in/oauth/authorize?response_type=code&client_id=omnihome-alexa&sso_token=$ssoToken&redirect_uri=hasomi.com.homeautomation%3A%2F%2Falexa-callback&state=c4d03795-ad24-4b32-8ce5-6376969cf843',
-          ),
+          equals(dynamicAuthorizeUrl),
         );
       },
     );
@@ -322,69 +320,92 @@ void main() {
       );
     });
 
-    test('Simultaneous token refresh deduplication via in-flight mutex', () async {
-      int bffCallCount = 0;
-      Future<String?>? inFlightRefresh;
+    test(
+      'Simultaneous token refresh deduplication via in-flight mutex',
+      () async {
+        int bffCallCount = 0;
+        Future<String?>? inFlightRefresh;
 
-      Future<String?> simulateRefresh() {
-        if (inFlightRefresh != null) {
+        Future<String?> simulateRefresh() {
+          if (inFlightRefresh != null) {
+            return inFlightRefresh!;
+          }
+          inFlightRefresh =
+              Future.delayed(const Duration(milliseconds: 50), () {
+                bffCallCount++;
+                return _createTestJwt();
+              }).whenComplete(() {
+                inFlightRefresh = null;
+              });
           return inFlightRefresh!;
         }
-        inFlightRefresh = Future.delayed(
-          const Duration(milliseconds: 50),
-          () {
-            bffCallCount++;
-            return _createTestJwt();
-          },
-        ).whenComplete(() {
-          inFlightRefresh = null;
-        });
-        return inFlightRefresh!;
-      }
 
-      // Simulate 5 concurrent 401s triggering refresh at the exact same moment
-      final results = await Future.wait([
-        simulateRefresh(),
-        simulateRefresh(),
-        simulateRefresh(),
-        simulateRefresh(),
-        simulateRefresh(),
-      ]);
+        // Simulate 5 concurrent 401s triggering refresh at the exact same moment
+        final results = await Future.wait([
+          simulateRefresh(),
+          simulateRefresh(),
+          simulateRefresh(),
+          simulateRefresh(),
+          simulateRefresh(),
+        ]);
 
-      expect(bffCallCount, equals(1));
-      expect(results, hasLength(5));
-      for (final res in results) {
-        expect(ApiClient.isJwtValid(res), isTrue);
-      }
+        expect(bffCallCount, equals(1));
+        expect(results, hasLength(5));
+        for (final res in results) {
+          expect(ApiClient.isJwtValid(res), isTrue);
+        }
+      },
+    );
+
+    test(
+      'Client GUID normalization preserves valid client GUIDs and rejects empty/null',
+      () {
+        const validUuid = 'd3b07384-d113-404c-83b6-2a6c8e312a0e';
+        expect(ApiEndpoints.normalizeClientGuid(validUuid), equals(validUuid));
+        expect(
+          () => ApiEndpoints.normalizeClientGuid(null),
+          throwsArgumentError,
+        );
+        expect(() => ApiEndpoints.normalizeClientGuid(''), throwsArgumentError);
+      },
+    );
+
+    test(
+      'ApiEndpoints.clientHomes constructs client GUID route dynamically',
+      () {
+        const clientId = 'c1234567-89ab-cdef-0123-456789abcdef';
+        final endpoint = ApiEndpoints.clientHomes(clientId);
+        expect(endpoint, equals('/api/v1/clients/$clientId/homes'));
+      },
+    );
+  });
+
+  group('Alexa Flow & Security Validation Tests', () {
+    test('State generation has sufficient length and entropy', () async {
+      final service = AlexaService();
+      final state = await service.generateSecureState();
+      expect(state.length, greaterThanOrEqualTo(16));
+      expect(RegExp(r'^[0-9a-fA-F\-]+$').hasMatch(state), isTrue);
     });
 
-    test('Client GUID normalization preserves valid client GUIDs and rejects empty/null', () {
-      const validUuid = 'd3b07384-d113-404c-83b6-2a6c8e312a0e';
-      expect(
-        ApiEndpoints.normalizeClientGuid(validUuid),
-        equals(validUuid),
-      );
-      expect(
-        () => ApiEndpoints.normalizeClientGuid(null),
-        throwsArgumentError,
-      );
-      expect(
-        () => ApiEndpoints.normalizeClientGuid(''),
-        throwsArgumentError,
-      );
+    test('Callback state validation prevents replay attacks', () async {
+      final service = AlexaService();
+      final state = await service.generateSecureState();
+
+      // First validation succeeds
+      final firstCheck = await service.validateCallbackState(state);
+      expect(firstCheck, isTrue);
+
+      // Replay attempt fails immediately
+      final replayCheck = await service.validateCallbackState(state);
+      expect(replayCheck, isFalse);
     });
 
-    test('ApiEndpoints.clientHomes constructs client GUID route dynamically', () {
-      const clientId = 'c1234567-89ab-cdef-0123-456789abcdef';
-      final endpoint = ApiEndpoints.clientHomes(clientId);
+    test('Default redirect URI matches exact configured scheme', () {
       expect(
-        endpoint,
-        equals('/api/v1/clients/$clientId/homes'),
+        AlexaService.alexaRedirectUri,
+        equals('hasomi.com.homeautomation://alexa-callback'),
       );
     });
   });
 }
-
-
-
-

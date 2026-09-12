@@ -5,6 +5,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import axios from "axios";
 import * as https from "https";
+import * as crypto from "crypto";
 
 // Initialize Keep-Alive agent for fast connection reuse to AuraBrain
 const httpsAgent = new https.Agent({
@@ -13,7 +14,7 @@ const httpsAgent = new https.Agent({
   keepAliveMsecs: 1000,
 });
 axios.defaults.httpsAgent = httpsAgent;
-axios.defaults.timeout = 8000; // 8s global timeout for all AuraBrain calls
+axios.defaults.timeout = 25000; // 25s global timeout for AuraBrain calls
 
 // Initialize Firebase Admin SDK
 initializeApp();
@@ -43,26 +44,43 @@ const tokenCache: TokenCache = {
 let inFlightTokenPromise: Promise<string> | null = null;
 
 /**
+ * Invalidates the cached Tenant JWT token immediately.
+ */
+function invalidateTenantToken(): void {
+  tokenCache.token = null;
+  tokenCache.expiresAt = 0;
+}
+
+/**
  * Concurrency-safe Tenant token manager.
  * Uses a single in-flight Promise during token refresh.
+ * Enforces a 5-minute safety buffer before token expiration.
  */
-async function getTenantToken(): Promise<string> {
+async function getTenantToken(forceRefresh: boolean = false): Promise<string> {
   const now = Date.now();
   // Return cached token if still valid with a 5-minute safety buffer
-  if (tokenCache.token && tokenCache.expiresAt > now + 300000) {
+  if (!forceRefresh && tokenCache.token && tokenCache.expiresAt > now + 300000) {
+    console.log(
+      `[AlexaDebug] tenant JWT cache HIT (expires in ${Math.round(
+        (tokenCache.expiresAt - now) / 1000
+      )}s)`
+    );
     return tokenCache.token;
   }
 
   if (inFlightTokenPromise) {
+    console.log("[AlexaDebug] awaiting in-flight tenant JWT request...");
     return inFlightTokenPromise;
   }
 
   inFlightTokenPromise = (async () => {
+    const jwtStart = Date.now();
+    console.log("[AlexaDebug] requesting/caching tenant JWT START");
     try {
-      console.log("[BFF] Fetching new Tenant JWT token from AuraBrain...");
       let cId = "";
       let cSecret = "";
 
+      const secretStart = Date.now();
       try {
         cId = TENANT_CLIENT_ID.value();
       } catch (_) {}
@@ -91,17 +109,25 @@ async function getTenantToken(): Promise<string> {
         cSecret = process.env.TENANT_CLIENT_SECRET || process.env.AURABRAIN_CLIENT_SECRET || "";
       }
 
+      console.log(
+        `[AlexaDebug] Secret Manager access END durationMs=${Date.now() - secretStart}, hasCId=${!!cId}, hasCSecret=${!!cSecret}`
+      );
+
       if (!cId || !cSecret) {
         throw new Error("Missing required Secret Manager credentials (TENANT_CLIENT_ID / TENANT_CLIENT_SECRET).");
       }
 
+      const tokenHttpStart = Date.now();
       const response = await axios.post(
         `${TENANT_BASE_URL}/api/Auth/token`,
         {
           clientId: cId,
           clientSecret: cSecret,
         },
-        { timeout: 10000 }
+        { timeout: 15000 }
+      );
+      console.log(
+        `[AlexaDebug] POST /api/Auth/token END durationMs=${Date.now() - tokenHttpStart}, status=${response.status}`
       );
 
       const data = response.data;
@@ -109,14 +135,38 @@ async function getTenantToken(): Promise<string> {
         throw new Error(data.error?.message || data.error || "Failed to exchange Tenant API token.");
       }
 
-      tokenCache.token = data.token;
-      const expiryDuration = data.expiresIn ? data.expiresIn * 1000 : 3600000;
-      tokenCache.expiresAt = Date.now() + expiryDuration;
+      const rawToken = data.token as string;
+      tokenCache.token = rawToken;
 
-      console.log("[BFF] Successfully acquired and cached Tenant JWT token.");
+      // Extract JWT exp claim if present
+      let calculatedExpiresAt = 0;
+      try {
+        const parts = rawToken.split(".");
+        if (parts.length === 3) {
+          const payload = JSON.parse(Buffer.from(parts[1], "base64").toString("utf-8"));
+          if (payload && typeof payload.exp === "number") {
+            calculatedExpiresAt = payload.exp * 1000;
+          }
+        }
+      } catch (_) {}
+
+      if (calculatedExpiresAt && calculatedExpiresAt > now) {
+        tokenCache.expiresAt = calculatedExpiresAt;
+      } else if (data.expiresIn && typeof data.expiresIn === "number") {
+        tokenCache.expiresAt = Date.now() + data.expiresIn * 1000;
+      } else {
+        // Safe default: 1 hour
+        tokenCache.expiresAt = Date.now() + 3600000;
+      }
+
+      console.log(
+        `[AlexaDebug] tenant JWT request END durationMs=${Date.now() - jwtStart}`
+      );
       return tokenCache.token as string;
     } catch (error: any) {
-      console.error("[BFF] Error acquiring dynamic Tenant token:", error.message || error);
+      console.error(
+        `[AlexaDebug] tenant JWT request FAILED durationMs=${Date.now() - jwtStart}, status=${error.response?.status}, message=${error.message}`
+      );
       throw error;
     } finally {
       inFlightTokenPromise = null;
@@ -140,24 +190,33 @@ function getVerifiedClaims(auth: any) {
  * Firebase user.
  *
  * Priority:
- * 1. Existing Firestore mapping
+ * 1. Existing Firestore mapping for the authenticated Firebase UID
  * 2. Verified Firebase phone/email -> Tenant API resolution
  *
  * IMPORTANT:
- * Never fall back to a hardcoded client ID.
+ * Never trust a client-supplied Tenant clientId.
  */
-async function getMappedClientId(uid: string, auth?: any): Promise<string> {
+async function getMappedClientId(
+  uid: string,
+  auth?: any
+): Promise<string> {
+  const mapStart = Date.now();
+  console.log(`[AlexaDebug] resolve client START for UID=${uid}`);
   try {
     // ---------------------------------------------------------
     // 1. Check existing Firestore mapping
     // ---------------------------------------------------------
+    const firestoreStart = Date.now();
     const userDoc = await db.collection("userTenantMappings").doc(uid).get();
+    console.log(
+      `[AlexaDebug] Firestore mapping check END durationMs=${Date.now() - firestoreStart}, exists=${userDoc.exists}`
+    );
 
     if (userDoc.exists) {
       const data = userDoc.data();
       if (data?.auraClientId) {
         console.log(
-          `[BFF] Using mapped Tenant client for UID ${uid}: ${data.auraClientId}`
+          `[AlexaDebug] clientId resolved from Firestore durationMs=${Date.now() - mapStart}: ${data.auraClientId}`
         );
         return data.auraClientId as string;
       }
@@ -183,17 +242,19 @@ async function getMappedClientId(uid: string, auth?: any): Promise<string> {
     }
 
     console.log(
-      `[BFF] Resolving Tenant client for Firebase UID ${uid}. ` +
-      `phone=${phone ? maskPhone(phone) : "none"}, ` +
-      `email=${email ? maskEmail(email) : "none"}`
+      `[AlexaDebug] Resolving Tenant client via API. phone=${phone ? maskPhone(phone) : "none"}, email=${email ? maskEmail(email) : "none"}`
     );
 
     const token = await getTenantToken();
+    const resolveStart = Date.now();
     const resolved = await resolveAuraClient(token, phone, email);
+    console.log(
+      `[AlexaDebug] resolveAuraClient END durationMs=${Date.now() - resolveStart}, found=${!!resolved?.id}`
+    );
 
     if (!resolved?.id) {
       console.error(
-        `[BFF] No Tenant client found for Firebase UID ${uid}.`
+        `[AlexaDebug] No Tenant client found for Firebase UID ${uid}.`
       );
       throw new HttpsError(
         "failed-precondition",
@@ -221,20 +282,17 @@ async function getMappedClientId(uid: string, auth?: any): Promise<string> {
       );
 
     console.log(
-      `[BFF] Successfully mapped Firebase UID ${uid} ` +
-      `to Tenant client ${resolved.id}`
+      `[AlexaDebug] clientId resolved durationMs=${Date.now() - mapStart}: ${resolved.id}`
     );
 
     return resolved.id;
   } catch (err: any) {
+    console.error(
+      `[AlexaDebug] getMappedClientId FAILED durationMs=${Date.now() - mapStart}, message=${err.message}`
+    );
     if (err instanceof HttpsError) {
       throw err;
     }
-
-    console.error(
-      "[BFF] getMappedClientId failed:",
-      err.response?.data || err.message || err
-    );
 
     throw new HttpsError(
       "failed-precondition",
@@ -251,7 +309,7 @@ async function verifyDeviceOwnership(clientId: string, deviceId: string): Promis
   try {
     const res = await axios.get(
       `${TENANT_BASE_URL}/api/v1/clients/${clientId}/devices/${deviceId}`,
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: { Authorization: `Bearer ${token}` }, timeout: 10000 }
     );
     const data = res.data?.data || res.data;
     if (data && data.client_id && data.client_id !== clientId) {
@@ -271,7 +329,7 @@ async function verifyHomeOwnership(clientId: string, homeId: string): Promise<vo
   try {
     const res = await axios.get(
       `${TENANT_BASE_URL}/api/v1/clients/${clientId}/homes/${homeId}`,
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: { Authorization: `Bearer ${token}` }, timeout: 10000 }
     );
     const data = res.data?.data || res.data;
     if (data && data.client_id && data.client_id !== clientId) {
@@ -306,9 +364,9 @@ function maskEmail(email: string): string {
 /**
  * Helper to resolve an AuraBrain client by phone, email, or name.
  * Tries:
- * 1. POST /api/v1/clients/resolve with full phone (e.g. +91...) and 10-digit phone
- * 2. POST /api/v1/clients/resolve with email
- * 3. GET /api/v1/clients to search for matching phone, email, or name
+ * 1. POST /api/v1/clients/resolve with full phone (e.g. +91...) and 10-digit phone (timeout 4s)
+ * 2. POST /api/v1/clients/resolve with email (timeout 4s)
+ * 3. GET /api/v1/clients to search for matching phone, email, or name (timeout 6s)
  */
 async function resolveAuraClient(
   token: string,
@@ -322,13 +380,13 @@ async function resolveAuraClient(
     ...(clean10Phone && clean10Phone !== phone ? [clean10Phone] : []),
   ];
 
-  // 1. Try resolve endpoint with phone variations
+  // 1. Try resolve endpoint with phone variations (fast 4s timeout)
   for (const p of phoneVariations) {
     try {
       const res = await axios.post(
         `${TENANT_BASE_URL}/api/v1/clients/resolve`,
         { phone: p },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` }, timeout: 4000 }
       );
       const data = res.data?.data || res.data;
       if (
@@ -353,13 +411,13 @@ async function resolveAuraClient(
     }
   }
 
-  // 2. Try resolve endpoint with email
+  // 2. Try resolve endpoint with email (fast 4s timeout)
   if (email && email.trim().length > 0) {
     try {
       const res = await axios.post(
         `${TENANT_BASE_URL}/api/v1/clients/resolve`,
         { email: email.trim() },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` }, timeout: 4000 }
       );
       const data = res.data?.data || res.data;
       if (
@@ -384,10 +442,11 @@ async function resolveAuraClient(
     }
   }
 
-  // 3. Fallback: Search all active clients under this tenant
+  // 3. Fallback: Search all active clients under this tenant (fast 6s timeout)
   try {
     const listRes = await axios.get(`${TENANT_BASE_URL}/api/v1/clients`, {
       headers: { Authorization: `Bearer ${token}` },
+      timeout: 6000,
     });
     const clients: any[] = listRes.data?.data || listRes.data || [];
     if (Array.isArray(clients) && clients.length > 0) {
@@ -1234,32 +1293,46 @@ export const syncDevices = onCall(
  *
  * Generates an Alexa App-to-App account linking SSO token
  * and authorize URL for the authenticated Firebase user.
+ *
+ * Flow:
+ * 1. Authenticate Firebase user
+ * 2. Resolve mapped Tenant clientId
+ * 3. Reuse cached Tenant JWT (or fetch fresh if expired)
+ * 4. Call Tenant /api/integrations/alexa/link-token
+ * 5. If 401: invalidate cached JWT, fetch new JWT, retry once
+ * 6. Return sanitized { success: true, authorizeUrl, state } to Flutter
  */
 export const getAlexaLinkToken = onCall(
   {
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
+    timeoutSeconds: 60,
   },
   async (request) => {
+    const callStart = Date.now();
+    console.log("[AlexaDebug] getAlexaLinkToken START");
+
     // ---------------------------------------------------------
-    // Authentication
+    // 1. Authentication
     // ---------------------------------------------------------
     if (!request.auth) {
+      console.error("[AlexaDebug] getAlexaLinkToken FAILED: Unauthenticated");
       throw new HttpsError(
         "unauthenticated",
         "Authentication required."
       );
     }
 
-    try {
-      console.log("[BFF] Alexa link-token request received");
+    const uid = request.auth.uid;
+    console.log(`[AlexaDebug] auth verified for UID: ${uid}`);
 
+    try {
       // -----------------------------------------------------
-      // Resolve the REAL Tenant client for this Firebase user
+      // 2. Resolve Tenant clientId for this Firebase user
       // -----------------------------------------------------
       const clientId = await getMappedClientId(
-        request.auth.uid,
+        uid,
         request.auth
       );
 
@@ -1270,31 +1343,29 @@ export const getAlexaLinkToken = onCall(
         );
       }
 
-      console.log("[BFF] Tenant client resolved:", clientId);
+      console.log(`[AlexaDebug] clientId resolved: ${clientId}`);
 
       // -----------------------------------------------------
-      // Validate state
+      // 3. Cryptographically Secure OAuth State
       // -----------------------------------------------------
-      const state = request.data?.state;
-
+      let state = request.data?.state;
       if (!state || typeof state !== "string" || state.trim().length < 16) {
-        throw new HttpsError(
-          "invalid-argument",
-          "A valid OAuth state is required."
-        );
+        state = crypto.randomBytes(16).toString("hex");
+      } else {
+        state = state.trim();
       }
 
       // -----------------------------------------------------
-      // Redirect URI
+      // 4. Redirect URI Validation
       // -----------------------------------------------------
       const redirectUri =
         request.data?.redirectUri || ALEXA_REDIRECT_URI;
 
       if (
         typeof redirectUri !== "string" ||
-        (!redirectUri.startsWith("https://") &&
-          !redirectUri.startsWith("hasomi.com.homeautomation://"))
+        redirectUri.trim() !== ALEXA_REDIRECT_URI
       ) {
+        console.error(`[AlexaDebug] Invalid redirect URI: ${redirectUri}`);
         throw new HttpsError(
           "invalid-argument",
           "Invalid Alexa redirect URI."
@@ -1302,43 +1373,66 @@ export const getAlexaLinkToken = onCall(
       }
 
       // -----------------------------------------------------
-      // Get Tenant JWT
+      // 5. Call Tenant Alexa API with 401 Retry-Once
       // -----------------------------------------------------
-      const token = await getTenantToken();
+      let token = await getTenantToken();
+      let response;
 
-      console.log(
-        `[BFF] Generating Alexa link token for ` +
-        `UID=${request.auth.uid}, clientId=${clientId}`
-      );
+      const callTenantLinkToken = async (jwtToken: string) => {
+        const reqStart = Date.now();
+        console.log("[AlexaDebug] Alexa link-token request START");
 
-      console.log(
-        `[BFF] Alexa redirectUri=${redirectUri}`
-      );
-
-      // -----------------------------------------------------
-      // Call Tenant Alexa API
-      // -----------------------------------------------------
-      const response = await axios.post(
-        `${TENANT_BASE_URL}/api/integrations/alexa/link-token`,
-        {
-          clientId: clientId,
+        const requestPayload = {
           redirectUri: redirectUri,
           state: state,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          timeout: 10000,
+        };
+
+        try {
+          const res = await axios.post(
+            `${TENANT_BASE_URL}/api/integrations/alexa/link-token`,
+            requestPayload,
+            {
+              headers: {
+                Authorization: `Bearer ${jwtToken}`,
+                "Content-Type": "application/json",
+              },
+              params: {
+                clientId: clientId,
+              },
+              timeout: 15000,
+            }
+          );
+          console.log(
+            `[AlexaDebug] Alexa link-token request END durationMs=${Date.now() - reqStart}, status=${res.status}`
+          );
+          return res;
+        } catch (postErr: any) {
+          console.error(
+            `[AlexaDebug] Alexa link-token request FAILED durationMs=${Date.now() - reqStart}, status=${postErr.response?.status}, message=${postErr.message}`
+          );
+          throw postErr;
         }
-      );
+      };
+
+      try {
+        response = await callTenantLinkToken(token);
+      } catch (apiError: any) {
+        if (apiError.response?.status === 401) {
+          console.warn(
+            "[AlexaDebug] Tenant API returned 401 on link-token. Invalidating cache, refreshing token and retrying once..."
+          );
+          invalidateTenantToken();
+          token = await getTenantToken(true);
+          response = await callTenantLinkToken(token);
+        } else {
+          throw apiError;
+        }
+      }
 
       // -----------------------------------------------------
-      // Validate & Normalize authorizeUrl
+      // 6. Validate & Normalize authorizeUrl
       // -----------------------------------------------------
       const data = response.data;
-
       if (!data) {
         throw new Error(
           "Tenant API returned an empty Alexa link-token response."
@@ -1373,43 +1467,68 @@ export const getAlexaLinkToken = onCall(
       }
 
       if (parsedUrl.protocol !== "https:") {
-        parsedUrl.protocol = "https:";
-      }
-
-      if (parsedUrl.hostname === "tenant-api-qa.omnihome.in") {
-        parsedUrl.hostname = "tenant-api.omnihome.in";
+        throw new HttpsError(
+          "internal",
+          "Tenant API returned a non-HTTPS authorize URL."
+        );
       }
 
       const absoluteAuthorizeUrl = parsedUrl.toString();
 
-      console.log("[BFF] Alexa authorize URL generated successfully");
-      console.log("[BFF] Authorize URL host:", parsedUrl.host);
+      console.log(
+        `[AlexaDebug] getAlexaLinkToken SUCCESS durationMs=${Date.now() - callStart}`
+      );
 
+      // Return ONLY safe properties — never leak Tenant JWT, secrets, or internal configs
       return {
-        ...data,
+        success: true,
         authorizeUrl: absoluteAuthorizeUrl,
+        state: state,
+        expiresInSeconds: data.expiresInSeconds || data.expiresIn || 300,
       };
     } catch (error: any) {
+      console.error(
+        `[AlexaDebug] getAlexaLinkToken FAILED totalDurationMs=${Date.now() - callStart}:`,
+        {
+          uid: uid,
+          status: error.response?.status,
+          code: error.code,
+          message: error.message,
+        }
+      );
+
       if (error instanceof HttpsError) {
         throw error;
       }
 
       const status = error.response?.status;
       const responseData = error.response?.data;
+      const rawMsg =
+        responseData?.message ||
+        responseData?.title ||
+        responseData?.error ||
+        responseData?.detail ||
+        error.message;
+      const sanitizedMsg = typeof rawMsg === "string" ? rawMsg : JSON.stringify(rawMsg);
 
-      console.error(
-        "[BFF] getAlexaLinkToken failed.",
-        {
-          status: status,
-          response: responseData,
-          message: error.message,
-        }
-      );
+      if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+        throw new HttpsError(
+          "deadline-exceeded",
+          "Alexa linking request timed out reaching Tenant API. Please try again."
+        );
+      }
+
+      if (error.code === "ECONNREFUSED" || error.code === "ENOTFOUND") {
+        throw new HttpsError(
+          "unavailable",
+          "Unable to reach Alexa integration service. Please check connection and try again."
+        );
+      }
 
       if (status === 401) {
         throw new HttpsError(
           "unauthenticated",
-          "Tenant API authentication failed."
+          sanitizedMsg ? `Tenant API 401: ${sanitizedMsg}` : "Tenant API authentication failed."
         );
       }
 
@@ -1453,7 +1572,7 @@ export const getAlexaLinkToken = onCall(
 export const getAlexaStatus = onCall(
   {
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
   },
   async (request) => {
@@ -1464,37 +1583,52 @@ export const getAlexaStatus = onCall(
       );
     }
 
+    const uid = request.auth.uid;
+
     try {
       // Resolve user -> Tenant client
       const clientId = await getMappedClientId(
-        request.auth.uid,
+        uid,
         request.auth
       );
 
-      const token = await getTenantToken();
+      let token = await getTenantToken();
 
       console.log(
-        `[BFF] Checking Alexa status for UID=${request.auth.uid}, clientId=${clientId}`
+        `[BFF] Checking Alexa status for UID=${uid}, clientId=${clientId}`
       );
 
-      const response = await axios.get(
-        `${TENANT_BASE_URL}/api/integrations/alexa/status`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          params: {
-            clientId: clientId,
-          },
-          timeout: 10000,
+      const callTenantStatus = async (jwtToken: string) => {
+        return await axios.get(
+          `${TENANT_BASE_URL}/api/integrations/alexa/status`,
+          {
+            headers: {
+              Authorization: `Bearer ${jwtToken}`,
+              "Content-Type": "application/json",
+            },
+            params: {
+              clientId: clientId,
+            },
+            timeout: 10000,
+          }
+        );
+      };
+
+      let response;
+      try {
+        response = await callTenantStatus(token);
+      } catch (apiError: any) {
+        if (apiError.response?.status === 401) {
+          console.warn("[BFF] Tenant API returned 401 for Alexa status. Retrying once with fresh token...");
+          invalidateTenantToken();
+          token = await getTenantToken(true);
+          response = await callTenantStatus(token);
+        } else {
+          throw apiError;
         }
-      );
+      }
 
-      console.log(
-        "[BFF] Alexa status response received"
-      );
-
+      console.log("[BFF] Alexa status response received successfully");
       return response.data;
     } catch (error: any) {
       if (error instanceof HttpsError) {
@@ -1504,14 +1638,11 @@ export const getAlexaStatus = onCall(
       const status = error.response?.status;
       const responseData = error.response?.data;
 
-      console.error(
-        "[BFF] getAlexaStatus failed:",
-        {
-          status: status,
-          response: responseData,
-          message: error.message,
-        }
-      );
+      console.error("[BFF] getAlexaStatus failed:", {
+        uid: uid,
+        status: status,
+        message: error.message,
+      });
 
       if (status === 401) {
         throw new HttpsError(
@@ -1558,7 +1689,7 @@ export const getAlexaStatus = onCall(
 export const disconnectAlexa = onCall(
   {
     region: "asia-south1",
-    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET],
+    secrets: [TENANT_CLIENT_ID, TENANT_CLIENT_SECRET, AURABRAIN_CLIENT_ID, AURABRAIN_CLIENT_SECRET],
     enforceAppCheck: false,
   },
   async (request) => {
@@ -1569,31 +1700,49 @@ export const disconnectAlexa = onCall(
       );
     }
 
+    const uid = request.auth.uid;
+
     try {
       const clientId = await getMappedClientId(
-        request.auth.uid,
+        uid,
         request.auth
       );
 
-      const token = await getTenantToken();
+      let token = await getTenantToken();
 
       console.log(
-        `[BFF] Disconnecting Alexa for clientId=${clientId}`
+        `[BFF] Disconnecting Alexa for UID=${uid}, clientId=${clientId}`
       );
 
-      const response = await axios.post(
-        `${TENANT_BASE_URL}/api/integrations/alexa/disconnect`,
-        {
-          clientId: clientId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+      const callTenantDisconnect = async (jwtToken: string) => {
+        return await axios.post(
+          `${TENANT_BASE_URL}/api/integrations/alexa/disconnect`,
+          {
+            clientId: clientId,
           },
-          timeout: 10000,
+          {
+            headers: {
+              Authorization: `Bearer ${jwtToken}`,
+              "Content-Type": "application/json",
+            },
+            timeout: 10000,
+          }
+        );
+      };
+
+      let response;
+      try {
+        response = await callTenantDisconnect(token);
+      } catch (apiError: any) {
+        if (apiError.response?.status === 401) {
+          console.warn("[BFF] Tenant API returned 401 for Alexa disconnect. Retrying once with fresh token...");
+          invalidateTenantToken();
+          token = await getTenantToken(true);
+          response = await callTenantDisconnect(token);
+        } else {
+          throw apiError;
         }
-      );
+      }
 
       return response.data;
     } catch (error: any) {
@@ -1604,14 +1753,11 @@ export const disconnectAlexa = onCall(
       const status = error.response?.status;
       const responseData = error.response?.data;
 
-      console.error(
-        "[BFF] disconnectAlexa failed:",
-        {
-          status: status,
-          response: responseData,
-          message: error.message,
-        }
-      );
+      console.error("[BFF] disconnectAlexa failed:", {
+        uid: uid,
+        status: status,
+        message: error.message,
+      });
 
       if (status === 401) {
         throw new HttpsError(

@@ -48,12 +48,14 @@ class _EnergyScreenState extends State<EnergyScreen>
     _liveTelemetryTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (mounted) {
         final deviceProvider = context.read<DeviceProvider>();
-        final calculatedWatts = _calculateTotalActiveWatts(deviceProvider.devices);
+        final calculatedWatts = _calculateTotalActiveWatts(
+          deviceProvider.devices,
+        );
         final liveWatts = calculatedWatts > 0
             ? calculatedWatts
             : (deviceProvider.activeLiveWatts > 0
-                ? deviceProvider.activeLiveWatts
-                : 0.0);
+                  ? deviceProvider.activeLiveWatts
+                  : 0.0);
         context.read<EnergyProvider>().updateLiveWatts(liveWatts);
       }
     });
@@ -103,10 +105,11 @@ class _EnergyScreenState extends State<EnergyScreen>
     final liveWatts = calculatedWatts > 0
         ? calculatedWatts
         : (deviceProvider.activeLiveWatts > 0
-            ? deviceProvider.activeLiveWatts
-            : 0.0);
+              ? deviceProvider.activeLiveWatts
+              : 0.0);
 
-    final homeId = _selectedHomeId ??
+    final homeId =
+        _selectedHomeId ??
         (context.read<PropertyProvider>().properties.isNotEmpty
             ? context.read<PropertyProvider>().properties.first.id
             : 'home_main');
@@ -131,8 +134,9 @@ class _EnergyScreenState extends State<EnergyScreen>
         final tariff = context.read<TariffProvider>();
         final total = dashboard.gridKwh + dashboard.backupKwh;
         final gridShare = total <= 0 ? 88.0 : (dashboard.gridKwh / total * 100);
-        final backupShare =
-            total <= 0 ? 12.0 : (dashboard.backupKwh / total * 100);
+        final backupShare = total <= 0
+            ? 12.0
+            : (dashboard.backupKwh / total * 100);
         final gridCost = tariff.calculateGridCost(dashboard.gridKwh);
         final backupCost = tariff.calculateBackupCost(dashboard.backupKwh);
         final totalCost = gridCost + backupCost;
@@ -197,7 +201,8 @@ class _EnergyScreenState extends State<EnergyScreen>
                     percentage: gridShare,
                     color: const Color(0xFF00A38E),
                     icon: Icons.electrical_services_rounded,
-                    cost: '${tariff.currencySymbol} ${gridCost.toStringAsFixed(2)} (@ ${tariff.currencySymbol}${tariff.gridRate.toStringAsFixed(2)}/u)',
+                    cost:
+                        '${tariff.currencySymbol} ${gridCost.toStringAsFixed(2)} (@ ${tariff.currencySymbol}${tariff.gridRate.toStringAsFixed(2)}/u)',
                   ),
                   const SizedBox(height: 16),
                   _ModernComparisonBar(
@@ -206,7 +211,8 @@ class _EnergyScreenState extends State<EnergyScreen>
                     percentage: backupShare,
                     color: const Color(0xFF0284C7),
                     icon: Icons.solar_power_rounded,
-                    cost: '${tariff.currencySymbol} ${backupCost.toStringAsFixed(2)} (@ ${tariff.currencySymbol}${tariff.backupRate.toStringAsFixed(2)}/u)',
+                    cost:
+                        '${tariff.currencySymbol} ${backupCost.toStringAsFixed(2)} (@ ${tariff.currencySymbol}${tariff.backupRate.toStringAsFixed(2)}/u)',
                   ),
                   const SizedBox(height: 24),
                   Container(
@@ -354,7 +360,7 @@ class _EnergyScreenState extends State<EnergyScreen>
   Widget build(BuildContext context) {
     final energyProvider = context.watch<EnergyProvider>();
     final properties = context.watch<PropertyProvider>().properties;
-final deviceProvider = context.watch<DeviceProvider>();
+    final deviceProvider = context.watch<DeviceProvider>();
     final dashboard = energyProvider.dashboard;
 
     // Real-time live wattage calculated from user devices
@@ -362,8 +368,8 @@ final deviceProvider = context.watch<DeviceProvider>();
     final currentLiveWatts = calculatedWatts > 0
         ? calculatedWatts
         : (energyProvider.liveTelemetryWatts > 0
-            ? energyProvider.liveTelemetryWatts
-            : 0.0);
+              ? energyProvider.liveTelemetryWatts
+              : 0.0);
 
     final canPop = Navigator.canPop(context);
 
@@ -557,9 +563,9 @@ class _ModernEnergyHeader extends StatelessWidget {
                   color: const Color(0xFFE6F7F5),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: const Color(0xFF00A38E).withOpacity(
-                      0.3 + (pulseAnimation.value * 0.4),
-                    ),
+                    color: const Color(
+                      0xFF00A38E,
+                    ).withOpacity(0.3 + (pulseAnimation.value * 0.4)),
                     width: 1,
                   ),
                 ),
@@ -574,9 +580,9 @@ class _ModernEnergyHeader extends StatelessWidget {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF00A38E).withOpacity(
-                              0.5 + (pulseAnimation.value * 0.4),
-                            ),
+                            color: const Color(
+                              0xFF00A38E,
+                            ).withOpacity(0.5 + (pulseAnimation.value * 0.4)),
                             blurRadius: 6,
                             spreadRadius: 1,
                           ),
@@ -680,10 +686,7 @@ class _ModernTopControls extends StatelessWidget {
                     items: properties.map((p) {
                       return DropdownMenuItem<String>(
                         value: p.id,
-                        child: Text(
-                          p.name,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        child: Text(p.name, overflow: TextOverflow.ellipsis),
                       );
                     }).toList(),
                     onChanged: onHomeChanged,
@@ -729,9 +732,13 @@ class _ModernTopControls extends StatelessWidget {
                       child: Text(
                         period.shortLabel,
                         style: TextStyle(
-                          color: isSelected ? Colors.white : const Color(0xFF64748B),
+                          color: isSelected
+                              ? Colors.white
+                              : const Color(0xFF64748B),
                           fontSize: 12.5,
-                          fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                          fontWeight: isSelected
+                              ? FontWeight.w900
+                              : FontWeight.w700,
                         ),
                       ),
                     ),
@@ -767,7 +774,10 @@ class _ModernEnergyHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tariff = context.watch<TariffProvider>();
-    final computedCost = tariff.calculateTotalCost(dashboard.gridKwh, dashboard.backupKwh);
+    final computedCost = tariff.calculateTotalCost(
+      dashboard.gridKwh,
+      dashboard.backupKwh,
+    );
 
     return Container(
       width: double.infinity,
@@ -792,13 +802,14 @@ class _ModernEnergyHero extends StatelessWidget {
             children: [
               Flexible(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE6F7F5),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: const Color(0xFFBFECE5),
-                    ),
+                    border: Border.all(color: const Color(0xFFBFECE5)),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -914,7 +925,10 @@ class _ModernEnergyHero extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(8),
@@ -947,7 +961,8 @@ class _ModernEnergyHero extends StatelessWidget {
               const SizedBox(width: 10),
               _ModernMetricTile(
                 title: 'EST. TARIFF',
-                value: '${tariff.currencySymbol} ${computedCost.toStringAsFixed(1)}',
+                value:
+                    '${tariff.currencySymbol} ${computedCost.toStringAsFixed(1)}',
                 color: const Color(0xFF0284C7),
                 bgColor: const Color(0xFFE0F2FE),
                 icon: Icons.currency_rupee_rounded,
@@ -1047,8 +1062,12 @@ class _ModernPowerFlowCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = dashboard.gridKwh + dashboard.backupKwh;
-    final gridRatio = total <= 0 ? 0.88 : (dashboard.gridKwh / total).clamp(0.0, 1.0);
-    final backupRatio = total <= 0 ? 0.12 : (dashboard.backupKwh / total).clamp(0.0, 1.0);
+    final gridRatio = total <= 0
+        ? 0.88
+        : (dashboard.gridKwh / total).clamp(0.0, 1.0);
+    final backupRatio = total <= 0
+        ? 0.12
+        : (dashboard.backupKwh / total).clamp(0.0, 1.0);
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -1083,11 +1102,7 @@ class _ModernPowerFlowCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Icon(
-                Icons.hub_rounded,
-                color: Color(0xFF00A38E),
-                size: 18,
-              ),
+              Icon(Icons.hub_rounded, color: Color(0xFF00A38E), size: 18),
             ],
           ),
           const SizedBox(height: 14),
@@ -1324,10 +1339,8 @@ class _ModernChartCard extends StatelessWidget {
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  getDrawingHorizontalLine: (val) => const FlLine(
-                    color: Color(0xFFF1F5F9),
-                    strokeWidth: 1,
-                  ),
+                  getDrawingHorizontalLine: (val) =>
+                      const FlLine(color: Color(0xFFF1F5F9), strokeWidth: 1),
                 ),
                 titlesData: FlTitlesData(
                   topTitles: const AxisTitles(
@@ -1440,7 +1453,9 @@ class _ChartPill extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? const Color(0xFF00A38E) : const Color(0xFF64748B),
+            color: isSelected
+                ? const Color(0xFF00A38E)
+                : const Color(0xFF64748B),
             fontSize: 10.5,
             fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
           ),
@@ -1536,7 +1551,9 @@ class _UserDeviceBreakdownCard extends StatelessWidget {
             )
           else
             ...devices.map((device) {
-              final double watts = _EnergyScreenState._getApplianceWattage(device);
+              final double watts = _EnergyScreenState._getApplianceWattage(
+                device,
+              );
               final double percentage = totalLiveWatts > 0
                   ? (watts / totalLiveWatts * 100).clamp(0.0, 100.0)
                   : (device.isOn ? 25.0 : 0.0);
@@ -1597,7 +1614,9 @@ class _UserDeviceBreakdownCard extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                location.isNotEmpty ? location : device.type.label,
+                                location.isNotEmpty
+                                    ? location
+                                    : device.type.label,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -1613,7 +1632,9 @@ class _UserDeviceBreakdownCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              device.isOn ? '${watts.toStringAsFixed(0)} W' : '0 W',
+                              device.isOn
+                                  ? '${watts.toStringAsFixed(0)} W'
+                                  : '0 W',
                               style: TextStyle(
                                 color: device.isOn
                                     ? const Color(0xFF0F172A)
@@ -1627,7 +1648,9 @@ class _UserDeviceBreakdownCard extends StatelessWidget {
                                   ? '${percentage.toStringAsFixed(0)}% Load'
                                   : 'Standby',
                               style: TextStyle(
-                                color: device.isOn ? itemColor : const Color(0xFF94A3B8),
+                                color: device.isOn
+                                    ? itemColor
+                                    : const Color(0xFF94A3B8),
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -1646,7 +1669,9 @@ class _UserDeviceBreakdownCard extends StatelessWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
-                        value: device.isOn ? (percentage / 100).clamp(0.05, 1.0) : 0.0,
+                        value: device.isOn
+                            ? (percentage / 100).clamp(0.05, 1.0)
+                            : 0.0,
                         backgroundColor: const Color(0xFFF1F5F9),
                         valueColor: AlwaysStoppedAnimation<Color>(itemColor),
                         minHeight: 4,
@@ -1666,10 +1691,7 @@ class _MiniDeviceToggle extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
 
-  const _MiniDeviceToggle({
-    required this.value,
-    required this.onChanged,
-  });
+  const _MiniDeviceToggle({required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -1708,8 +1730,6 @@ class _MiniDeviceToggle extends StatelessWidget {
     );
   }
 }
-
-
 
 // ============================================================================
 // MODAL COMPONENTS

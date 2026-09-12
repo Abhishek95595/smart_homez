@@ -215,9 +215,7 @@ class _ProfileTariffCardState extends State<ProfileTariffCard> {
                     decoration: BoxDecoration(
                       color: const Color(0xFFE6F7F5),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: const Color(0xFFBFECE5),
-                      ),
+                      border: Border.all(color: const Color(0xFFBFECE5)),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,

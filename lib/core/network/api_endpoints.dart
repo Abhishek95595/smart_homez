@@ -222,8 +222,10 @@ abstract final class ApiEndpoints {
       '${client(clientId)}/subscription/cancel';
   static String subscriptionInvoices(String clientId) =>
       '${client(clientId)}/subscription/invoices';
-  static String subscriptionInvoiceDownload(String clientId, String invoiceId) =>
-      '${subscriptionInvoices(clientId)}/$invoiceId/download';
+  static String subscriptionInvoiceDownload(
+    String clientId,
+    String invoiceId,
+  ) => '${subscriptionInvoices(clientId)}/$invoiceId/download';
   static String subscriptionRefund(String clientId) =>
       '${client(clientId)}/subscription/refund';
   static String subscriptionCheckout(String clientId) =>

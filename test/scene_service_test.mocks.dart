@@ -79,7 +79,11 @@ class MockApiClient extends _i1.Mock implements _i3.ApiClient {
             Invocation.method(
               #post,
               [path],
-              {#data: data, #queryParameters: queryParameters, #options: options},
+              {
+                #data: data,
+                #queryParameters: queryParameters,
+                #options: options,
+              },
             ),
             returnValue: _i4.Future<_i2.Response<dynamic>>.value(
               _FakeResponse_0<dynamic>(
@@ -87,7 +91,11 @@ class MockApiClient extends _i1.Mock implements _i3.ApiClient {
                 Invocation.method(
                   #post,
                   [path],
-                  {#data: data, #queryParameters: queryParameters, #options: options},
+                  {
+                    #data: data,
+                    #queryParameters: queryParameters,
+                    #options: options,
+                  },
                 ),
               ),
             ),
@@ -97,7 +105,11 @@ class MockApiClient extends _i1.Mock implements _i3.ApiClient {
                 Invocation.method(
                   #post,
                   [path],
-                  {#data: data, #queryParameters: queryParameters, #options: options},
+                  {
+                    #data: data,
+                    #queryParameters: queryParameters,
+                    #options: options,
+                  },
                 ),
               ),
             ),
@@ -115,7 +127,11 @@ class MockApiClient extends _i1.Mock implements _i3.ApiClient {
             Invocation.method(
               #put,
               [path],
-              {#data: data, #queryParameters: queryParameters, #options: options},
+              {
+                #data: data,
+                #queryParameters: queryParameters,
+                #options: options,
+              },
             ),
             returnValue: _i4.Future<_i2.Response<dynamic>>.value(
               _FakeResponse_0<dynamic>(
@@ -123,7 +139,11 @@ class MockApiClient extends _i1.Mock implements _i3.ApiClient {
                 Invocation.method(
                   #put,
                   [path],
-                  {#data: data, #queryParameters: queryParameters, #options: options},
+                  {
+                    #data: data,
+                    #queryParameters: queryParameters,
+                    #options: options,
+                  },
                 ),
               ),
             ),
@@ -133,7 +153,11 @@ class MockApiClient extends _i1.Mock implements _i3.ApiClient {
                 Invocation.method(
                   #put,
                   [path],
-                  {#data: data, #queryParameters: queryParameters, #options: options},
+                  {
+                    #data: data,
+                    #queryParameters: queryParameters,
+                    #options: options,
+                  },
                 ),
               ),
             ),
@@ -151,7 +175,11 @@ class MockApiClient extends _i1.Mock implements _i3.ApiClient {
             Invocation.method(
               #patch,
               [path],
-              {#data: data, #queryParameters: queryParameters, #options: options},
+              {
+                #data: data,
+                #queryParameters: queryParameters,
+                #options: options,
+              },
             ),
             returnValue: _i4.Future<_i2.Response<dynamic>>.value(
               _FakeResponse_0<dynamic>(
@@ -159,7 +187,11 @@ class MockApiClient extends _i1.Mock implements _i3.ApiClient {
                 Invocation.method(
                   #patch,
                   [path],
-                  {#data: data, #queryParameters: queryParameters, #options: options},
+                  {
+                    #data: data,
+                    #queryParameters: queryParameters,
+                    #options: options,
+                  },
                 ),
               ),
             ),
@@ -169,7 +201,11 @@ class MockApiClient extends _i1.Mock implements _i3.ApiClient {
                 Invocation.method(
                   #patch,
                   [path],
-                  {#data: data, #queryParameters: queryParameters, #options: options},
+                  {
+                    #data: data,
+                    #queryParameters: queryParameters,
+                    #options: options,
+                  },
                 ),
               ),
             ),
@@ -187,7 +223,11 @@ class MockApiClient extends _i1.Mock implements _i3.ApiClient {
             Invocation.method(
               #delete,
               [path],
-              {#data: data, #queryParameters: queryParameters, #options: options},
+              {
+                #data: data,
+                #queryParameters: queryParameters,
+                #options: options,
+              },
             ),
             returnValue: _i4.Future<_i2.Response<dynamic>>.value(
               _FakeResponse_0<dynamic>(
@@ -195,7 +235,11 @@ class MockApiClient extends _i1.Mock implements _i3.ApiClient {
                 Invocation.method(
                   #delete,
                   [path],
-                  {#data: data, #queryParameters: queryParameters, #options: options},
+                  {
+                    #data: data,
+                    #queryParameters: queryParameters,
+                    #options: options,
+                  },
                 ),
               ),
             ),
@@ -205,7 +249,11 @@ class MockApiClient extends _i1.Mock implements _i3.ApiClient {
                 Invocation.method(
                   #delete,
                   [path],
-                  {#data: data, #queryParameters: queryParameters, #options: options},
+                  {
+                    #data: data,
+                    #queryParameters: queryParameters,
+                    #options: options,
+                  },
                 ),
               ),
             ),

@@ -38,13 +38,6 @@ class AlexaLinkResponse {
         map['url']?.toString() ??
         '';
 
-    if (authUrl.contains('tenant-api-qa.omnihome.in')) {
-      authUrl = authUrl.replaceAll(
-        'tenant-api-qa.omnihome.in',
-        'tenant-api.omnihome.in',
-      );
-    }
-
     return AlexaLinkResponse(
       ssoToken: ssoToken,
       expiresInSeconds: expiresVal is num

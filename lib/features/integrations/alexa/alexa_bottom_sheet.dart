@@ -86,14 +86,15 @@ class AlexaBottomSheet extends StatelessWidget {
                       Navigator.pop(context);
                       final result = await alexaProvider.connectAlexa();
                       if (result != null && context.mounted) {
-                        final returnedUri = await Navigator.of(context).push<Uri>(
-                          MaterialPageRoute(
-                            builder: (_) => AlexaWebViewScreen(
-                              authorizeUri: result.uri,
-                              bearerToken: result.token,
-                            ),
-                          ),
-                        );
+                        final returnedUri = await Navigator.of(context)
+                            .push<Uri>(
+                              MaterialPageRoute(
+                                builder: (_) => AlexaWebViewScreen(
+                                  authorizeUri: result.uri,
+                                  bearerToken: result.token,
+                                ),
+                              ),
+                            );
                         if (returnedUri != null) {
                           await alexaProvider.handleCallbackUri(returnedUri);
                         }

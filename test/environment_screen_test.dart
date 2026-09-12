@@ -30,7 +30,7 @@ class FakeEnvironmentService extends EnvironmentService {
         'title': 'Natural Ventilation',
         'description': 'Open windows for optimal breeze.',
         'type': 'wind',
-      }
+      },
     ];
   }
 
@@ -79,45 +79,44 @@ void main() {
       expect(service.getWidgets, isNotNull);
     });
 
-    testWidgets('EnvironmentScreen renders with solar arc, metrics, and cards', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(1080, 3000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'EnvironmentScreen renders with solar arc, metrics, and cards',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(1080, 3000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      final fakeService = FakeEnvironmentService();
+        final fakeService = FakeEnvironmentService();
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: EnvironmentScreen(service: fakeService),
-        ),
-      );
+        await tester.pumpWidget(
+          MaterialApp(home: EnvironmentScreen(service: fakeService)),
+        );
 
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-      // Check title
-      expect(find.text('Smart Environment'), findsOneWidget);
+        // Check title
+        expect(find.text('Smart Environment'), findsOneWidget);
 
-      // Check section titles
-      expect(find.text('Solar Cycle'), findsOneWidget);
-      expect(find.text('Live Conditions'), findsOneWidget);
-      expect(find.text('Dusk-to-Dawn'), findsOneWidget);
-      expect(find.text('Family Presence'), findsOneWidget);
-      expect(find.text('Home Location'), findsOneWidget);
+        // Check section titles
+        expect(find.text('Solar Cycle'), findsOneWidget);
+        expect(find.text('Live Conditions'), findsOneWidget);
+        expect(find.text('Dusk-to-Dawn'), findsOneWidget);
+        expect(find.text('Family Presence'), findsOneWidget);
+        expect(find.text('Home Location'), findsOneWidget);
 
-      // Check metric titles
-      expect(find.text('Temperature'), findsOneWidget);
-      expect(find.text('Humidity'), findsOneWidget);
-      expect(find.text('Air Quality'), findsOneWidget);
-      expect(find.text('UV Index'), findsOneWidget);
+        // Check metric titles
+        expect(find.text('Temperature'), findsOneWidget);
+        expect(find.text('Humidity'), findsOneWidget);
+        expect(find.text('Air Quality'), findsOneWidget);
+        expect(find.text('UV Index'), findsOneWidget);
 
-      // Check presence & prompt data loaded
-      expect(find.text('Rahul Sharma'), findsOneWidget);
-      expect(find.text('Natural Ventilation'), findsOneWidget);
-      expect(find.text('Evening Chill'), findsOneWidget);
-    });
+        // Check presence & prompt data loaded
+        expect(find.text('Rahul Sharma'), findsOneWidget);
+        expect(find.text('Natural Ventilation'), findsOneWidget);
+        expect(find.text('Evening Chill'), findsOneWidget);
+      },
+    );
   });
 }

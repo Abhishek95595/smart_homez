@@ -40,8 +40,12 @@ class ApiClient {
                 if (token != null && token.trim().isNotEmpty) {
                   options.headers['Authorization'] = 'Bearer ${token.trim()}';
                   debugPrint('[API] Tenant JWT source = tenant_api_jwt');
-                  debugPrint('[API] Tenant = ${ApiEndpoints.productionTenantId}');
-                  debugPrint('[API] AuraBrain ClientId = ${ApiEndpoints.productionClientId}');
+                  debugPrint(
+                    '[API] Tenant = ${ApiEndpoints.productionTenantId}',
+                  );
+                  debugPrint(
+                    '[API] AuraBrain ClientId = ${ApiEndpoints.productionClientId}',
+                  );
                 } else {
                   options.headers.remove('Authorization');
                 }
@@ -75,6 +79,11 @@ class ApiClient {
             '$path',
           );
 
+          if (statusCode == 429) {
+            debugPrint('[API RateLimit] Received 429 on $path. Backing off.');
+            return handler.next(error);
+          }
+
           if (statusCode == 401 && !isRetry) {
             if (path == ApiEndpoints.authLogin) {
               return handler.next(error);
@@ -82,8 +91,10 @@ class ApiClient {
 
             try {
               debugPrint('[API] 401 → refreshing Tenant API token');
+              _cachedMemoryToken = null;
               final String? refreshedToken = await _refreshToken();
               if (refreshedToken != null && refreshedToken.isNotEmpty) {
+                _cachedMemoryToken = refreshedToken;
                 final RequestOptions options = error.requestOptions;
                 options.extra['isRetry'] = true;
                 options.headers['Authorization'] = 'Bearer $refreshedToken';
@@ -94,8 +105,8 @@ class ApiClient {
                     headers: options.headers,
                   ),
                 );
-                final Response<dynamic> retryResponse =
-                    await retryDio.fetch<dynamic>(options);
+                final Response<dynamic> retryResponse = await retryDio
+                    .fetch<dynamic>(options);
                 return handler.resolve(retryResponse);
               }
             } catch (retryErr) {
@@ -109,12 +120,23 @@ class ApiClient {
     );
   }
 
+  String? _cachedMemoryToken;
   Future<String?>? _refreshFuture;
+
+  /// Clears the in-memory token cache (e.g. on logout)
+  void clearTokenCache() {
+    _cachedMemoryToken = null;
+  }
 
   /// Retrieves a validated production Tenant API JWT.
   /// If expired, invalid, or missing, requests a fresh token from Firebase Cloud Function.
   Future<String?> getValidTenantApiToken() async {
-    // 1. Check authoritative tenant_api_jwt key
+    // 0. In-memory fast path
+    if (_cachedMemoryToken != null && isJwtValid(_cachedMemoryToken)) {
+      return _cachedMemoryToken;
+    }
+
+    // 1. Check authoritative tenant_api_jwt key in persistent storage
     String? token = await _storage.read(key: tenantApiJwtKey);
 
     // Legacy migration check if tenant_api_jwt is not yet set
@@ -128,11 +150,16 @@ class ApiClient {
     }
 
     if (token != null && isJwtValid(token)) {
+      _cachedMemoryToken = token;
       return token;
     }
 
     // 2. Token is missing or expired -> request fresh token through Firebase BFF
-    return _refreshToken();
+    final freshToken = await _refreshToken();
+    if (freshToken != null && isJwtValid(freshToken)) {
+      _cachedMemoryToken = freshToken;
+    }
+    return freshToken;
   }
 
   Future<String?> _refreshToken() async {
@@ -143,6 +170,9 @@ class ApiClient {
     _refreshFuture = _doRefreshToken();
     try {
       final token = await _refreshFuture;
+      if (token != null && isJwtValid(token)) {
+        _cachedMemoryToken = token;
+      }
       return token;
     } finally {
       _refreshFuture = null;
@@ -153,7 +183,9 @@ class ApiClient {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
-        debugPrint('[API Auth] No Firebase user authenticated, cannot request Tenant API token.');
+        debugPrint(
+          '[API Auth] No Firebase user authenticated, cannot request Tenant API token.',
+        );
         return null;
       }
 
@@ -180,6 +212,7 @@ class ApiClient {
           await _storage.delete(key: 'client_api_jwt');
           await _storage.delete(key: 'platform_user_jwt');
           await _storage.delete(key: 'jwt_token');
+          _cachedMemoryToken = token;
           return token;
         }
       }

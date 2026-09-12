@@ -80,8 +80,11 @@ class AlexaService {
     final int? exp = claims?['exp'] is int
         ? claims!['exp'] as int
         : int.tryParse(claims?['exp']?.toString() ?? '');
-    final bool isExpired = exp != null &&
-        DateTime.fromMillisecondsSinceEpoch(exp * 1000).isBefore(DateTime.now());
+    final bool isExpired =
+        exp != null &&
+        DateTime.fromMillisecondsSinceEpoch(
+          exp * 1000,
+        ).isBefore(DateTime.now());
     final bool isValid = ApiClient.isJwtValid(token);
 
     debugPrint('[Alexa Auth] token source = firebase-bff');
@@ -120,11 +123,8 @@ class AlexaService {
     final String targetEmail = (email ?? user?.email ?? savedEmail ?? '')
         .trim()
         .toLowerCase();
-    final String targetPhone =
-        (phone ?? user?.phoneNumber ?? savedPhone ?? '').replaceAll(
-          RegExp(r'\D'),
-          '',
-        );
+    final String targetPhone = (phone ?? user?.phoneNumber ?? savedPhone ?? '')
+        .replaceAll(RegExp(r'\D'), '');
 
     try {
       final Response<dynamic> response = await _api.get('/api/v1/clients');
@@ -186,9 +186,12 @@ class AlexaService {
       }
 
       // 3. Fallback to saved client ID if matched
-      if (matchedClient == null && savedClientId != null && savedClientId.isNotEmpty) {
+      if (matchedClient == null &&
+          savedClientId != null &&
+          savedClientId.isNotEmpty) {
         for (final item in clientsList) {
-          if (item is Map && item['id']?.toString().trim() == savedClientId.trim()) {
+          if (item is Map &&
+              item['id']?.toString().trim() == savedClientId.trim()) {
             matchedClient = Map<String, dynamic>.from(item);
             break;
           }
@@ -254,7 +257,8 @@ class AlexaService {
     if (reference.isAbsolute) {
       resolvedUri = reference;
     } else if (raw.startsWith('/')) {
-      final String host = requestUri.host.isNotEmpty &&
+      final String host =
+          requestUri.host.isNotEmpty &&
               requestUri.host != 'tenant-api-qa.omnihome.in'
           ? requestUri.host
           : 'tenant-api.omnihome.in';
@@ -290,14 +294,14 @@ class AlexaService {
   /// Primary flow: Calls Firebase Cloud Function getAlexaLinkToken (asia-south1).
   /// Falls back to direct REST only if Cloud Function is unavailable and user is authenticated.
   Future<AlexaLinkResponse> createLinkToken({
-    String? clientId,
     String? redirectUri,
     String? state,
   }) async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       throw ApiException(
-        message: 'Authentication required. Please log in to link your Alexa account.',
+        message:
+            'Authentication required. Please log in to link your Alexa account.',
         statusCode: 401,
       );
     }
@@ -306,7 +310,9 @@ class AlexaService {
 
     // 1. Primary: Call Firebase Cloud Function getAlexaLinkToken
     try {
-      debugPrint('[AlexaService] Requesting Alexa link token from Cloud Function (asia-south1)...');
+      debugPrint(
+        '[AlexaService] Requesting Alexa link token from Cloud Function (asia-south1)...',
+      );
       final callable = _functions.httpsCallable('getAlexaLinkToken');
       final result = await callable.call<dynamic>(<String, dynamic>{
         'redirectUri': redirectUri ?? alexaRedirectUri,
@@ -314,9 +320,20 @@ class AlexaService {
       });
 
       if (result.data is Map) {
-        final linkResp = AlexaLinkResponse.fromJson(
-          Map<String, dynamic>.from(result.data as Map),
+        final Map<String, dynamic> dataMap = Map<String, dynamic>.from(
+          result.data as Map,
         );
+        final linkResp = AlexaLinkResponse.fromJson(dataMap);
+
+        // Synchronize returned state if provided by server
+        final String? returnedState = dataMap['state']?.toString();
+        if (returnedState != null &&
+            returnedState.isNotEmpty &&
+            returnedState != currentState) {
+          _lastGeneratedState = returnedState;
+          await _storage.write(key: alexaLinkStateKey, value: returnedState);
+        }
+
         if (linkResp.authorizeUrl.isNotEmpty) {
           debugPrint(
             '[AlexaService] Cloud Function getAlexaLinkToken returned successfully.',
@@ -336,27 +353,36 @@ class AlexaService {
       int statusCode = 500;
       switch (fbErr.code) {
         case 'unauthenticated':
-          userMessage = 'Your session has expired. Please log in again to link Alexa.';
+          userMessage = 'Please login again and try connecting Alexa.';
           statusCode = 401;
           break;
         case 'failed-precondition':
-          userMessage = fbErr.message ?? 'Unable to find a Tenant client for this account.';
+          userMessage =
+              fbErr.message ?? 'Your account is not configured for Alexa yet.';
           statusCode = 400;
           break;
         case 'permission-denied':
-          userMessage = 'Permission denied. Your account is not authorized for Alexa linking.';
+          userMessage = 'Alexa connection was not authorized.';
           statusCode = 403;
           break;
         case 'not-found':
-          userMessage = 'Alexa integration service endpoint was not found.';
+          userMessage = 'Alexa integration is currently unavailable.';
           statusCode = 404;
+          break;
+        case 'deadline-exceeded':
+          userMessage = 'Alexa connection timed out. Please try again.';
+          statusCode = 504;
+          break;
+        case 'unavailable':
+          userMessage = 'Service temporarily unavailable. Please try again.';
+          statusCode = 503;
           break;
         case 'invalid-argument':
           userMessage = fbErr.message ?? 'Invalid Alexa linking configuration.';
           statusCode = 400;
           break;
         default:
-          userMessage = fbErr.message ?? 'Failed to generate Alexa link token.';
+          userMessage = 'Unable to connect Alexa right now. Please try again.';
           statusCode = 500;
       }
       throw ApiException(message: userMessage, statusCode: statusCode);

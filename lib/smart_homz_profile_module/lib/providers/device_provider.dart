@@ -201,7 +201,7 @@ class DeviceProvider extends ChangeNotifier {
   /// Starts a safe polling-based real-time sync.
   Future<void> startRealtimeSync(
     String clientId, {
-    Duration refreshInterval = const Duration(seconds: 5),
+    Duration refreshInterval = const Duration(seconds: 10),
   }) async {
     final String cleanClientId = clientId.trim();
 
